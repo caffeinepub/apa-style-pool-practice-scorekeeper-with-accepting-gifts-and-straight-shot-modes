@@ -12,6 +12,12 @@ export interface Player {
     name: string;
     skillLevel?: bigint;
 }
+export interface PracticeMatch {
+    makes?: bigint;
+    base: BaseMatchEntry;
+    attempts?: bigint;
+    streaks?: bigint;
+}
 export interface ApaNineBallMatch {
     matchType: string;
     base: BaseMatchEntry;
@@ -21,6 +27,7 @@ export interface ApaNineBallMatch {
     umpire?: Principal;
     seasonType: string;
 }
+export type Time = bigint;
 export interface APAMatchStatsUiRackStats {
     extraStats: string;
     description: string;
@@ -31,7 +38,6 @@ export interface APAMatchStatsUiRackStats {
     timestamp: Time;
     rackNumber: bigint;
 }
-export type Time = bigint;
 export interface APA9MatchPlayerStatsUi {
     id: string;
     ppi: number;
@@ -133,6 +139,12 @@ export interface AcceptingGiftsMatch {
     score: bigint;
     rulesReference: string;
 }
+export interface APADetailedInnningSummary {
+    defensiveShots: bigint;
+    player: string;
+    deadBalls: bigint;
+    points: bigint;
+}
 export interface RackStat {
     extraStats: string;
     description: string;
@@ -233,14 +245,32 @@ export interface ApiMatch {
     streaks?: bigint;
     strokes?: Array<bigint>;
 }
+export interface BallState {
+    by: string;
+    id: bigint;
+    all: string;
+    eoi: boolean;
+    inn: bigint;
+    pna: bigint;
+    ballNumber: bigint;
+    calledShot: boolean;
+    runOut: string;
+    difficulty: string;
+    rack: bigint;
+    gameId: string;
+    isBreak: boolean;
+    defensiveShot: boolean;
+    positionPlay: string;
+    intendedPocket: string;
+    score: bigint;
+    pocketed: string;
+    finalBall: bigint;
+    activePlayer: string;
+    defense: boolean;
+    points: bigint;
+}
 export interface UserProfile {
     name: string;
-}
-export interface PracticeMatch {
-    makes?: bigint;
-    base: BaseMatchEntry;
-    attempts?: bigint;
-    streaks?: bigint;
 }
 export enum MatchMode {
     straightShot = "straightShot",
@@ -261,6 +291,7 @@ export enum Variant_all_playerMatch_teamMatch_detailRack {
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearHistory(): Promise<void>;
+    computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;

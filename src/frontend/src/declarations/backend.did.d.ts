@@ -52,6 +52,12 @@ export interface APA9MatchPlayerStatsUi {
   'ballsOnBreak' : Array<bigint>,
   'points' : bigint,
 }
+export interface APADetailedInnningSummary {
+  'defensiveShots' : bigint,
+  'player' : string,
+  'deadBalls' : bigint,
+  'points' : bigint,
+}
 export interface APAMatchStatsUiContainer {
   'matchType' : string,
   'summary' : APAMatchStatsUiSummary,
@@ -144,6 +150,30 @@ export interface ApiMatch {
   'streaks' : [] | [bigint],
   'strokes' : [] | [Array<bigint>],
 }
+export interface BallState {
+  'by' : string,
+  'id' : bigint,
+  'all' : string,
+  'eoi' : boolean,
+  'inn' : bigint,
+  'pna' : bigint,
+  'ballNumber' : bigint,
+  'calledShot' : boolean,
+  'runOut' : string,
+  'difficulty' : string,
+  'rack' : bigint,
+  'gameId' : string,
+  'isBreak' : boolean,
+  'defensiveShot' : boolean,
+  'positionPlay' : string,
+  'intendedPocket' : string,
+  'score' : bigint,
+  'pocketed' : string,
+  'finalBall' : bigint,
+  'activePlayer' : string,
+  'defense' : boolean,
+  'points' : bigint,
+}
 export interface BaseMatchEntry {
   'owner' : Principal,
   'mode' : MatchMode,
@@ -230,6 +260,10 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearHistory' : ActorMethod<[], undefined>,
+  'computeAPASummary' : ActorMethod<
+    [string, Array<BallState>],
+    APADetailedInnningSummary
+  >,
   'deleteMatch' : ActorMethod<[string], undefined>,
   'getAllMatches' : ActorMethod<[], Array<ApiMatch>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,

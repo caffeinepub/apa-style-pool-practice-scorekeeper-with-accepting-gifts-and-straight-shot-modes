@@ -1,141 +1,88 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T19:16:12.369Z",
+  "generatedAt": "2026-02-13T21:56:30.096Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 6,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-12",
-        "summary": "Investigate and fix the regression where a previously authenticated user is unexpectedly logged out (or forced to re-authenticate) after an app update/reload, so that Internet Identity sessions persist as expected across page reloads and routine redeploys (until the delegation expires or the user explicitly logs out).",
+        "id": "REQ-18",
+        "summary": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/auth/AuthGate.tsx",
-          "frontend/src/components/auth/LoginButton.tsx",
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/components/auth/AuthPersistenceGate.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/auth/AuthGate.tsx"
-        ]
-      },
-      {
-        "id": "REQ-13",
-        "summary": "Remove all APA Practice UI/logic that treats APA as a 'race to X' format, and update the APA Practice start and game screens to be APA 9-ball Equalizer point-based tracking (points-to-win by skill level) rather than a rack race.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/apa/apaEqualizer.ts",
-          "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/apa/apaEqualizer.ts",
-          "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-14",
-        "summary": "Implement APA 9-ball rack-by-rack scoring capture in the APA Practice flow, including: 10 total points per rack (1–8 = 1 point each, 9-ball = 2 points), dead balls tracked as 0 points, and defensive shots tracking, in a way that mirrors core APA scorekeeper behaviors for practice use.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/apa/apaScoring.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
           "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/components/apa/ApaDefensiveShotsControl.tsx"
+          "frontend/src/components/apa/ApaBallButton.tsx",
+          "frontend/src/components/apa/apaBallStyles.ts"
         ],
         "matchedFiles": [
-          "frontend/src/lib/apa/apaScoring.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "frontend/src/components/apa/ApaBallButton.tsx",
+          "frontend/src/components/apa/apaBallStyles.ts"
+        ]
+      },
+      {
+        "id": "REQ-19",
+        "summary": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/apa/useApaInningFlow.ts",
+          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "frontend/src/pages/apa/PracticeGamePage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/apa/useApaInningFlow.ts",
           "frontend/src/components/apa/ApaRackScoringPanel.tsx"
         ]
       },
       {
-        "id": "REQ-15",
-        "summary": "At the end of an APA 9-ball practice match, calculate and display APA 20-point match result conversion (winner 12–20 / loser 0–8) using the user-provided SL-specific chart thresholds based on the losing player’s ball points earned relative to their SL goal.",
+        "id": "REQ-20",
+        "summary": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/apa/apaMatchPoints.ts",
-          "frontend/src/components/apa/ApaMatchPointChartEditor.tsx",
-          "frontend/src/components/apa/ApaResultsSummary.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/pages/apa/PracticeStartPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/apa/apaMatchPoints.ts",
-          "frontend/src/components/apa/ApaResultsSummary.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/pages/apa/PracticeStartPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-16",
-        "summary": "Update persisted match data structures so APA Practice saved matches store the new APA 9-ball Equalizer fields (skill levels, points-to-win targets, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) and ensure Match History and Match Details render a correct APA 9-ball summary for these matches.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/matches/matchBuilders.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "frontend/src/pages/history/MatchDetailsPage.tsx",
-          "frontend/src/pages/history/MatchHistoryPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/matches/matchBuilders.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "frontend/src/pages/history/MatchDetailsPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-17",
-        "summary": "Update any app branding elements that incorrectly imply 8-ball for an APA 9-ball-focused scorekeeper (e.g., the '8' badge in the header/login card), while keeping all user-facing text in English.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/layout/AppLayout.tsx",
-          "frontend/src/components/auth/AuthGate.tsx",
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "frontend/src/lib/apa/apaScoring.ts",
           "frontend/src/pages/apa/PracticeGamePage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/layout/AppLayout.tsx",
-          "frontend/src/components/auth/AuthGate.tsx",
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx"
+          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "frontend/src/lib/apa/apaScoring.ts"
+        ]
+      },
+      {
+        "id": "REQ-21",
+        "summary": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "frontend/src/lib/matches/matchBuilders.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/apa/ApaRackScoringPanel.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
+    "frontend/src/components/apa/ApaBallButton.tsx",
     "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-    "frontend/src/components/apa/ApaResultsSummary.tsx",
-    "frontend/src/components/auth/AuthGate.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/components/matches/MatchSummaryCard.tsx",
+    "frontend/src/components/apa/apaBallStyles.ts",
+    "frontend/src/components/apa/useApaInningFlow.ts",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/lib/apa/apaEqualizer.ts",
-    "frontend/src/lib/apa/apaMatchPoints.ts",
     "frontend/src/lib/apa/apaScoring.ts",
-    "frontend/src/lib/matches/matchBuilders.ts",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/apa/PracticeGamePage.tsx",
-    "frontend/src/pages/apa/PracticeStartPage.tsx",
-    "frontend/src/pages/history/MatchDetailsPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

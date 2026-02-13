@@ -5,11 +5,11 @@ import Principal "mo:core/Principal";
 import Time "mo:core/Time";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
-import Nat "mo:core/Nat";
 import List "mo:core/List";
+import Nat "mo:core/Nat";
+import Float "mo:core/Float";
+import Int "mo:core/Int";
 
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -41,19 +41,19 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  public type Player = {
+  type Player = {
     id : Principal;
     name : Text;
     skillLevel : ?Nat;
   };
 
-  public type MatchMode = {
+  type MatchMode = {
     #acceptingGifts;
     #straightShot;
     #apaPractice;
   };
 
-  public type BaseMatchEntry = {
+  type BaseMatchEntry = {
     matchId : Text;
     mode : MatchMode;
     dateTime : Time.Time;
@@ -62,21 +62,21 @@ actor {
     owner : Principal;
   };
 
-  public type PracticeMatch = {
+  type PracticeMatch = {
     base : BaseMatchEntry;
     attempts : ?Nat;
     makes : ?Nat;
     streaks : ?Nat;
   };
 
-  public type AcceptingGiftsMatch = {
+  type AcceptingGiftsMatch = {
     base : BaseMatchEntry;
     rulesReference : Text;
     completionStatus : Bool;
     score : Nat;
   };
 
-  public type StraightShotMatch = {
+  type StraightShotMatch = {
     base : BaseMatchEntry;
     strokes : [Nat];
     scratchStrokes : [Nat];
@@ -92,7 +92,7 @@ actor {
     };
   };
 
-  public type ApaNineBallMatch = {
+  type ApaNineBallMatch = {
     base : BaseMatchEntry;
     seasonType : Text;
     matchType : Text;
@@ -102,7 +102,7 @@ actor {
     teamStats : [TeamStats];
   };
 
-  public type ApaPlayerStats = {
+  type ApaPlayerStats = {
     playerId : Principal;
     skillLevel : Nat;
     pointsNeeded : Nat;
@@ -118,7 +118,7 @@ actor {
     pointsEarnedRunningTotal : Nat;
   };
 
-  public type RackScore = {
+  type RackScore = {
     validBreak : Bool;
     breakMaiden : Bool;
     ballsOnBreak : Int;
@@ -129,7 +129,7 @@ actor {
     totalRackScore : Nat;
   };
 
-  public type TeamStats = {
+  type TeamStats = {
     matchesPlayed : Nat;
     matchesWon : Nat;
     playtimes : [Float];
@@ -153,16 +153,39 @@ actor {
     };
   };
 
-  public type MatchRecord = {
+  type MatchRecord = {
     #practice : PracticeMatch;
     #acceptingGifts : AcceptingGiftsMatch;
     #straightShot : StraightShotMatch;
     #apaNineBall : ApaNineBallMatch;
   };
 
-  let matchHistory = Map.empty<Text, MatchRecord>();
+  type BallState = {
+    ballNumber : Int;
+    inn : Int;
+    pocketed : Text;
+    by : Text;
+    score : Int;
+    pna : Int;
+    runOut : Text;
+    all : Text;
+    isBreak : Bool;
+    points : Int;
+    eoi : Bool;
+    difficulty : Text;
+    rack : Int;
+    defense : Bool;
+    gameId : Text;
+    activePlayer : Text;
+    calledShot : Bool;
+    finalBall : Int;
+    id : Int;
+    defensiveShot : Bool;
+    positionPlay : Text;
+    intendedPocket : Text;
+  };
 
-  public type ApiMatch = {
+  type ApiMatch = {
     matchId : Text;
     mode : MatchMode;
     dateTime : Time.Time;
@@ -188,14 +211,14 @@ actor {
     apaMatchInfo : ?APAMatchStatsUiContainer;
   };
 
-  public type APAMatchStatsUiContainer = {
+  type APAMatchStatsUiContainer = {
     seasonType : Text;
     matchType : Text;
     summary : APAMatchStatsUiSummary;
     players : [?APA9MatchPlayerStatsUi];
   };
 
-  public type APAMatchStatsUiSummary = {
+  type APAMatchStatsUiSummary = {
     timestamp : Time.Time;
     level : {
       #all;
@@ -219,7 +242,7 @@ actor {
     rackStats : APAMatchStatsUiRackStats;
   };
 
-  public type APAMatchStatsUiRackStats = {
+  type APAMatchStatsUiRackStats = {
     rackNumber : Nat;
     description : Text;
     timestamp : Time.Time;
@@ -230,7 +253,7 @@ actor {
     rackStats : [RackStat];
   };
 
-  public type RackStat = {
+  type RackStat = {
     rackNumber : Nat;
     description : Text;
     timestamp : Time.Time;
@@ -240,7 +263,7 @@ actor {
     rackNumberCopy : Nat;
   };
 
-  public type APA9MatchPlayerStatsUi = {
+  type APA9MatchPlayerStatsUi = {
     timestamp : Time.Time;
     points : Nat;
     pointsAwarded : Nat;
@@ -284,6 +307,17 @@ actor {
     pointsWonConverted : Nat;
     pointsEarnedRunningTotal : Nat;
   };
+
+  type APADetailedInnningSummary = {
+    player : Text;
+    points : Nat;
+    deadBalls : Nat;
+    defensiveShots : Nat;
+  };
+
+  let matchHistory = Map.empty<Text, MatchRecord>();
+  let apaBallState = Map.empty<Int, BallState>();
+  var apaStartingPlayer : ?Text = null;
 
   func convertToApiMatch(matchRecord : MatchRecord) : ApiMatch {
     switch (matchRecord) {
@@ -548,7 +582,6 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save matches");
     };
-
     // Always set the owner to the caller to prevent ownership spoofing
     let secureMatch = setMatchOwner(matchRecord, caller);
     matchHistory.add(matchId, secureMatch);
@@ -572,10 +605,6 @@ actor {
   };
 
   public query ({ caller }) func getAllMatches() : async [ApiMatch] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view matches");
-    };
-
     let isAdmin = AccessControl.isAdmin(accessControlState, caller);
 
     matchHistory.values()
@@ -632,5 +661,72 @@ actor {
       Runtime.trap("Unauthorized: Only admins can clear all history");
     };
     matchHistory.clear();
+  };
+
+  public shared ({ caller }) func computeAPASummary(startingPlayer : Text, ballStates : [BallState]) : async APADetailedInnningSummary {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can compute APA summaries");
+    };
+
+    var playerAPoints = 0;
+    var playerBPoints = 0;
+    var playerADeadBalls = 0;
+    var playerBDeadBalls = 0;
+    var playerADefensiveShots = 0;
+    var playerBDefensiveShots = 0;
+    var inningCounter = 1;
+    var currentPlayer = startingPlayer;
+    var consecutiveDefensiveShots = 0;
+    var defensivePointsAwarded = false;
+
+    func switchPlayer(currentPlayer : Text) : Text {
+      if (currentPlayer == "A") { "B" } else {
+        "A";
+      };
+    };
+
+    for (ball in ballStates.values()) {
+      if (ball.activePlayer == currentPlayer) {
+        if (ball.defensiveShot) {
+          consecutiveDefensiveShots += 1;
+          if (currentPlayer == "A") {
+            playerADefensiveShots += 1;
+          } else if (currentPlayer == "B") {
+            playerBDefensiveShots += 1;
+          };
+        } else {
+          consecutiveDefensiveShots := 0;
+        };
+
+        if (consecutiveDefensiveShots >= 3 and not defensivePointsAwarded) {
+          if (currentPlayer == "A") {
+            playerBPoints += 3;
+          } else {
+            playerAPoints += 3;
+          };
+          defensivePointsAwarded := true;
+        } else if (consecutiveDefensiveShots < 3) {
+          defensivePointsAwarded := false;
+        };
+      } else {
+        currentPlayer := switchPlayer(currentPlayer);
+        consecutiveDefensiveShots := 0;
+      };
+
+      if (ball.defense) {
+        if (currentPlayer == "A") {
+          playerADefensiveShots += 1;
+        } else if (currentPlayer == "B") {
+          playerBDefensiveShots += 1;
+        };
+      };
+    };
+
+    {
+      player = "A";
+      points = playerAPoints;
+      deadBalls = playerADeadBalls;
+      defensiveShots = playerADefensiveShots;
+    };
   };
 };

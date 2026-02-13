@@ -1,14 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Restore Internet Identity login persistence across reloads/updates and correct APA Practice to true APA 9-ball Equalizer scoring, tracking, and saved-match summaries.
+**Goal:** Revamp the APA 9-ball Practice scoring screen from manual rack inputs to a ball-based, per-inning workflow with automatic innings and in-flow dead ball/defensive-shot controls, while keeping saved match records compatible.
 
 **Planned changes:**
-- Fix the authentication persistence regression so logged-in users remain authenticated across page reloads, route navigation, and routine redeploys until they explicitly log out or the delegation expires (with a clear English “session expired” message when applicable).
-- Remove APA UI/logic that treats APA as a “race to X” rack format; update APA Practice start/game screens to use skill level (SL 1–9) and points-to-win targets (SL1=14, SL2=19, SL3=25, SL4=31, SL5=38, SL6=46, SL7=55, SL8=65, SL9=75).
-- Add APA 9-ball rack-by-rack scoring capture: per-rack ball points (1–8=1, 9-ball=2), dead balls (0), enforced rack accounting to total 10 points, defensive shots per player, and innings tracking for PPI calculation.
-- Add end-of-match results that compute and display APA 20-point match result conversion (12–20 / 0–8) using user-provided SL-specific threshold ranges, and ensure no “race to” terminology appears in results.
-- Update persisted match data structures and rendering so APA Practice saved matches store the new APA 9-ball Equalizer fields and Match History/Match Details show APA-relevant summaries; add a conditional backend migration only if required to preserve existing saved matches.
-- Update branding elements that imply 8-ball (e.g., header/login “8” badge) so APA mode is clearly 9-ball and all user-facing text remains English.
+- Replace numeric rack scoring inputs (points/innings) with a per-inning UI that shows balls 1–9 as selectable controls for the current rack; selecting/unselecting balls assigns them to the currently active player for the current inning.
+- Add a clear “Turn Over” control that ends the current inning, increments innings for the player whose inning ended, and switches the active player indicator.
+- Add in-flow controls to mark dead balls for the rack (count toward 10-point rack accounting but add 0 points) and to record a defensive shot for the currently active player.
+- Enforce valid rack completion rules: 9-ball counts as 2 points, 1–8 as 1 point each, and the rack can only complete when exactly 10 rack points are accounted for via player-scored balls plus dead balls.
+- Compute the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new UI so the saved match record shape and Match History/Details remain compatible and unchanged.
 
-**User-visible outcome:** Users stay logged in after refreshes, can run an APA 9-ball practice match with correct Equalizer points-to-win, rack-by-rack point capture (including dead balls and defensive shots), see innings and PPI, get proper 20-point match conversion results, and view accurate APA-focused summaries in Match History/Details with updated 9-ball branding.
+**User-visible outcome:** On the APA Practice game screen, the scorekeeper can track each inning by tapping pocketed balls, press “Turn Over” to switch players and automatically advance innings, record dead balls and defensive shots during play, and still finish/save matches with the same match history/details as before.

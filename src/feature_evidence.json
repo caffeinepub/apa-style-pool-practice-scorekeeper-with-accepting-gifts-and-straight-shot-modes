@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-investigate-and-fix-the-regression-where-a-previously-authenticated-user-is-unexpectedly-logged-out-or-forced-to-re-authenticate-after-an-app-update-reload-so-that-internet-identity-sessions-persist-as-expected-across-page-reloads-and-routine-redeploys-until-the-delegation-expires-or-the-user-explicitly-logs-out",
-      "featureTitle": "Investigate and fix the regression where a previously authenticated user is unexpectedly logged out (or forced to re-authenticate) after an app update/reload, so that Internet Identity sessions persist as expected across page reloads and routine redeploys (until the delegation expires or the user explicitly logs out).",
+      "featureId": "feature-replace-the-current-apa-rack-scoring-entry-ui-numeric-inputs-for-points-innings-with-a-seamless-per-inning-gui-for-apa-9-ball-practice-matches-show-balls-1-9-for-the-current-rack-allow-the-scorekeeper-to-tap-select-which-balls-were-pocketed-during-the-current-inning-and-provide-a-clear-turn-over-control-to-advance-to-the-next-player-s-inning",
+      "featureTitle": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
       "files": [
-        "frontend/src/components/auth/AuthGate.tsx"
+        "frontend/src/components/apa/ApaBallButton.tsx",
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+        "frontend/src/components/apa/apaBallStyles.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,38 +18,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-12"
+        "REQ-18"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-remove-all-apa-practice-ui-logic-that-treats-apa-as-a-race-to-x-format-and-update-the-apa-practice-start-and-game-screens-to-be-apa-9-ball-equalizer-point-based-tracking-points-to-win-by-skill-level-rather-than-a-rack-race",
-      "featureTitle": "Remove all APA Practice UI/logic that treats APA as a 'race to X' format, and update the APA Practice start and game screens to be APA 9-ball Equalizer point-based tracking (points-to-win by skill level) rather than a rack race.",
-      "files": [
-        "frontend/src/lib/apa/apaEqualizer.ts",
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/pages/apa/PracticeStartPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-13"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-apa-9-ball-rack-by-rack-scoring-capture-in-the-apa-practice-flow-including-10-total-points-per-rack-1-8-1-point-each-9-ball-2-points-dead-balls-tracked-as-0-points-and-defensive-shots-tracking-in-a-way-that-mirrors-core-apa-scorekeeper-behaviors-for-practice-use",
-      "featureTitle": "Implement APA 9-ball rack-by-rack scoring capture in the APA Practice flow, including: 10 total points per rack (1–8 = 1 point each, 9-ball = 2 points), dead balls tracked as 0 points, and defensive shots tracking, in a way that mirrors core APA scorekeeper behaviors for practice use.",
+      "featureId": "feature-implement-automatic-innings-tracking-for-apa-practice-gameplay-based-on-the-per-inning-flow-innings-should-be-incremented-automatically-as-the-scorekeeper-uses-the-turn-over-workflow-no-manual-innings-numeric-input-fields",
+      "featureTitle": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
       "files": [
         "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/lib/apa/apaScoring.ts",
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
+        "frontend/src/components/apa/useApaInningFlow.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -58,18 +38,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-14"
+        "REQ-19"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-at-the-end-of-an-apa-9-ball-practice-match-calculate-and-display-apa-20-point-match-result-conversion-winner-12-20-loser-0-8-using-the-user-provided-sl-specific-chart-thresholds-based-on-the-losing-player-s-ball-points-earned-relative-to-their-sl-goal",
-      "featureTitle": "At the end of an APA 9-ball practice match, calculate and display APA 20-point match result conversion (winner 12–20 / loser 0–8) using the user-provided SL-specific chart thresholds based on the losing player’s ball points earned relative to their SL goal.",
+      "featureId": "feature-add-in-flow-controls-to-mark-dead-balls-and-defensive-shots-during-apa-per-inning-entry-without-breaking-the-existing-per-rack-10-point-accounting-and-defensive-shot-totals",
+      "featureTitle": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
       "files": [
-        "frontend/src/components/apa/ApaResultsSummary.tsx",
-        "frontend/src/lib/apa/apaMatchPoints.ts",
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/pages/apa/PracticeStartPage.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+        "frontend/src/lib/apa/apaScoring.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -80,18 +58,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-15"
+        "REQ-20"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-persisted-match-data-structures-so-apa-practice-saved-matches-store-the-new-apa-9-ball-equalizer-fields-skill-levels-points-to-win-targets-per-rack-scoring-with-dead-balls-defensive-shots-innings-ppi-and-match-point-conversion-outcome-and-ensure-match-history-and-match-details-render-a-correct-apa-9-ball-summary-for-these-matches",
-      "featureTitle": "Update persisted match data structures so APA Practice saved matches store the new APA 9-ball Equalizer fields (skill levels, points-to-win targets, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) and ensure Match History and Match Details render a correct APA 9-ball summary for these matches.",
+      "featureId": "feature-update-the-apa-practice-game-flow-to-compute-and-submit-the-existing-per-rack-summary-data-playera-playerb-points-dead-balls-innings-defensive-shots-from-the-new-per-inning-ball-based-ui-keeping-the-saved-match-record-shape-and-match-history-details-rendering-compatible-with-existing-apa-match-persistence",
+      "featureTitle": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
       "files": [
-        "frontend/src/components/matches/MatchSummaryCard.tsx",
-        "frontend/src/lib/matches/matchBuilders.ts",
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/pages/history/MatchDetailsPage.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -102,30 +77,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-16"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-any-app-branding-elements-that-incorrectly-imply-8-ball-for-an-apa-9-ball-focused-scorekeeper-e-g-the-8-badge-in-the-header-login-card-while-keeping-all-user-facing-text-in-english",
-      "featureTitle": "Update any app branding elements that incorrectly imply 8-ball for an APA 9-ball-focused scorekeeper (e.g., the '8' badge in the header/login card), while keeping all user-facing text in English.",
-      "files": [
-        "frontend/src/components/auth/AuthGate.tsx",
-        "frontend/src/components/layout/AppLayout.tsx",
-        "frontend/src/pages/HomePage.tsx",
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/pages/apa/PracticeStartPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-17"
+        "REQ-21"
       ],
       "confidence": "high"
     }

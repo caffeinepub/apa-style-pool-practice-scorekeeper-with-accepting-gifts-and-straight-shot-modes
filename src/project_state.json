@@ -1,18 +1,19 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 7,
+  "projectStateVersion": 9,
   "summary": "APA pool practice scorekeeper app focused on APA 9-ball (not 8-ball), using The Equalizer® point-based scoring with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, and end-of-match team match-point conversion; plus additional practice modes: Accepting Gifts and Straight Shot.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
     "Need explicit rule decision for scratch-on-break when break shot itself doesn’t count (user spec: possibly counts as 1).",
     "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
     "APA 9-ball session tracking should support rack-by-rack 10-point accounting: player A points + player B points + dead balls = 10 each rack; include 9-ball worth 2, dead balls worth 0, and support defensive shots + innings for correct PPI.",
-    "APA 9-ball rules constraints to encode: no push-outs (standard handicapped APA 9-ball), 9-on-the-snap ends rack with 2 points, three consecutive fouls within a rack loses the rack and remaining balls become dead."
+    "APA 9-ball rules constraints to encode: no push-outs (standard handicapped APA 9-ball), 9-on-the-snap ends rack with 2 points, three consecutive fouls within a rack loses the rack and remaining balls become dead.",
+    "APA 9-ball active scoring UI should mirror official APA scorekeeper flow: per-rack display of balls 1–9, tap-to-select pocketed balls for the current inning, Turn Over control to switch players, innings auto-increment logic, and in-flow toggles/controls to mark dead balls and defensive shots."
   ],
   "known_issues": [
     "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
       "id": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
@@ -141,6 +142,38 @@
         "REQ-17"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-replace-the-current-apa-rack-scoring-entry-ui-numeric-inputs-for-points-innings-with-a-seamless-per-inning-gui-for-apa-9-ball-practice-matches-show-balls-1-9-for-the-current-rack-allow-the-scorekeeper-to-tap-select-which-balls-were-pocketed-during-the-current-inning-and-provide-a-clear-turn-over-control-to-advance-to-the-next-player-s-inning",
+      "title": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-automatic-innings-tracking-for-apa-practice-gameplay-based-on-the-per-inning-flow-innings-should-be-incremented-automatically-as-the-scorekeeper-uses-the-turn-over-workflow-no-manual-innings-numeric-input-fields",
+      "title": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-in-flow-controls-to-mark-dead-balls-and-defensive-shots-during-apa-per-inning-entry-without-breaking-the-existing-per-rack-10-point-accounting-and-defensive-shot-totals",
+      "title": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-apa-practice-game-flow-to-compute-and-submit-the-existing-per-rack-summary-data-playera-playerb-points-dead-balls-innings-defensive-shots-from-the-new-per-inning-ball-based-ui-keeping-the-saved-match-record-shape-and-match-history-details-rendering-compatible-with-existing-apa-match-persistence",
+      "title": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -179,6 +212,12 @@
     {
       "id": "AR-7",
       "summary": "Correct APA mode to be APA 9-ball Equalizer scoring (points-to-win by skill level), including per-rack 10-point accounting (balls + dead balls), defensive shots, innings, PPI calculation, and 20-point match-point conversion (12–20 winner / 0–8 loser). Remove any 'race to X' UI/logic.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Improve APA 9-ball scoring UI to a seamless, APA-scorekeeper-like per-inning GUI: display balls 1–9 each rack, allow selecting pocketed balls per inning, provide a Turn Over button to alternate turns, auto-adjust innings, and support marking dead balls and defensive shots during entry.",
       "reqIds": [],
       "status": "pending"
     }

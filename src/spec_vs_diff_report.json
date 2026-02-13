@@ -1,79 +1,53 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T19:16:12.366Z",
-  "summary": "Diff implements substantial APA 9-ball Equalizer UI/scoring changes (skill-level points-to-win mapping, rack total validation with dead balls, defensive shots, innings/PPI display, match-point outcome types) and updates branding from “8” to “9”. Backend types were expanded with an APA 9-ball match variant and a migration module was added, but some requirements (notably login persistence regression fix details and custom/user-provided match-point thresholds) are not clearly evidenced, and the migration logic appears incomplete/incorrect per the diff summary.",
+  "generatedAt": "2026-02-13T21:56:30.093Z",
+  "summary": "The diff adds a new ball-based rack scoring UI (ball buttons with states for Player A/B/dead), an inning-flow hook, and updates the rack scoring panel to compute rack totals from ball selections and to auto-track innings/defensive shots. However, some acceptance-criteria details are either not evidenced or appear implemented differently than requested, and there are backend changes that look unrelated to the UI-only scope.",
   "missing_requirements": [
     {
-      "id": "REQ-12",
-      "requirement": "Fix regression where previously authenticated users are unexpectedly logged out after reload/update; sessions persist across reloads/routine redeploys until delegation expires or user logs out; show clear English message if session expired; do not edit immutable hook files (compose/wrap instead).",
-      "reason": "AuthGate was modified to show an initializing spinner and updated branding, but the diff summary does not show any change that would ensure delegation/session persistence across reloads/redeploys, nor any explicit handling/message for expired/invalid delegations. No wrapper/composition mechanism beyond using the existing hook is evidenced.",
+      "id": "REQ-19",
+      "requirement": "Each press of \"Turn Over\" increments innings for the player whose inning is being ended, and then switches the active player indicator.",
+      "reason": "The new inning flow only increments innings when `currentInningHasBalls` is true; if no balls were marked in the inning, `turnOver()` does not increment innings. This does not match the AC statement that each press increments innings for the player whose inning is being ended.",
       "evidence": [
-        "frontend/src/components/auth/AuthGate.tsx",
-        "frontend-file-summaries.txt"
+        "frontend/src/components/apa/useApaInningFlow.ts"
       ]
     },
     {
-      "id": "REQ-15",
-      "requirement": "Use the exact user-provided SL-specific threshold ranges (SL1–SL9) for APA 20-point match result conversion (winner 12–20 / loser 0–8).",
-      "reason": "The implementation introduces a hard-coded DEFAULT_MATCH_POINT_CHART in code; the diff summary shows no mechanism for using “user-provided” thresholds (e.g., UI input, configuration, persistence, or injection of a provided chart).",
+      "id": "REQ-20",
+      "requirement": "UI prevents impossible states (e.g., more dead balls than remaining unscored balls in the rack).",
+      "reason": "The dead-ball toggle allows marking any unscored ball as dead without an explicit guard against exceeding the rack accounting limit; the only evidenced behavior is showing an error when totals exceed POINTS_PER_RACK. No disabling/prevention logic is shown in the provided diff summary.",
       "evidence": [
-        "frontend/src/lib/apa/apaMatchPoints.ts"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ]
     },
     {
-      "id": "REQ-16",
-      "requirement": "If changing backend stable types requires a state upgrade, add a conditional migration in backend/migration.mo to preserve existing saved matches without traps (conditional migration policy).",
-      "reason": "A new backend/migration.mo was added, but its run() function maps OldMatchRecord to NewMatchRecord by returning oldRecord unchanged, despite the variant type set differing (NewMatchRecord adds #apaNineBall). From the diff summary alone, this migration does not demonstrate a conditional/compatible transformation to ensure safe upgrades and preservation without traps.",
+      "id": "REQ-21",
+      "requirement": "Completing a rack via the new GUI produces the same RackData shape used today by PracticeGamePage (rackNumber, playerA points/innings/defensiveShots, playerB points/innings/defensiveShots, deadBalls).",
+      "reason": "The updated rack panel’s `onRackComplete` payload uses `player1Points/player2Points/player1Innings/...` naming (player1/player2), not the explicitly required `playerA/playerB` RackData shape. The diff is truncated before seeing final mapping, so there is not enough evidence that the emitted data is converted back into the exact `RackData` shape as required.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+        "frontend/src/lib/apa/apaScoring.ts"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Backend APA nine-ball match schema includes many extra fields (seasonType, matchType, matchBehaviorPhase, winPercentage, isPlayerOfMatch, pointsEarnedRunningTotal, TeamStats with penalties/forfeits, rack fields like validBreak/breakMaiden/ballsOnBreak/runOut, etc.) beyond the requested persisted fields for APA practice (SLs, points-to-win, per-rack ball/dead-ball points, defensive shots, innings/PPI, match-point conversion).",
-      "reason": "REQ-16 asks to persist APA practice fields needed to reconstruct scoring/results; the diff adds a significantly more elaborate schema not requested and not tied to stated acceptance criteria.",
+      "description": "Backend addition of a detailed `BallState` type suggesting ball-by-ball/inning event logging structures.",
+      "reason": "The BuildRequest explicitly frames this as a UI-only change with no backend schema/migration required, and non-goals include not adding turn-by-turn shot log persistence. The diff shows a new/expanded backend `type BallState = { ballNumber; inn; pocketed; by; ... }` which is not requested by REQ-18–REQ-21 and appears to introduce ball-level event schema.",
       "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo",
-        "frontend/src/lib/matches/matchBuilders.ts"
-      ]
-    },
-    {
-      "description": "Straight Shot “moving average (last 10 sessions) showing stroke performance trends.”",
-      "reason": "Not requested by REQ-12–REQ-17 and not part of the stated goals; appears as an additional analytics feature.",
-      "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Footer branding includes “Built with ❤️ using caffeine.ai” link.",
-      "reason": "Not requested by REQ-12–REQ-17; adds new branding/copy not specified in the BuildRequest.",
-      "evidence": [
-        "frontend/src/components/layout/AppLayout.tsx"
+        "backend/main.mo"
       ]
     }
   ],
-  "confidence": 0.68,
+  "confidence": 0.66,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/components/apa/ApaBallButton.tsx",
     "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-    "frontend/src/components/apa/ApaResultsSummary.tsx",
-    "frontend/src/components/auth/AuthGate.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/components/matches/MatchSummaryCard.tsx",
-    "frontend/src/lib/apa/apaEqualizer.ts",
-    "frontend/src/lib/apa/apaMatchPoints.ts",
+    "frontend/src/components/apa/apaBallStyles.ts",
+    "frontend/src/components/apa/useApaInningFlow.ts",
     "frontend/src/lib/apa/apaScoring.ts",
-    "frontend/src/lib/matches/matchBuilders.ts",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/apa/PracticeGamePage.tsx",
-    "frontend/src/pages/apa/PracticeStartPage.tsx",
-    "frontend/src/pages/history/MatchDetailsPage.tsx",
     "project_state.json"
   ]
 }

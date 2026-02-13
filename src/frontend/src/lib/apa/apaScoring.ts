@@ -24,6 +24,10 @@ export const POINTS_PER_RACK = 10;
 export const NINE_BALL_VALUE = 2;
 export const REGULAR_BALL_VALUE = 1;
 
+export function getBallValue(ballNumber: number): number {
+  return ballNumber === 9 ? NINE_BALL_VALUE : REGULAR_BALL_VALUE;
+}
+
 export function validateRackTotal(playerA: number, playerB: number, dead: number): boolean {
   return playerA + playerB + dead === POINTS_PER_RACK;
 }

@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, AlertCircle } from 'lucide-react';
-import { validateRackTotal, getRackError, POINTS_PER_RACK } from '../../lib/apa/apaScoring';
+import { Badge } from '@/components/ui/badge';
+import { Plus, AlertCircle, RotateCcw, Shield } from 'lucide-react';
+import { POINTS_PER_RACK } from '../../lib/apa/apaScoring';
+import ApaBallButton from './ApaBallButton';
+import { useApaInningFlow } from './useApaInningFlow';
+import type { BallState } from './apaBallStyles';
+import { calculateRackTotals } from './apaBallStyles';
 
 interface RackScoringPanelProps {
   rackNumber: number;
@@ -28,169 +31,273 @@ export default function ApaRackScoringPanel({
   player2Name,
   onRackComplete,
 }: RackScoringPanelProps) {
-  const [player1Points, setPlayer1Points] = useState('');
-  const [player2Points, setPlayer2Points] = useState('');
-  const [deadBalls, setDeadBalls] = useState('');
-  const [player1Innings, setPlayer1Innings] = useState('');
-  const [player2Innings, setPlayer2Innings] = useState('');
-  const [player1DefensiveShots, setPlayer1DefensiveShots] = useState('0');
-  const [player2DefensiveShots, setPlayer2DefensiveShots] = useState('0');
+  const [ballStates, setBallStates] = useState<Record<number, BallState>>({});
+  const [player1DefensiveShots, setPlayer1DefensiveShots] = useState(0);
+  const [player2DefensiveShots, setPlayer2DefensiveShots] = useState(0);
+  
+  const inningFlow = useApaInningFlow('A');
 
-  const p1 = parseInt(player1Points) || 0;
-  const p2 = parseInt(player2Points) || 0;
-  const dead = parseInt(deadBalls) || 0;
-  const total = p1 + p2 + dead;
-  const error = getRackError(p1, p2, dead);
-  const isValid = validateRackTotal(p1, p2, dead) && 
-                  player1Innings.trim() !== '' && 
-                  player2Innings.trim() !== '';
+  const totals = calculateRackTotals(ballStates);
+  const isRackComplete = totals.totalAccounted === POINTS_PER_RACK;
+  const error = totals.totalAccounted > POINTS_PER_RACK 
+    ? `Too many points! Remove ${totals.totalAccounted - POINTS_PER_RACK} point${totals.totalAccounted - POINTS_PER_RACK > 1 ? 's' : ''}.`
+    : totals.totalAccounted < POINTS_PER_RACK
+    ? `Need ${POINTS_PER_RACK - totals.totalAccounted} more point${POINTS_PER_RACK - totals.totalAccounted > 1 ? 's' : ''}.`
+    : null;
 
-  const handleSubmit = () => {
-    if (isValid) {
-      onRackComplete({
-        player1Points: p1,
-        player2Points: p2,
-        deadBalls: dead,
-        player1Innings: parseInt(player1Innings) || 0,
-        player2Innings: parseInt(player2Innings) || 0,
-        player1DefensiveShots: parseInt(player1DefensiveShots) || 0,
-        player2DefensiveShots: parseInt(player2DefensiveShots) || 0,
-      });
-      // Reset form
-      setPlayer1Points('');
-      setPlayer2Points('');
-      setDeadBalls('');
-      setPlayer1Innings('');
-      setPlayer2Innings('');
-      setPlayer1DefensiveShots('0');
-      setPlayer2DefensiveShots('0');
+  const handleBallClick = (ballNumber: number) => {
+    setBallStates(prev => {
+      const currentState = prev[ballNumber] || 'unscored';
+      const activePlayerState = inningFlow.activePlayer === 'A' ? 'playerA' : 'playerB';
+      
+      if (currentState === 'unscored') {
+        // Mark as scored by active player
+        inningFlow.markBallScored();
+        return { ...prev, [ballNumber]: activePlayerState };
+      } else if (currentState === activePlayerState) {
+        // Unmark (back to unscored)
+        const ballsForActivePlayer = Object.entries(prev).filter(
+          ([_, state]) => state === activePlayerState
+        ).length;
+        inningFlow.markBallUnscored(ballsForActivePlayer === 1);
+        const newStates = { ...prev };
+        delete newStates[ballNumber];
+        return newStates;
+      }
+      // If ball is scored by other player or dead, do nothing
+      return prev;
+    });
+  };
+
+  const handleMarkDead = (ballNumber: number) => {
+    setBallStates(prev => {
+      const currentState = prev[ballNumber] || 'unscored';
+      if (currentState === 'unscored') {
+        return { ...prev, [ballNumber]: 'dead' };
+      } else if (currentState === 'dead') {
+        const newStates = { ...prev };
+        delete newStates[ballNumber];
+        return newStates;
+      }
+      return prev;
+    });
+  };
+
+  const handleDefensiveShot = () => {
+    if (inningFlow.activePlayer === 'A') {
+      setPlayer1DefensiveShots(prev => prev + 1);
+    } else {
+      setPlayer2DefensiveShots(prev => prev + 1);
     }
+  };
+
+  const handleTurnOver = () => {
+    inningFlow.turnOver();
+  };
+
+  const handleCompleteRack = () => {
+    if (isRackComplete) {
+      onRackComplete({
+        player1Points: totals.playerAPoints,
+        player2Points: totals.playerBPoints,
+        deadBalls: totals.deadBallPoints,
+        player1Innings: inningFlow.playerAInnings + (inningFlow.activePlayer === 'A' && inningFlow.currentInningHasBalls ? 1 : 0),
+        player2Innings: inningFlow.playerBInnings + (inningFlow.activePlayer === 'B' && inningFlow.currentInningHasBalls ? 1 : 0),
+        player1DefensiveShots,
+        player2DefensiveShots,
+      });
+      // Reset for next rack
+      setBallStates({});
+      setPlayer1DefensiveShots(0);
+      setPlayer2DefensiveShots(0);
+      inningFlow.reset();
+    }
+  };
+
+  const handleReset = () => {
+    setBallStates({});
+    setPlayer1DefensiveShots(0);
+    setPlayer2DefensiveShots(0);
+    inningFlow.reset();
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Rack {rackNumber} Scoring</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Rack {rackNumber} Scoring</span>
+          <Button variant="ghost" size="sm" onClick={handleReset}>
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Each rack has {POINTS_PER_RACK} points total. Balls 1-8 = 1 point each, 9-ball = 2 points.
-            Dead balls count as 0 points.
+            Select balls pocketed by the active player. Balls 1-8 = 1 point, 9-ball = 2 points. Total must equal {POINTS_PER_RACK} points.
           </AlertDescription>
         </Alert>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="p1-points">{player1Name} Points</Label>
-            <Input
-              id="p1-points"
-              type="number"
-              min="0"
-              max="10"
-              value={player1Points}
-              onChange={(e) => setPlayer1Points(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="p2-points">{player2Name} Points</Label>
-            <Input
-              id="p2-points"
-              type="number"
-              min="0"
-              max="10"
-              value={player2Points}
-              onChange={(e) => setPlayer2Points(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dead-balls">Dead Balls</Label>
-            <Input
-              id="dead-balls"
-              type="number"
-              min="0"
-              max="10"
-              value={deadBalls}
-              onChange={(e) => setDeadBalls(e.target.value)}
-              placeholder="0"
-            />
+        {/* Active Player Indicator */}
+        <div className="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-4 dark:bg-emerald-950">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                Active Player
+              </div>
+              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                {inningFlow.activePlayer === 'A' ? player1Name : player2Name}
+              </div>
+            </div>
+            <Badge variant="secondary" className="text-lg px-4 py-2">
+              Inning {(inningFlow.activePlayer === 'A' ? inningFlow.playerAInnings : inningFlow.playerBInnings) + 1}
+            </Badge>
           </div>
         </div>
 
-        <div className="rounded-lg border p-3">
+        {/* Ball Grid */}
+        <div className="space-y-4">
+          <div className="text-center text-sm font-medium text-muted-foreground">
+            Select Balls Pocketed
+          </div>
+          <div className="grid grid-cols-5 gap-4 justify-items-center">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(ballNumber => (
+              <ApaBallButton
+                key={ballNumber}
+                ballNumber={ballNumber}
+                state={ballStates[ballNumber] || 'unscored'}
+                onClick={() => handleBallClick(ballNumber)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Dead Ball Controls */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Mark Dead Balls</div>
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(ballNumber => {
+              const state = ballStates[ballNumber] || 'unscored';
+              const isDead = state === 'dead';
+              const isUnscored = state === 'unscored';
+              return (
+                <Button
+                  key={ballNumber}
+                  variant={isDead ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleMarkDead(ballNumber)}
+                  disabled={!isUnscored && !isDead}
+                  className={isDead ? 'bg-gray-500 hover:bg-gray-600' : ''}
+                >
+                  {ballNumber}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Rack Totals */}
+        <div className="rounded-lg border p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Rack Total:</span>
-            <span className={`font-semibold ${total === POINTS_PER_RACK ? 'text-emerald-600' : 'text-amber-600'}`}>
-              {total} / {POINTS_PER_RACK}
+            <span className="text-muted-foreground">{player1Name}:</span>
+            <span className="font-semibold text-emerald-600">{totals.playerAPoints} pts</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{player2Name}:</span>
+            <span className="font-semibold text-blue-600">{totals.playerBPoints} pts</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Dead Balls:</span>
+            <span className="font-semibold text-gray-600">{totals.deadBallPoints} pts</span>
+          </div>
+          <div className="border-t pt-2 flex justify-between">
+            <span className="font-medium">Rack Total:</span>
+            <span className={`font-bold ${totals.totalAccounted === POINTS_PER_RACK ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {totals.totalAccounted} / {POINTS_PER_RACK}
             </span>
           </div>
           {error && (
-            <p className="mt-1 text-xs text-amber-600">{error}</p>
+            <p className="text-xs text-amber-600 text-center">{error}</p>
           )}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="p1-innings">{player1Name} Innings</Label>
-            <Input
-              id="p1-innings"
-              type="number"
-              min="0"
-              value={player1Innings}
-              onChange={(e) => setPlayer1Innings(e.target.value)}
-              placeholder="0"
-            />
+        {/* Innings Display */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-lg border p-3 text-center">
+            <div className="text-sm text-muted-foreground">{player1Name} Innings</div>
+            <div className="text-2xl font-bold text-emerald-600">
+              {inningFlow.playerAInnings + (inningFlow.activePlayer === 'A' && inningFlow.currentInningHasBalls ? 1 : 0)}
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="p2-innings">{player2Name} Innings</Label>
-            <Input
-              id="p2-innings"
-              type="number"
-              min="0"
-              value={player2Innings}
-              onChange={(e) => setPlayer2Innings(e.target.value)}
-              placeholder="0"
-            />
+          <div className="rounded-lg border p-3 text-center">
+            <div className="text-sm text-muted-foreground">{player2Name} Innings</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {inningFlow.playerBInnings + (inningFlow.activePlayer === 'B' && inningFlow.currentInningHasBalls ? 1 : 0)}
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Defensive Shots */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="p1-defensive">{player1Name} Defensive Shots</Label>
-            <Input
-              id="p1-defensive"
-              type="number"
-              min="0"
-              value={player1DefensiveShots}
-              onChange={(e) => setPlayer1DefensiveShots(e.target.value)}
-              placeholder="0"
-            />
+            <div className="text-sm font-medium">{player1Name} Defensive</div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDefensiveShot}
+                disabled={inningFlow.activePlayer !== 'A'}
+                className="flex-1"
+              >
+                <Shield className="h-4 w-4 mr-1" />
+                Record
+              </Button>
+              <Badge variant="secondary" className="text-lg px-3 py-1">
+                {player1DefensiveShots}
+              </Badge>
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="p2-defensive">{player2Name} Defensive Shots</Label>
-            <Input
-              id="p2-defensive"
-              type="number"
-              min="0"
-              value={player2DefensiveShots}
-              onChange={(e) => setPlayer2DefensiveShots(e.target.value)}
-              placeholder="0"
-            />
+            <div className="text-sm font-medium">{player2Name} Defensive</div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDefensiveShot}
+                disabled={inningFlow.activePlayer !== 'B'}
+                className="flex-1"
+              >
+                <Shield className="h-4 w-4 mr-1" />
+                Record
+              </Button>
+              <Badge variant="secondary" className="text-lg px-3 py-1">
+                {player2DefensiveShots}
+              </Badge>
+            </div>
           </div>
         </div>
 
-        <Button
-          onClick={handleSubmit}
-          disabled={!isValid}
-          className="w-full"
-          size="lg"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Complete Rack {rackNumber}
-        </Button>
+        {/* Action Buttons */}
+        <div className="grid gap-3">
+          <Button
+            onClick={handleTurnOver}
+            variant="outline"
+            size="lg"
+            className="w-full"
+          >
+            Turn Over
+          </Button>
+          <Button
+            onClick={handleCompleteRack}
+            disabled={!isRackComplete}
+            className="w-full"
+            size="lg"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Complete Rack {rackNumber}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

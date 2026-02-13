@@ -1,153 +1,100 @@
 {
   "kind": "build_request",
-  "title": "Fix login persistence regression and correct APA mode to APA 9-ball Equalizer scoring",
-  "priority": "high",
+  "title": "Revamp APA 9-Ball scoring UI to a ball-based per-inning workflow",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-12",
-      "text": "Investigate and fix the regression where a previously authenticated user is unexpectedly logged out (or forced to re-authenticate) after an app update/reload, so that Internet Identity sessions persist as expected across page reloads and routine redeploys (until the delegation expires or the user explicitly logs out).",
+      "id": "REQ-18",
+      "text": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-20"
+          "msg-1"
         ],
         "quotes": [
-          "you lost my login and i had to redo...."
+          "i want it more seemless. i would want more or less a gui that has 9 balls (numbered 1-9) for each round. turns would alternate and you select which balls were pocketed per inning. then a button kind of for turn over."
         ]
       },
       "acceptanceCriteria": [
-        "After logging in once, refreshing the page keeps the user authenticated (AuthGate does not return to the login prompt).",
-        "Navigating between routes does not clear authentication state.",
-        "A user is only logged out when they click Logout, or when the delegation is actually expired/invalid (and the UI provides a clear, English message indicating the session expired).",
-        "No changes are made to immutable hook files; fixes are implemented via safe composition/wrappers where needed."
+        "On the APA Practice game screen, rack scoring no longer relies on manually typing player points for the rack; instead, balls 1–9 are displayed as selectable controls for the current rack.",
+        "Tapping a ball marks it as scored for the currently active player for the current inning; tapping again unmarks it (until the rack is completed).",
+        "A \"Turn Over\" button toggles the active player for the next inning entry, and the UI clearly indicates whose inning it is.",
+        "The 9-ball is scored as 2 points; balls 1–8 are scored as 1 point each, consistent with existing APA logic.",
+        "The rack can only be completed when exactly 10 rack points are accounted for via (player-scored balls + dead balls), matching POINTS_PER_RACK = 10.",
+        "All user-facing text is in English."
       ]
     },
     {
-      "id": "REQ-13",
-      "text": "Remove all APA Practice UI/logic that treats APA as a 'race to X' format, and update the APA Practice start and game screens to be APA 9-ball Equalizer point-based tracking (points-to-win by skill level) rather than a rack race.",
+      "id": "REQ-19",
+      "text": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6",
-          "msg-18"
+          "msg-1"
         ],
         "quotes": [
-          "why does it say race to 5? 9 ball doesnt work like that.",
-          "APA 9-ball rules follow a rotation format but use a unique point-per-ball system known as The Equalizer® handicap system. Unlike standard 9-ball, matches are not a race to a specific number of games, but a race to a total point count based on your skill level."
+          "innings are automatically adjusted."
         ]
       },
       "acceptanceCriteria": [
-        "The APA Practice Start page no longer labels the target as 'Race to' and does not use a rack-race target model.",
-        "The APA Practice Game page no longer displays 'Race to {target}'.",
-        "Users can set each player skill level (SL 1–9) and the UI displays the correct points-to-win target for each player (SL1=14, SL2=19, SL3=25, SL4=31, SL5=38, SL6=46, SL7=55, SL8=65, SL9=75).",
-        "The match ends based on reaching the required point total (not based on a rack count)."
+        "The APA Practice game screen no longer requires the user to manually enter innings values per rack for either player.",
+        "Each press of \"Turn Over\" increments innings for the player whose inning is being ended, and then switches the active player indicator.",
+        "The player cards on the game screen continue to show innings totals and PPI updates correctly as innings advance.",
+        "Existing end-of-match summary (ApaResultsSummary) continues to display innings and PPI without regression."
       ]
     },
     {
-      "id": "REQ-14",
-      "text": "Implement APA 9-ball rack-by-rack scoring capture in the APA Practice flow, including: 10 total points per rack (1–8 = 1 point each, 9-ball = 2 points), dead balls tracked as 0 points, and defensive shots tracking, in a way that mirrors core APA scorekeeper behaviors for practice use.",
+      "id": "REQ-20",
+      "text": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-18"
+          "msg-1"
         ],
         "quotes": [
-          "Each rack has 10 points available: Balls 1–8: Each worth 1 point. 9-Ball: Worth 2 points. Dead Balls... count for 0 points.",
-          "Failing to mark defensive shots (safeties) is considered a serious scorekeeping error that can artificially inflate skill levels"
+          "we mark deadballs somehow and defensive shot too see."
         ]
       },
       "acceptanceCriteria": [
-        "For each rack, the UI supports recording ball points for the active shooter, including recording a 9-ball worth 2 points.",
-        "For each rack, the UI supports recording dead balls (0 points) such that rack accounting is always enforced: playerA_points + playerB_points + dead_balls = 10.",
-        "The UI supports recording defensive shots per player (count).",
-        "Innings are tracked in an APA-appropriate way for point-per-inning (PPI) calculation (the UI clearly indicates what counts as an inning).",
-        "The app calculates and displays PPI for each player using the captured points and innings."
+        "The rack scoring UI includes a way to mark one or more balls as \"dead\" for the rack; dead balls count toward the 10-ball accounting but add 0 points to either player.",
+        "The rack scoring UI includes a way to record a defensive shot for the currently active player during an inning (e.g., a toggle/button that increments a defensive-shot counter for that player).",
+        "Defensive shots recorded during the rack update the defensive shot totals shown on the game screen player cards and persist into the saved match summary as they do today.",
+        "The UI prevents impossible states (e.g., more dead balls than remaining unscored balls in the rack)."
       ]
     },
     {
-      "id": "REQ-15",
-      "text": "At the end of an APA 9-ball practice match, calculate and display APA 20-point match result conversion (winner 12–20 / loser 0–8) using the user-provided SL-specific chart thresholds based on the losing player’s ball points earned relative to their SL goal.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-18"
-        ],
-        "quotes": [
-          "APA 9-Ball Match Point Conversion Chart ... (Source: Official APA 9-Ball Scoresheet)"
-        ]
-      },
-      "acceptanceCriteria": [
-        "On match completion, the results screen shows: both players’ SL, required points-to-win, points earned, defensive shots, innings, PPI, and the computed team match points for winner and loser.",
-        "The conversion uses the exact threshold ranges provided by the user for SL1–SL9 and produces one of: 20-0, 19-1, 18-2, 17-3, 16-4, 15-5, 14-6, 13-7, 12-8.",
-        "No 'race to X' terminology appears anywhere in the APA results UI."
-      ]
-    },
-    {
-      "id": "REQ-16",
-      "text": "Update persisted match data structures so APA Practice saved matches store the new APA 9-ball Equalizer fields (skill levels, points-to-win targets, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) and ensure Match History and Match Details render a correct APA 9-ball summary for these matches.",
+      "id": "REQ-21",
+      "text": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-18",
-          "msg-20"
+          "msg-1"
         ],
         "quotes": [
-          "i want it to keep track of ppi and defensive shots and what the apa scorekeeper does so this is wrong",
-          "can you please build correct app!! it was correct before and you lost my login and i had to redo...."
+          "I love what it saves. but the interface is laccking. lets correct these things first."
         ]
       },
       "acceptanceCriteria": [
-        "Saving an APA Practice match persists the APA 9-ball-specific fields needed to reconstruct scoring and results (including dead balls and defensive shots).",
-        "Match History summary cards for APA matches show APA-relevant stats (points earned/required and/or PPI) rather than the current practice attempts/makes placeholders.",
-        "Match Details for APA matches displays the full APA 9-ball summary and end-of-match match-point conversion.",
-        "If changing backend stable types requires a state upgrade, add a conditional migration in backend/migration.mo to preserve existing saved matches without traps (policy: conditional)."
-      ]
-    },
-    {
-      "id": "REQ-17",
-      "text": "Update any app branding elements that incorrectly imply 8-ball for an APA 9-ball-focused scorekeeper (e.g., the '8' badge in the header/login card), while keeping all user-facing text in English.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6",
-          "msg-18"
-        ],
-        "quotes": [
-          "the apa app is for 9ball not 8ball",
-          "APA 9-ball rules follow..."
-        ]
-      },
-      "acceptanceCriteria": [
-        "The header badge and login screen badge no longer show an '8' if the intended primary mode is APA 9-ball.",
-        "No user-facing copy suggests APA mode is 8-ball or uses rack-race language.",
-        "All updated/added user-facing text is English."
+        "Completing a rack via the new GUI produces the same RackData shape used today by PracticeGamePage (rackNumber, playerA points/innings/defensiveShots, playerB points/innings/defensiveShots, deadBalls).",
+        "The APA Practice match can still be completed and saved successfully using the existing save flow, and saved matches continue to appear in Match History and Match Details with correct totals.",
+        "No backend schema/state migration is required for this UI-only change; saved APA matches created before the change remain viewable.",
+        "The rack history section (if kept) displays correct per-rack totals derived from the new UI."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
-    "Only create/modify backend/migration.mo if required to preserve existing stable state during upgrade (conditional migration policy).",
-    "Do not edit any frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui (compose instead).",
-    "Do not add third-party authentication providers; only Internet Identity is supported."
+    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "Backend must remain single-actor; all Motoko logic stays in backend/main.mo.",
+    "Use English for all user-facing text.",
+    "Do not introduce external services, databases, or unsupported frameworks."
   ],
   "nonGoals": [
-    "Do not add new game modes beyond APA Practice, Accepting Gifts, and Straight Shot.",
-    "Do not implement real-time/multiplayer scorekeeping or shared live matches.",
-    "Do not integrate external databases or third-party APIs for APA rules.",
-    "Do not change Straight Shot or Accepting Gifts scoring rules unless required by shared persistence/schema adjustments."
+    "Do not add full turn-by-turn shot log persistence to match history unless explicitly requested later.",
+    "Do not change APA 9-ball Equalizer rules, match-point conversion tables, or existing saved-match summary fields beyond what is needed to support the new UI.",
+    "Do not add real-time/multiplayer features or third-party auth providers beyond Internet Identity."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

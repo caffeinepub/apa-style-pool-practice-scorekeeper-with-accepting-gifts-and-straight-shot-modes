@@ -1,206 +1,115 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Login persistence fix + APA 9-ball Equalizer scoring corrections (frontend)",
+  "title": "APA 9-Ball Practice: Ball-based per-inning rack scoring UI (frontend-only)",
   "requirements": [
     {
-      "id": "REQ-12",
-      "summary": "Fix Internet Identity session persistence across reloads/redeploys and show clear session-expired messaging without editing immutable auth hooks.",
+      "id": "REQ-18",
+      "summary": "Replace numeric rack scoring inputs with a ball-based per-inning workflow (select balls 1–9, show active player, and provide Turn Over to switch innings).",
       "acceptanceCriteria": [
-        "After logging in once, refreshing the page keeps the user authenticated (AuthGate does not return to the login prompt).",
-        "Navigating between routes does not clear authentication state.",
-        "A user is only logged out when they click Logout, or when the delegation is actually expired/invalid (and the UI provides a clear, English message indicating the session expired).",
-        "No changes are made to immutable hook files; fixes are implemented via safe composition/wrappers where needed."
+        "On the APA Practice game screen, rack scoring no longer relies on manually typing player points for the rack; instead, balls 1–9 are displayed as selectable controls for the current rack.",
+        "Tapping a ball marks it as scored for the currently active player for the current inning; tapping again unmarks it (until the rack is completed).",
+        "A \"Turn Over\" button toggles the active player for the next inning entry, and the UI clearly indicates whose inning it is.",
+        "The 9-ball is scored as 2 points; balls 1–8 are scored as 1 point each, consistent with existing APA logic.",
+        "The rack can only be completed when exactly 10 rack points are accounted for via (player-scored balls + dead balls), matching POINTS_PER_RACK = 10.",
+        "All user-facing text is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/AuthGate.tsx",
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Add a persistence-safe gating layer that avoids showing the login prompt until the app has completed a secondary “session restore” check, and present a clear English message when the session is actually expired/invalid. Use the authorization component guidance for auth UX/error handling; verify the component's usage instructions before implementing."
+          "description": "Replace the current points/innings numeric-entry form with a ball-based rack UI: render selectable controls for balls 1–9, show a clear active-player indicator for the current inning, and add a prominent \"Turn Over\" control to switch the active player. Use existing shadcn-ui components (e.g., Card/Button/Badge/Alert) for layout and interactions; verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/auth/LoginButton.tsx",
-          "operation": "modify",
-          "description": "Ensure logout is the only explicit UI action that clears cached app data, and add user-friendly handling for auth errors (including expired delegation) while keeping behavior aligned with authorization component logout guidance; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Reduce unnecessary actor recreation/refetch churn across reloads and route navigation (so auth-dependent queries don’t flap), while keeping identity-driven actor creation intact."
-        },
-        {
-          "path": "frontend/src/components/auth/AuthPersistenceGate.tsx",
+          "path": "frontend/src/components/apa/ApaBallButton.tsx",
           "operation": "create",
-          "description": "Create a small wrapper component used by AuthGate to perform a one-time, client-side session restore check and to centralize session-expired messaging without changing immutable auth hook files. Use shadcn-ui primitives already present for consistent loading/error UI; verify the component's usage instructions before implementing."
+          "description": "Create a reusable ball control used by the rack scoring panel to display balls 1–9 with distinct visual states (unscored, scored by Player A, scored by Player B, dead) and accessible labels. Use existing shadcn-ui primitives where appropriate; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/apa/apaBallStyles.ts",
+          "operation": "create",
+          "description": "Add shared, UI-focused helpers for mapping ball number + state to classNames/labels so ApaRackScoringPanel and ApaBallButton stay consistent and readable (English-only text)."
         }
       ]
     },
     {
-      "id": "REQ-13",
-      "summary": "Replace APA Practice 'race to X' model with APA 9-ball Equalizer points-to-win by skill level (SL1–SL9).",
+      "id": "REQ-19",
+      "summary": "Automatically track and update innings totals using the Turn Over workflow (remove manual innings entry).",
       "acceptanceCriteria": [
-        "The APA Practice Start page no longer labels the target as 'Race to' and does not use a rack-race target model.",
-        "The APA Practice Game page no longer displays 'Race to {target}'.",
-        "Users can set each player skill level (SL 1–9) and the UI displays the correct points-to-win target for each player (SL1=14, SL2=19, SL3=25, SL4=31, SL5=38, SL6=46, SL7=55, SL8=65, SL9=75).",
-        "The match ends based on reaching the required point total (not based on a rack count)."
+        "The APA Practice game screen no longer requires the user to manually enter innings values per rack for either player.",
+        "Each press of \"Turn Over\" increments innings for the player whose inning is being ended, and then switches the active player indicator.",
+        "The player cards on the game screen continue to show innings totals and PPI updates correctly as innings advance.",
+        "Existing end-of-match summary (ApaResultsSummary) continues to display innings and PPI without regression."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/apa/apaEqualizer.ts",
+          "path": "frontend/src/components/apa/useApaInningFlow.ts",
           "operation": "create",
-          "description": "Add APA 9-ball Equalizer helpers for SL-to-points-to-win mapping (SL1–SL9), validation utilities, and shared labeling (no 'race to' language)."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "operation": "modify",
-          "description": "Replace the 'Race to' target input with per-player SL (1–9) inputs and computed points-to-win targets, stored into session state for the APA practice flow. Use shadcn-ui form components for consistent inputs; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Update game header and win condition to use points-to-win per player derived from SL (no rack race text), and ensure totals are tracked in APA 9-ball points rather than racks."
-        }
-      ]
-    },
-    {
-      "id": "REQ-14",
-      "summary": "Implement APA 9-ball rack-by-rack scoring capture (10 points per rack with dead balls), defensive shots, innings, and PPI calculation.",
-      "acceptanceCriteria": [
-        "For each rack, the UI supports recording ball points for the active shooter, including recording a 9-ball worth 2 points.",
-        "For each rack, the UI supports recording dead balls (0 points) such that rack accounting is always enforced: playerA_points + playerB_points + dead_balls = 10.",
-        "The UI supports recording defensive shots per player (count).",
-        "Innings are tracked in an APA-appropriate way for point-per-inning (PPI) calculation (the UI clearly indicates what counts as an inning).",
-        "The app calculates and displays PPI for each player using the captured points and innings."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/apa/apaScoring.ts",
-          "operation": "create",
-          "description": "Implement APA rack accounting (10 total points per rack; 1–8=1 each; 9-ball=2; dead balls=0), per-rack validation (A+B+dead=10), inning tracking helpers, and PPI calculation utilities."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Replace the current generic inning/score adjustment UI with a rack-by-rack scoring capture UI that enforces 10-point rack accounting, supports dead balls, tracks defensive shots per player, clearly defines/records innings, and displays live totals + PPI for each player. Use shadcn-ui Cards/Inputs/Dialogs for the scoring workflow; verify the component's usage instructions before implementing."
+          "description": "Implement a focused React hook to manage per-rack inning flow state: active player, inning-in-progress detection, per-player inning counts for the rack, and a Turn Over action that increments innings for the ending player and switches turns. The hook should expose derived rack totals needed by the UI."
         },
         {
           "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "operation": "create",
-          "description": "Create a focused rack scoring panel component used by PracticeGamePage to capture per-rack points (including 9-ball=2), dead balls, and inning boundaries with enforced rack totals. Use shadcn-ui primitives for layout and validation feedback; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/apa/ApaDefensiveShotsControl.tsx",
-          "operation": "create",
-          "description": "Create a reusable control for incrementing/decrementing defensive shots per player, used in the APA Practice game UI. Use shadcn-ui Button/Input patterns; verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "summary": "Compute and display APA 20-point match result conversion at match end using user-provided SL chart thresholds, and show full APA match summary without 'race to' terminology.",
-      "acceptanceCriteria": [
-        "On match completion, the results screen shows: both players’ SL, required points-to-win, points earned, defensive shots, innings, PPI, and the computed team match points for winner and loser.",
-        "The conversion uses the exact threshold ranges provided by the user for SL1–SL9 and produces one of: 20-0, 19-1, 18-2, 17-3, 16-4, 15-5, 14-6, 13-7, 12-8.",
-        "No 'race to X' terminology appears anywhere in the APA results UI."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/apa/apaMatchPoints.ts",
-          "operation": "create",
-          "description": "Add match-point conversion logic that takes a user-supplied threshold chart (by SL) and computes winner/loser match points in the 12–20 / 0–8 outcomes, without hardcoding unprovided chart ranges."
-        },
-        {
-          "path": "frontend/src/components/apa/ApaMatchPointChartEditor.tsx",
-          "operation": "create",
-          "description": "Add an in-flow UI (used on APA start and/or end flow) that lets users input/edit the SL-specific threshold chart used for 20-point conversion and persists it locally for reuse. Use shadcn-ui form and dialog components for a clean editor; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/apa/ApaResultsSummary.tsx",
-          "operation": "create",
-          "description": "Create a results summary component that displays SL, points-to-win, points earned, defensive shots, innings, PPI, and computed match points for both players, ensuring no rack-race language. Use shadcn-ui Cards/Badges for clear presentation; verify the component's usage instructions before implementing."
+          "operation": "modify",
+          "description": "Integrate the per-inning flow hook to remove manual innings inputs and to drive automatic innings updates via Turn Over. Ensure the rack completion action also finalizes inning counting consistently (without requiring numeric inputs). Use existing shadcn-ui components; verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
           "operation": "modify",
-          "description": "On match completion (when a player reaches their points-to-win), show the APA results summary (including match-point conversion via the user-provided chart), and keep all visible copy in English with no 'race to' terminology."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "operation": "modify",
-          "description": "Provide access to the match-point conversion chart editor (so the user can supply/adjust thresholds before play) while keeping the start flow focused on APA 9-ball points-to-win by SL. Use shadcn-ui Dialog/Accordion patterns if needed; verify the component's usage instructions before implementing."
+          "description": "Adjust the APA practice gameplay page to rely on the rack panel’s computed innings (no manual inputs), ensuring the player cards update innings totals and PPI as racks are completed. Keep existing routing and save flow unchanged."
         }
       ]
     },
     {
-      "id": "REQ-16",
-      "summary": "Update APA Practice saved match payloads to include APA 9-ball Equalizer fields and update Match History/Details to render APA 9-ball summaries correctly.",
+      "id": "REQ-20",
+      "summary": "Add in-flow dead ball and defensive shot controls to the per-inning UI while preventing impossible rack states.",
       "acceptanceCriteria": [
-        "Saving an APA Practice match persists the APA 9-ball-specific fields needed to reconstruct scoring and results (including dead balls and defensive shots).",
-        "Match History summary cards for APA matches show APA-relevant stats (points earned/required and/or PPI) rather than the current practice attempts/makes placeholders.",
-        "Match Details for APA matches displays the full APA 9-ball summary and end-of-match match-point conversion.",
-        "If changing backend stable types requires a state upgrade, add a conditional migration in backend/migration.mo to preserve existing saved matches without traps (policy: conditional)."
+        "The rack scoring UI includes a way to mark one or more balls as \"dead\" for the rack; dead balls count toward the 10-ball accounting but add 0 points to either player.",
+        "The rack scoring UI includes a way to record a defensive shot for the currently active player during an inning (e.g., a toggle/button that increments a defensive-shot counter for that player).",
+        "Defensive shots recorded during the rack update the defensive shot totals shown on the game screen player cards and persist into the saved match summary as they do today.",
+        "The UI prevents impossible states (e.g., more dead balls than remaining unscored balls in the rack)."
       ],
       "file_operations": [
+        {
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "operation": "modify",
+          "description": "Add in-flow controls for (1) marking balls as dead (with dead contributing to rack accounting but awarding 0 points) and (2) recording a defensive shot for the active player (incrementing that player’s defensive-shot counter). Prevent invalid states by disallowing dead/scored assignment on already-assigned balls and by ensuring the rack cannot be completed unless total accounted rack points equals POINTS_PER_RACK. Use existing shadcn-ui components (e.g., Button/Badge/Alert); verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/lib/apa/apaScoring.ts",
+          "operation": "modify",
+          "description": "Add small, shared scoring helpers needed by the new UI (e.g., compute ball value for 1–9 with 9-ball=2, compute rack totals from per-ball assignments, and a validation helper that confirms accounted rack points equals POINTS_PER_RACK). Keep existing exports working to avoid regressions."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Ensure defensive shots and dead-ball totals received from the new rack UI continue to roll up correctly into game totals and rack history display, and persist through the existing save flow."
+        }
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "summary": "Derive and submit the existing per-rack summary data (points, dead balls, innings, defensive shots) from the new per-inning UI while keeping saved match records and history views compatible.",
+      "acceptanceCriteria": [
+        "Completing a rack via the new GUI produces the same RackData shape used today by PracticeGamePage (rackNumber, playerA points/innings/defensiveShots, playerB points/innings/defensiveShots, deadBalls).",
+        "The APA Practice match can still be completed and saved successfully using the existing save flow, and saved matches continue to appear in Match History and Match Details with correct totals.",
+        "No backend schema/state migration is required for this UI-only change; saved APA matches created before the change remain viewable.",
+        "The rack history section (if kept) displays correct per-rack totals derived from the new UI."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure the rack completion callback produces the same numeric per-rack summary fields as before (player points, dead ball points, innings, defensive shots), derived from the ball-based per-inning UI, so PracticeGamePage can continue building RackData without changing its shape."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Keep RackData construction and session persistence compatible while accepting the new rack panel output. Ensure rack history rendering remains accurate using the derived per-rack totals from the new UI (no shape changes)."
+        },
         {
           "path": "frontend/src/lib/matches/matchBuilders.ts",
           "operation": "modify",
-          "description": "Update the APA Practice match builder to save APA 9-ball Equalizer match records (including SLs, points-to-win, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) using the appropriate MatchRecord variant, while avoiding changes to other modes unless strictly needed."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Wire the new APA match state into saving logic so the persisted match contains full rack-by-rack and results data, and ensure sessionStorage state can reconstruct ongoing games."
-        },
-        {
-          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "operation": "modify",
-          "description": "Update APA match summary rendering to show APA-relevant stats (e.g., points earned vs points-to-win and/or PPI) using available APA match info fields, instead of attempts/makes placeholders."
-        },
-        {
-          "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
-          "operation": "modify",
-          "description": "Update the APA match details section to display a full APA 9-ball summary (SL, points-to-win, points earned, defensive shots, innings, PPI, and match-point conversion) and remove any rack-race language."
-        },
-        {
-          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
-          "operation": "modify",
-          "description": "Ensure the APA tab/list presentation aligns with the updated APA match summaries and remains readable with the new APA stats."
-        }
-      ]
-    },
-    {
-      "id": "REQ-17",
-      "summary": "Update branding to reflect APA 9-ball focus (remove 8-ball '8' badges) and ensure all user-facing text is English and free of rack-race language in APA mode.",
-      "acceptanceCriteria": [
-        "The header badge and login screen badge no longer show an '8' if the intended primary mode is APA 9-ball.",
-        "No user-facing copy suggests APA mode is 8-ball or uses rack-race language.",
-        "All updated/added user-facing text is English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Update the header badge branding from an '8' to a 9-ball/APA-appropriate mark (text-only) while keeping the rest of the layout intact and all copy in English."
-        },
-        {
-          "path": "frontend/src/components/auth/AuthGate.tsx",
-          "operation": "modify",
-          "description": "Update the unauthenticated login card badge branding to remove the '8' and ensure login screen copy reflects APA 9-ball focus and remains English-only."
-        },
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Review and adjust any homepage copy that implies 8-ball or rack races for APA mode, keeping English-only text and maintaining existing navigation."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "operation": "modify",
-          "description": "Remove remaining 'Race to' wording and ensure APA start UI text is consistent with APA 9-ball Equalizer points-based tracking and English-only copy."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Remove remaining 'Race to' wording and ensure APA in-game UI text is consistent with points-to-win and English-only copy."
+          "description": "Confirm APA match building continues to use the same per-rack fields (points/innings/defensiveShots/deadBalls) supplied by PracticeGamePage, ensuring saved match record shape remains compatible with existing Match History/Details rendering."
         }
       ]
     }
