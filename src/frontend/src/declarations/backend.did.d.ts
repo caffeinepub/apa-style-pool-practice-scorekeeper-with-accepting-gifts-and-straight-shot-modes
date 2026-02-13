@@ -10,26 +10,139 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface APA9MatchPlayerStatsUi {
+  'id' : string,
+  'ppi' : number,
+  'rankIcon' : string,
+  'matchType' : string,
+  'breakMaidenCount' : bigint,
+  'defensiveShots' : bigint,
+  'pointsAwarded' : bigint,
+  'matchBehaviorPhase' : string,
+  'totalBallsScoredPerRack' : Array<bigint>,
+  'breakRuns' : Array<bigint>,
+  'runOutAttempts' : bigint,
+  'inningScores' : Array<bigint>,
+  'rank' : string,
+  'rackCount' : bigint,
+  'pointsNeeded' : bigint,
+  'deadBallsPerRack' : Array<bigint>,
+  'pointsWonConverted' : bigint,
+  'level' : { 'all' : null } |
+    { 'playerMatch' : null } |
+    { 'teamMatch' : null } |
+    { 'detailRack' : null },
+  'totalScore' : bigint,
+  'summary' : string,
+  'rackStats' : APAMatchStatsUiRackStats,
+  'innings' : bigint,
+  'timestamp' : Time,
+  'validBreakCount' : bigint,
+  'ballsOnBreakAwardedToOpponentCount' : bigint,
+  'winPercentage' : number,
+  'pointsEarnedRunningTotal' : bigint,
+  'isPlayerOfMatch' : boolean,
+  'comments' : string,
+  'skillLevel' : bigint,
+  'runOutCount' : bigint,
+  'umpire' : string,
+  'racksPlayed' : bigint,
+  'seasonType' : string,
+  'location' : string,
+  'ballsOnBreak' : Array<bigint>,
+  'points' : bigint,
+}
+export interface APAMatchStatsUiContainer {
+  'matchType' : string,
+  'summary' : APAMatchStatsUiSummary,
+  'players' : Array<[] | [APA9MatchPlayerStatsUi]>,
+  'seasonType' : string,
+}
+export interface APAMatchStatsUiRackStats {
+  'extraStats' : string,
+  'description' : string,
+  'summary' : string,
+  'matchId' : string,
+  'playerStats' : Array<[] | [APA9MatchPlayerStatsUi]>,
+  'rackStats' : Array<RackStat>,
+  'timestamp' : Time,
+  'rackNumber' : bigint,
+}
+export interface APAMatchStatsUiSummary {
+  'id' : string,
+  'matchType' : string,
+  'extraStats' : string,
+  'pointsAwarded' : bigint,
+  'level' : { 'all' : null } |
+    { 'playerMatch' : null } |
+    { 'teamMatch' : null } |
+    { 'detailRack' : null },
+  'summary' : string,
+  'playerStats' : Array<[] | [APA9MatchPlayerStatsUi]>,
+  'rackStats' : APAMatchStatsUiRackStats,
+  'timestamp' : Time,
+  'isInProgress' : boolean,
+  'comments' : string,
+  'phase' : string,
+  'umpire' : [] | [Principal],
+  'seasonType' : string,
+  'location' : string,
+  'points' : bigint,
+}
 export interface AcceptingGiftsMatch {
   'completionStatus' : boolean,
   'base' : BaseMatchEntry,
   'score' : bigint,
   'rulesReference' : string,
 }
+export interface ApaNineBallMatch {
+  'matchType' : string,
+  'base' : BaseMatchEntry,
+  'winner' : Principal,
+  'playerStats' : Array<ApaPlayerStats>,
+  'teamStats' : Array<TeamStats>,
+  'umpire' : [] | [Principal],
+  'seasonType' : string,
+}
+export interface ApaPlayerStats {
+  'ppi' : number,
+  'defensiveShots' : bigint,
+  'matchBehaviorPhase' : string,
+  'playerId' : Principal,
+  'pointsNeeded' : bigint,
+  'pointsWonConverted' : bigint,
+  'totalScore' : bigint,
+  'innings' : bigint,
+  'winPercentage' : number,
+  'pointsEarnedRunningTotal' : bigint,
+  'isPlayerOfMatch' : boolean,
+  'skillLevel' : bigint,
+  'racks' : Array<RackScore>,
+}
 export interface ApiMatch {
   'makes' : [] | [bigint],
+  'thirdShotScore' : [] | [bigint],
   'completionTime' : [] | [bigint],
   'completionStatus' : [] | [boolean],
   'owner' : Principal,
+  'scratchStrokes' : [] | [Array<bigint>],
   'mode' : MatchMode,
   'attempts' : [] | [bigint],
   'score' : [] | [bigint],
+  'shots' : [] | [bigint],
+  'totalScore' : [] | [bigint],
   'rulesReference' : [] | [string],
+  'fourthShotScore' : [] | [bigint],
   'matchId' : string,
   'players' : Array<Player>,
+  'firstShotScore' : [] | [bigint],
+  'ballsMade' : [] | [bigint],
   'notes' : [] | [string],
+  'apaMatchInfo' : [] | [APAMatchStatsUiContainer],
+  'secondShotScore' : [] | [bigint],
   'dateTime' : Time,
   'streaks' : [] | [bigint],
+  'strokes' : [] | [Array<bigint>],
 }
 export interface BaseMatchEntry {
   'owner' : Principal,
@@ -44,7 +157,8 @@ export type MatchMode = { 'straightShot' : null } |
   { 'acceptingGifts' : null };
 export type MatchRecord = { 'straightShot' : StraightShotMatch } |
   { 'acceptingGifts' : AcceptingGiftsMatch } |
-  { 'practice' : PracticeMatch };
+  { 'practice' : PracticeMatch } |
+  { 'apaNineBall' : ApaNineBallMatch };
 export interface Player {
   'id' : Principal,
   'name' : string,
@@ -56,11 +170,56 @@ export interface PracticeMatch {
   'attempts' : [] | [bigint],
   'streaks' : [] | [bigint],
 }
+export interface RackScore {
+  'validBreak' : boolean,
+  'breakMaiden' : boolean,
+  'runOut' : boolean,
+  'totalRackScore' : bigint,
+  'ballsOnBreakAwardedToOpponent' : bigint,
+  'inningScore' : bigint,
+  'ballsOnBreak' : bigint,
+  'deadBalls' : bigint,
+}
+export interface RackStat {
+  'extraStats' : string,
+  'description' : string,
+  'summary' : string,
+  'matchId' : string,
+  'timestamp' : Time,
+  'rackNumberCopy' : bigint,
+  'rackNumber' : bigint,
+}
 export interface StraightShotMatch {
-  'makes' : bigint,
-  'completionTime' : [] | [bigint],
   'base' : BaseMatchEntry,
-  'attempts' : bigint,
+  'scratchStrokes' : Array<bigint>,
+  'time' : [] | [bigint],
+  'score' : {
+    'firstShot' : bigint,
+    'total' : bigint,
+    'fourthShot' : bigint,
+    'thirdShot' : bigint,
+    'secondShot' : bigint,
+  },
+  'shots' : bigint,
+  'ballsMade' : bigint,
+  'strokes' : Array<bigint>,
+}
+export interface TeamStats {
+  'teamName' : string,
+  'teamAverageScore' : number,
+  'score' : { 'totalPoints' : bigint },
+  'playtimes' : Array<number>,
+  'matchesPlayed' : bigint,
+  'teamId' : string,
+  'matchesWon' : bigint,
+  'teamWinState' : { 'win' : string } |
+    { 'loss' : string } |
+    { 'teammatchInProgress' : null } |
+    { 'forfeit' : string },
+  'teamPenaltyState' : { 'penalty' : string } |
+    { 'pending' : null } |
+    { 'none' : null } |
+    { 'penaltyAwarded' : string },
 }
 export type Time = bigint;
 export interface UserProfile { 'name' : string }

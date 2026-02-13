@@ -24,7 +24,7 @@ export default function MatchSummaryCard({ match }: MatchSummaryCardProps) {
   const getModeLabel = (mode: MatchMode) => {
     switch (mode) {
       case MatchMode.apaPractice:
-        return 'APA Practice';
+        return 'APA 9-Ball';
       case MatchMode.acceptingGifts:
         return 'Accepting Gifts';
       case MatchMode.straightShot:
@@ -48,12 +48,25 @@ export default function MatchSummaryCard({ match }: MatchSummaryCardProps) {
   };
 
   const getSummary = () => {
-    if (match.mode === MatchMode.straightShot && match.attempts !== undefined && match.makes !== undefined) {
-      const percentage = match.attempts > 0 ? ((Number(match.makes) / Number(match.attempts)) * 100).toFixed(1) : '0.0';
-      return `${match.makes}/${match.attempts} (${percentage}%)`;
+    if (match.mode === MatchMode.straightShot && match.totalScore !== undefined) {
+      const strokes = Number(match.totalScore);
+      const isWin = strokes <= 20;
+      return (
+        <span className={isWin ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+          {strokes} strokes {isWin ? '✓' : ''}
+        </span>
+      );
     }
     if (match.mode === MatchMode.acceptingGifts && match.score !== undefined) {
       return `Score: ${match.score}`;
+    }
+    if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
+      const players = match.apaMatchInfo.players.filter(p => p !== null);
+      if (players.length >= 2) {
+        const p1 = players[0]!;
+        const p2 = players[1]!;
+        return `${Number(p1.totalScore)} - ${Number(p2.totalScore)} pts | PPI: ${p1.ppi.toFixed(2)} - ${p2.ppi.toFixed(2)}`;
+      }
     }
     return null;
   };

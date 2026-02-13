@@ -35,14 +35,14 @@ export default function EndMatchDialog({ onConfirm, disabled }: EndMatchDialogPr
       <DialogTrigger asChild>
         <Button disabled={disabled} size="lg" className="w-full">
           <CheckCircle2 className="mr-2 h-5 w-5" />
-          End Match
+          End & Save Session
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>End Match?</DialogTitle>
+          <DialogTitle>End Session?</DialogTitle>
           <DialogDescription>
-            This will save the match to your history. You can view it later from the Match History page.
+            This will save the session to your history. You can view it later from the Match History page.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

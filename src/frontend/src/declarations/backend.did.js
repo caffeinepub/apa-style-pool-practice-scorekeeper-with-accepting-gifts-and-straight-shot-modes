@@ -8,6 +8,7 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const APA9MatchPlayerStatsUi = IDL.Rec();
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -24,20 +25,124 @@ export const Player = IDL.Record({
   'skillLevel' : IDL.Opt(IDL.Nat),
 });
 export const Time = IDL.Int;
+export const RackStat = IDL.Record({
+  'extraStats' : IDL.Text,
+  'description' : IDL.Text,
+  'summary' : IDL.Text,
+  'matchId' : IDL.Text,
+  'timestamp' : Time,
+  'rackNumberCopy' : IDL.Nat,
+  'rackNumber' : IDL.Nat,
+});
+export const APAMatchStatsUiRackStats = IDL.Record({
+  'extraStats' : IDL.Text,
+  'description' : IDL.Text,
+  'summary' : IDL.Text,
+  'matchId' : IDL.Text,
+  'playerStats' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
+  'rackStats' : IDL.Vec(RackStat),
+  'timestamp' : Time,
+  'rackNumber' : IDL.Nat,
+});
+APA9MatchPlayerStatsUi.fill(
+  IDL.Record({
+    'id' : IDL.Text,
+    'ppi' : IDL.Float64,
+    'rankIcon' : IDL.Text,
+    'matchType' : IDL.Text,
+    'breakMaidenCount' : IDL.Nat,
+    'defensiveShots' : IDL.Nat,
+    'pointsAwarded' : IDL.Nat,
+    'matchBehaviorPhase' : IDL.Text,
+    'totalBallsScoredPerRack' : IDL.Vec(IDL.Nat),
+    'breakRuns' : IDL.Vec(IDL.Nat),
+    'runOutAttempts' : IDL.Nat,
+    'inningScores' : IDL.Vec(IDL.Int),
+    'rank' : IDL.Text,
+    'rackCount' : IDL.Nat,
+    'pointsNeeded' : IDL.Nat,
+    'deadBallsPerRack' : IDL.Vec(IDL.Nat),
+    'pointsWonConverted' : IDL.Nat,
+    'level' : IDL.Variant({
+      'all' : IDL.Null,
+      'playerMatch' : IDL.Null,
+      'teamMatch' : IDL.Null,
+      'detailRack' : IDL.Null,
+    }),
+    'totalScore' : IDL.Int,
+    'summary' : IDL.Text,
+    'rackStats' : APAMatchStatsUiRackStats,
+    'innings' : IDL.Nat,
+    'timestamp' : Time,
+    'validBreakCount' : IDL.Nat,
+    'ballsOnBreakAwardedToOpponentCount' : IDL.Nat,
+    'winPercentage' : IDL.Float64,
+    'pointsEarnedRunningTotal' : IDL.Nat,
+    'isPlayerOfMatch' : IDL.Bool,
+    'comments' : IDL.Text,
+    'skillLevel' : IDL.Nat,
+    'runOutCount' : IDL.Nat,
+    'umpire' : IDL.Text,
+    'racksPlayed' : IDL.Nat,
+    'seasonType' : IDL.Text,
+    'location' : IDL.Text,
+    'ballsOnBreak' : IDL.Vec(IDL.Int),
+    'points' : IDL.Nat,
+  })
+);
+export const APAMatchStatsUiSummary = IDL.Record({
+  'id' : IDL.Text,
+  'matchType' : IDL.Text,
+  'extraStats' : IDL.Text,
+  'pointsAwarded' : IDL.Nat,
+  'level' : IDL.Variant({
+    'all' : IDL.Null,
+    'playerMatch' : IDL.Null,
+    'teamMatch' : IDL.Null,
+    'detailRack' : IDL.Null,
+  }),
+  'summary' : IDL.Text,
+  'playerStats' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
+  'rackStats' : APAMatchStatsUiRackStats,
+  'timestamp' : Time,
+  'isInProgress' : IDL.Bool,
+  'comments' : IDL.Text,
+  'phase' : IDL.Text,
+  'umpire' : IDL.Opt(IDL.Principal),
+  'seasonType' : IDL.Text,
+  'location' : IDL.Text,
+  'points' : IDL.Nat,
+});
+export const APAMatchStatsUiContainer = IDL.Record({
+  'matchType' : IDL.Text,
+  'summary' : APAMatchStatsUiSummary,
+  'players' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
+  'seasonType' : IDL.Text,
+});
 export const ApiMatch = IDL.Record({
   'makes' : IDL.Opt(IDL.Nat),
+  'thirdShotScore' : IDL.Opt(IDL.Nat),
   'completionTime' : IDL.Opt(IDL.Nat),
   'completionStatus' : IDL.Opt(IDL.Bool),
   'owner' : IDL.Principal,
+  'scratchStrokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
   'mode' : MatchMode,
   'attempts' : IDL.Opt(IDL.Nat),
   'score' : IDL.Opt(IDL.Nat),
+  'shots' : IDL.Opt(IDL.Nat),
+  'totalScore' : IDL.Opt(IDL.Nat),
   'rulesReference' : IDL.Opt(IDL.Text),
+  'fourthShotScore' : IDL.Opt(IDL.Nat),
   'matchId' : IDL.Text,
   'players' : IDL.Vec(Player),
+  'firstShotScore' : IDL.Opt(IDL.Nat),
+  'ballsMade' : IDL.Opt(IDL.Nat),
   'notes' : IDL.Opt(IDL.Text),
+  'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
+  'secondShotScore' : IDL.Opt(IDL.Nat),
   'dateTime' : Time,
   'streaks' : IDL.Opt(IDL.Nat),
+  'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const BaseMatchEntry = IDL.Record({
@@ -49,10 +154,19 @@ export const BaseMatchEntry = IDL.Record({
   'dateTime' : Time,
 });
 export const StraightShotMatch = IDL.Record({
-  'makes' : IDL.Nat,
-  'completionTime' : IDL.Opt(IDL.Nat),
   'base' : BaseMatchEntry,
-  'attempts' : IDL.Nat,
+  'scratchStrokes' : IDL.Vec(IDL.Nat),
+  'time' : IDL.Opt(IDL.Nat),
+  'score' : IDL.Record({
+    'firstShot' : IDL.Nat,
+    'total' : IDL.Nat,
+    'fourthShot' : IDL.Nat,
+    'thirdShot' : IDL.Nat,
+    'secondShot' : IDL.Nat,
+  }),
+  'shots' : IDL.Nat,
+  'ballsMade' : IDL.Nat,
+  'strokes' : IDL.Vec(IDL.Nat),
 });
 export const AcceptingGiftsMatch = IDL.Record({
   'completionStatus' : IDL.Bool,
@@ -66,10 +180,66 @@ export const PracticeMatch = IDL.Record({
   'attempts' : IDL.Opt(IDL.Nat),
   'streaks' : IDL.Opt(IDL.Nat),
 });
+export const RackScore = IDL.Record({
+  'validBreak' : IDL.Bool,
+  'breakMaiden' : IDL.Bool,
+  'runOut' : IDL.Bool,
+  'totalRackScore' : IDL.Nat,
+  'ballsOnBreakAwardedToOpponent' : IDL.Nat,
+  'inningScore' : IDL.Int,
+  'ballsOnBreak' : IDL.Int,
+  'deadBalls' : IDL.Nat,
+});
+export const ApaPlayerStats = IDL.Record({
+  'ppi' : IDL.Float64,
+  'defensiveShots' : IDL.Nat,
+  'matchBehaviorPhase' : IDL.Text,
+  'playerId' : IDL.Principal,
+  'pointsNeeded' : IDL.Nat,
+  'pointsWonConverted' : IDL.Nat,
+  'totalScore' : IDL.Int,
+  'innings' : IDL.Nat,
+  'winPercentage' : IDL.Float64,
+  'pointsEarnedRunningTotal' : IDL.Nat,
+  'isPlayerOfMatch' : IDL.Bool,
+  'skillLevel' : IDL.Nat,
+  'racks' : IDL.Vec(RackScore),
+});
+export const TeamStats = IDL.Record({
+  'teamName' : IDL.Text,
+  'teamAverageScore' : IDL.Float64,
+  'score' : IDL.Record({ 'totalPoints' : IDL.Int }),
+  'playtimes' : IDL.Vec(IDL.Float64),
+  'matchesPlayed' : IDL.Nat,
+  'teamId' : IDL.Text,
+  'matchesWon' : IDL.Nat,
+  'teamWinState' : IDL.Variant({
+    'win' : IDL.Text,
+    'loss' : IDL.Text,
+    'teammatchInProgress' : IDL.Null,
+    'forfeit' : IDL.Text,
+  }),
+  'teamPenaltyState' : IDL.Variant({
+    'penalty' : IDL.Text,
+    'pending' : IDL.Null,
+    'none' : IDL.Null,
+    'penaltyAwarded' : IDL.Text,
+  }),
+});
+export const ApaNineBallMatch = IDL.Record({
+  'matchType' : IDL.Text,
+  'base' : BaseMatchEntry,
+  'winner' : IDL.Principal,
+  'playerStats' : IDL.Vec(ApaPlayerStats),
+  'teamStats' : IDL.Vec(TeamStats),
+  'umpire' : IDL.Opt(IDL.Principal),
+  'seasonType' : IDL.Text,
+});
 export const MatchRecord = IDL.Variant({
   'straightShot' : StraightShotMatch,
   'acceptingGifts' : AcceptingGiftsMatch,
   'practice' : PracticeMatch,
+  'apaNineBall' : ApaNineBallMatch,
 });
 
 export const idlService = IDL.Service({
@@ -95,6 +265,7 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const APA9MatchPlayerStatsUi = IDL.Rec();
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
@@ -111,20 +282,124 @@ export const idlFactory = ({ IDL }) => {
     'skillLevel' : IDL.Opt(IDL.Nat),
   });
   const Time = IDL.Int;
+  const RackStat = IDL.Record({
+    'extraStats' : IDL.Text,
+    'description' : IDL.Text,
+    'summary' : IDL.Text,
+    'matchId' : IDL.Text,
+    'timestamp' : Time,
+    'rackNumberCopy' : IDL.Nat,
+    'rackNumber' : IDL.Nat,
+  });
+  const APAMatchStatsUiRackStats = IDL.Record({
+    'extraStats' : IDL.Text,
+    'description' : IDL.Text,
+    'summary' : IDL.Text,
+    'matchId' : IDL.Text,
+    'playerStats' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
+    'rackStats' : IDL.Vec(RackStat),
+    'timestamp' : Time,
+    'rackNumber' : IDL.Nat,
+  });
+  APA9MatchPlayerStatsUi.fill(
+    IDL.Record({
+      'id' : IDL.Text,
+      'ppi' : IDL.Float64,
+      'rankIcon' : IDL.Text,
+      'matchType' : IDL.Text,
+      'breakMaidenCount' : IDL.Nat,
+      'defensiveShots' : IDL.Nat,
+      'pointsAwarded' : IDL.Nat,
+      'matchBehaviorPhase' : IDL.Text,
+      'totalBallsScoredPerRack' : IDL.Vec(IDL.Nat),
+      'breakRuns' : IDL.Vec(IDL.Nat),
+      'runOutAttempts' : IDL.Nat,
+      'inningScores' : IDL.Vec(IDL.Int),
+      'rank' : IDL.Text,
+      'rackCount' : IDL.Nat,
+      'pointsNeeded' : IDL.Nat,
+      'deadBallsPerRack' : IDL.Vec(IDL.Nat),
+      'pointsWonConverted' : IDL.Nat,
+      'level' : IDL.Variant({
+        'all' : IDL.Null,
+        'playerMatch' : IDL.Null,
+        'teamMatch' : IDL.Null,
+        'detailRack' : IDL.Null,
+      }),
+      'totalScore' : IDL.Int,
+      'summary' : IDL.Text,
+      'rackStats' : APAMatchStatsUiRackStats,
+      'innings' : IDL.Nat,
+      'timestamp' : Time,
+      'validBreakCount' : IDL.Nat,
+      'ballsOnBreakAwardedToOpponentCount' : IDL.Nat,
+      'winPercentage' : IDL.Float64,
+      'pointsEarnedRunningTotal' : IDL.Nat,
+      'isPlayerOfMatch' : IDL.Bool,
+      'comments' : IDL.Text,
+      'skillLevel' : IDL.Nat,
+      'runOutCount' : IDL.Nat,
+      'umpire' : IDL.Text,
+      'racksPlayed' : IDL.Nat,
+      'seasonType' : IDL.Text,
+      'location' : IDL.Text,
+      'ballsOnBreak' : IDL.Vec(IDL.Int),
+      'points' : IDL.Nat,
+    })
+  );
+  const APAMatchStatsUiSummary = IDL.Record({
+    'id' : IDL.Text,
+    'matchType' : IDL.Text,
+    'extraStats' : IDL.Text,
+    'pointsAwarded' : IDL.Nat,
+    'level' : IDL.Variant({
+      'all' : IDL.Null,
+      'playerMatch' : IDL.Null,
+      'teamMatch' : IDL.Null,
+      'detailRack' : IDL.Null,
+    }),
+    'summary' : IDL.Text,
+    'playerStats' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
+    'rackStats' : APAMatchStatsUiRackStats,
+    'timestamp' : Time,
+    'isInProgress' : IDL.Bool,
+    'comments' : IDL.Text,
+    'phase' : IDL.Text,
+    'umpire' : IDL.Opt(IDL.Principal),
+    'seasonType' : IDL.Text,
+    'location' : IDL.Text,
+    'points' : IDL.Nat,
+  });
+  const APAMatchStatsUiContainer = IDL.Record({
+    'matchType' : IDL.Text,
+    'summary' : APAMatchStatsUiSummary,
+    'players' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
+    'seasonType' : IDL.Text,
+  });
   const ApiMatch = IDL.Record({
     'makes' : IDL.Opt(IDL.Nat),
+    'thirdShotScore' : IDL.Opt(IDL.Nat),
     'completionTime' : IDL.Opt(IDL.Nat),
     'completionStatus' : IDL.Opt(IDL.Bool),
     'owner' : IDL.Principal,
+    'scratchStrokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
     'mode' : MatchMode,
     'attempts' : IDL.Opt(IDL.Nat),
     'score' : IDL.Opt(IDL.Nat),
+    'shots' : IDL.Opt(IDL.Nat),
+    'totalScore' : IDL.Opt(IDL.Nat),
     'rulesReference' : IDL.Opt(IDL.Text),
+    'fourthShotScore' : IDL.Opt(IDL.Nat),
     'matchId' : IDL.Text,
     'players' : IDL.Vec(Player),
+    'firstShotScore' : IDL.Opt(IDL.Nat),
+    'ballsMade' : IDL.Opt(IDL.Nat),
     'notes' : IDL.Opt(IDL.Text),
+    'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
+    'secondShotScore' : IDL.Opt(IDL.Nat),
     'dateTime' : Time,
     'streaks' : IDL.Opt(IDL.Nat),
+    'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const BaseMatchEntry = IDL.Record({
@@ -136,10 +411,19 @@ export const idlFactory = ({ IDL }) => {
     'dateTime' : Time,
   });
   const StraightShotMatch = IDL.Record({
-    'makes' : IDL.Nat,
-    'completionTime' : IDL.Opt(IDL.Nat),
     'base' : BaseMatchEntry,
-    'attempts' : IDL.Nat,
+    'scratchStrokes' : IDL.Vec(IDL.Nat),
+    'time' : IDL.Opt(IDL.Nat),
+    'score' : IDL.Record({
+      'firstShot' : IDL.Nat,
+      'total' : IDL.Nat,
+      'fourthShot' : IDL.Nat,
+      'thirdShot' : IDL.Nat,
+      'secondShot' : IDL.Nat,
+    }),
+    'shots' : IDL.Nat,
+    'ballsMade' : IDL.Nat,
+    'strokes' : IDL.Vec(IDL.Nat),
   });
   const AcceptingGiftsMatch = IDL.Record({
     'completionStatus' : IDL.Bool,
@@ -153,10 +437,66 @@ export const idlFactory = ({ IDL }) => {
     'attempts' : IDL.Opt(IDL.Nat),
     'streaks' : IDL.Opt(IDL.Nat),
   });
+  const RackScore = IDL.Record({
+    'validBreak' : IDL.Bool,
+    'breakMaiden' : IDL.Bool,
+    'runOut' : IDL.Bool,
+    'totalRackScore' : IDL.Nat,
+    'ballsOnBreakAwardedToOpponent' : IDL.Nat,
+    'inningScore' : IDL.Int,
+    'ballsOnBreak' : IDL.Int,
+    'deadBalls' : IDL.Nat,
+  });
+  const ApaPlayerStats = IDL.Record({
+    'ppi' : IDL.Float64,
+    'defensiveShots' : IDL.Nat,
+    'matchBehaviorPhase' : IDL.Text,
+    'playerId' : IDL.Principal,
+    'pointsNeeded' : IDL.Nat,
+    'pointsWonConverted' : IDL.Nat,
+    'totalScore' : IDL.Int,
+    'innings' : IDL.Nat,
+    'winPercentage' : IDL.Float64,
+    'pointsEarnedRunningTotal' : IDL.Nat,
+    'isPlayerOfMatch' : IDL.Bool,
+    'skillLevel' : IDL.Nat,
+    'racks' : IDL.Vec(RackScore),
+  });
+  const TeamStats = IDL.Record({
+    'teamName' : IDL.Text,
+    'teamAverageScore' : IDL.Float64,
+    'score' : IDL.Record({ 'totalPoints' : IDL.Int }),
+    'playtimes' : IDL.Vec(IDL.Float64),
+    'matchesPlayed' : IDL.Nat,
+    'teamId' : IDL.Text,
+    'matchesWon' : IDL.Nat,
+    'teamWinState' : IDL.Variant({
+      'win' : IDL.Text,
+      'loss' : IDL.Text,
+      'teammatchInProgress' : IDL.Null,
+      'forfeit' : IDL.Text,
+    }),
+    'teamPenaltyState' : IDL.Variant({
+      'penalty' : IDL.Text,
+      'pending' : IDL.Null,
+      'none' : IDL.Null,
+      'penaltyAwarded' : IDL.Text,
+    }),
+  });
+  const ApaNineBallMatch = IDL.Record({
+    'matchType' : IDL.Text,
+    'base' : BaseMatchEntry,
+    'winner' : IDL.Principal,
+    'playerStats' : IDL.Vec(ApaPlayerStats),
+    'teamStats' : IDL.Vec(TeamStats),
+    'umpire' : IDL.Opt(IDL.Principal),
+    'seasonType' : IDL.Text,
+  });
   const MatchRecord = IDL.Variant({
     'straightShot' : StraightShotMatch,
     'acceptingGifts' : AcceptingGiftsMatch,
     'practice' : PracticeMatch,
+    'apaNineBall' : ApaNineBallMatch,
   });
   
   return IDL.Service({

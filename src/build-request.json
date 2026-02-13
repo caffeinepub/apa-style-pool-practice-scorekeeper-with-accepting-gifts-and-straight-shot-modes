@@ -1,147 +1,153 @@
 {
   "kind": "build_request",
-  "title": "APA-style pool practice scorekeeper with Accepting Gifts and Straight Shot modes",
-  "priority": "normal",
+  "title": "Fix login persistence regression and correct APA mode to APA 9-ball Equalizer scoring",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Create the core app navigation and information architecture for a pool scorekeeper app with three modes: (1) APA-style practice scorekeeping similar to the official APA Scorekeeper app, (2) Accepting Gifts, and (3) Straight Shot.",
+      "id": "REQ-12",
+      "text": "Investigate and fix the regression where a previously authenticated user is unexpectedly logged out (or forced to re-authenticate) after an app update/reload, so that Internet Identity sessions persist as expected across page reloads and routine redeploys (until the delegation expires or the user explicitly logs out).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-20"
         ],
         "quotes": [
-          "i need to create an apa pool scorekeeper app for me to keep track of practice games like the official apa scorekeeper app. I also want to have two additional modes that keep track of a game called accepting gifts.... and a straight shot pool game."
+          "you lost my login and i had to redo...."
         ]
       },
       "acceptanceCriteria": [
-        "App has a clear home screen with entries for: APA Practice, Accepting Gifts, Straight Shot, and Match History.",
-        "Each mode has a dedicated start/new-game screen and a dedicated in-progress game screen (even if some scoring details are placeholders until rules are provided)."
+        "After logging in once, refreshing the page keeps the user authenticated (AuthGate does not return to the login prompt).",
+        "Navigating between routes does not clear authentication state.",
+        "A user is only logged out when they click Logout, or when the delegation is actually expired/invalid (and the UI provides a clear, English message indicating the session expired).",
+        "No changes are made to immutable hook files; fixes are implemented via safe composition/wrappers where needed."
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Implement backend persistence for practice games and match history, supporting all three modes with a unified data model that stores: mode, date/time, players (names), optional notes, and a mode-specific scoring payload.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "i need to create an apa pool scorekeeper app for me to keep track of practice games like the official apa scorekeeper app.  I also want to have two additional modes that keep track of a game called accepting gifts.... and a straight shot pool game."
-        ]
-      },
-      "acceptanceCriteria": [
-        "User can create a new game record for any of the three modes and it is stored in the canister.",
-        "User can list prior games in reverse-chronological order.",
-        "User can open a prior game to view its saved details.",
-        "User can delete a prior game."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Build an APA-style practice scorekeeping flow (UI + data capture) that lets a user track a practice match in a way that is recognizable and usable as an APA-style scorekeeper for practice, including at minimum: players, race/target (or equivalent match goal), current score, and per-visit/inning events entry.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "apa pool scorekeeper app for me to keep track of practice games like the official apa scorekeeper app"
-        ]
-      },
-      "acceptanceCriteria": [
-        "User can start an APA Practice game by entering player names and a match target (e.g., race/points goal).",
-        "During the game, user can increment/decrement each player’s score and record per-visit/inning events in a simple log.",
-        "User can end the game and it is saved to history with final score and basic summary."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add an Accepting Gifts mode with end-to-end creation, in-progress tracking, and completion saving; include a dedicated screen to display the Accepting Gifts rules and scoring method, and implement the scoring logic according to the user-provided rules.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Here is a description of accepting gifts.:"
-        ]
-      },
-      "acceptanceCriteria": [
-        "User can start an Accepting Gifts game and save it to history.",
-        "The in-progress screen supports whatever scoring inputs are required by the provided Accepting Gifts rules.",
-        "The rules for Accepting Gifts are visible in-app from the mode screens (as a Rules panel/section)."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Add a Straight Shot mode with end-to-end creation, in-progress tracking, and completion saving; implement the scoring inputs and summary appropriate for a Straight Shot practice game (e.g., attempts, makes, streaks, or other metrics), with exact tracked fields configurable based on user clarification.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "...and a straight shot pool game."
-        ]
-      },
-      "acceptanceCriteria": [
-        "User can start a Straight Shot game and save it to history.",
-        "Straight Shot in-progress screen supports tracking a defined set of metrics and shows a running summary.",
-        "Completed Straight Shot games appear in history with a summary of the tracked metrics."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Add a Match History UI that filters by mode (APA Practice / Accepting Gifts / Straight Shot) and shows a compact summary card per game (date, players, final result/summary).",
+      "id": "REQ-13",
+      "text": "Remove all APA Practice UI/logic that treats APA as a 'race to X' format, and update the APA Practice start and game screens to be APA 9-ball Equalizer point-based tracking (points-to-win by skill level) rather than a rack race.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6",
+          "msg-18"
         ],
         "quotes": [
-          "keep track of practice games"
+          "why does it say race to 5? 9 ball doesnt work like that.",
+          "APA 9-ball rules follow a rotation format but use a unique point-per-ball system known as The Equalizer® handicap system. Unlike standard 9-ball, matches are not a race to a specific number of games, but a race to a total point count based on your skill level."
         ]
       },
       "acceptanceCriteria": [
-        "History list can be filtered by mode and ‘All’.",
-        "Each game row/card shows date/time and player names.",
-        "Tapping a game opens a read-only details view showing the saved log/metrics for that mode."
+        "The APA Practice Start page no longer labels the target as 'Race to' and does not use a rack-race target model.",
+        "The APA Practice Game page no longer displays 'Race to {target}'.",
+        "Users can set each player skill level (SL 1–9) and the UI displays the correct points-to-win target for each player (SL1=14, SL2=19, SL3=25, SL4=31, SL5=38, SL6=46, SL7=55, SL8=65, SL9=75).",
+        "The match ends based on reaching the required point total (not based on a rack count)."
       ]
     },
     {
-      "id": "REQ-7",
-      "text": "Apply a cohesive visual theme and component styling across the app (typography, spacing, button styles, cards, and headers) suitable for a pool practice utility; avoid a blue/purple primary palette unless explicitly requested later.",
+      "id": "REQ-14",
+      "text": "Implement APA 9-ball rack-by-rack scoring capture in the APA Practice flow, including: 10 total points per rack (1–8 = 1 point each, 9-ball = 2 points), dead balls tracked as 0 points, and defensive shots tracking, in a way that mirrors core APA scorekeeper behaviors for practice use.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-18"
         ],
         "quotes": [
-          "apa pool scorekeeper app"
+          "Each rack has 10 points available: Balls 1–8: Each worth 1 point. 9-Ball: Worth 2 points. Dead Balls... count for 0 points.",
+          "Failing to mark defensive shots (safeties) is considered a serious scorekeeping error that can artificially inflate skill levels"
         ]
       },
       "acceptanceCriteria": [
-        "All primary screens share a consistent layout system (header + content area + primary actions).",
-        "Color palette is consistent and not primarily blue/purple.",
-        "Forms, cards, and scoring controls look consistent across modes."
+        "For each rack, the UI supports recording ball points for the active shooter, including recording a 9-ball worth 2 points.",
+        "For each rack, the UI supports recording dead balls (0 points) such that rack accounting is always enforced: playerA_points + playerB_points + dead_balls = 10.",
+        "The UI supports recording defensive shots per player (count).",
+        "Innings are tracked in an APA-appropriate way for point-per-inning (PPI) calculation (the UI clearly indicates what counts as an inning).",
+        "The app calculates and displays PPI for each player using the captured points and innings."
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "text": "At the end of an APA 9-ball practice match, calculate and display APA 20-point match result conversion (winner 12–20 / loser 0–8) using the user-provided SL-specific chart thresholds based on the losing player’s ball points earned relative to their SL goal.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-18"
+        ],
+        "quotes": [
+          "APA 9-Ball Match Point Conversion Chart ... (Source: Official APA 9-Ball Scoresheet)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On match completion, the results screen shows: both players’ SL, required points-to-win, points earned, defensive shots, innings, PPI, and the computed team match points for winner and loser.",
+        "The conversion uses the exact threshold ranges provided by the user for SL1–SL9 and produces one of: 20-0, 19-1, 18-2, 17-3, 16-4, 15-5, 14-6, 13-7, 12-8.",
+        "No 'race to X' terminology appears anywhere in the APA results UI."
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "text": "Update persisted match data structures so APA Practice saved matches store the new APA 9-ball Equalizer fields (skill levels, points-to-win targets, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) and ensure Match History and Match Details render a correct APA 9-ball summary for these matches.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-18",
+          "msg-20"
+        ],
+        "quotes": [
+          "i want it to keep track of ppi and defensive shots and what the apa scorekeeper does so this is wrong",
+          "can you please build correct app!! it was correct before and you lost my login and i had to redo...."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Saving an APA Practice match persists the APA 9-ball-specific fields needed to reconstruct scoring and results (including dead balls and defensive shots).",
+        "Match History summary cards for APA matches show APA-relevant stats (points earned/required and/or PPI) rather than the current practice attempts/makes placeholders.",
+        "Match Details for APA matches displays the full APA 9-ball summary and end-of-match match-point conversion.",
+        "If changing backend stable types requires a state upgrade, add a conditional migration in backend/migration.mo to preserve existing saved matches without traps (policy: conditional)."
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Update any app branding elements that incorrectly imply 8-ball for an APA 9-ball-focused scorekeeper (e.g., the '8' badge in the header/login card), while keeping all user-facing text in English.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6",
+          "msg-18"
+        ],
+        "quotes": [
+          "the apa app is for 9ball not 8ball",
+          "APA 9-ball rules follow..."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The header badge and login screen badge no longer show an '8' if the intended primary mode is APA 9-ball.",
+        "No user-facing copy suggests APA mode is 8-ball or uses rack-race language.",
+        "All updated/added user-facing text is English."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Backend must remain a single Motoko actor (no additional backend services).",
-    "Do not edit files under frontend immutablePaths; compose existing UI components instead."
+    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
+    "Only create/modify backend/migration.mo if required to preserve existing stable state during upgrade (conditional migration policy).",
+    "Do not edit any frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui (compose instead).",
+    "Do not add third-party authentication providers; only Internet Identity is supported."
   ],
   "nonGoals": [
-    "Integrating with or cloning any proprietary APA Scorekeeper backend/services.",
-    "Real-time multiplayer syncing or chat.",
-    "Third-party authentication providers (only Internet Identity is supported, but not required unless requested)."
+    "Do not add new game modes beyond APA Practice, Accepting Gifts, and Straight Shot.",
+    "Do not implement real-time/multiplayer scorekeeping or shared live matches.",
+    "Do not integrate external databases or third-party APIs for APA rules.",
+    "Do not change Straight Shot or Accepting Gifts scoring rules unless required by shared persistence/schema adjustments."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

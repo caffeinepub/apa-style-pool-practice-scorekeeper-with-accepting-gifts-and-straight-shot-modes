@@ -9,16 +9,16 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div className="text-center">
-        <h1 className="mb-2 text-4xl font-bold tracking-tight">Pool Scorekeeper</h1>
+        <h1 className="mb-2 text-4xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
         <p className="text-lg text-muted-foreground">
-          Track your practice games and improve your skills
+          Track your APA 9-ball practice games with Equalizer scoring and improve your skills
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <ModeCard
-          title="APA Practice"
-          description="Track APA-style practice matches with detailed scoring"
+          title="APA 9-Ball Practice"
+          description="Track APA 9-ball matches with Equalizer scoring, PPI, and match-point conversion"
           icon={<Target className="h-6 w-6" />}
           path="/apa-practice/start"
           variant="accent"
@@ -30,8 +30,8 @@ export default function HomePage() {
           path="/accepting-gifts/start"
         />
         <ModeCard
-          title="Straight Shot"
-          description="Track your straight shot accuracy and consistency"
+          title="Straight Shot (Strokes Drill)"
+          description="Count your strokes to clear the table - win at 20 or under"
           icon={<Zap className="h-6 w-6" />}
           path="/straight-shot/start"
         />

@@ -1,107 +1,79 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T18:43:16.673Z",
-  "summary": "The diff adds a full routed frontend shell (home + three modes + history), a consistent emerald/teal theme, and a Motoko backend with match/history types plus additional authentication/profile/access-control infrastructure. Core CRUD hooks and pages are referenced, but some key scoring/persistence details required by the spec (notably persisting APA per-inning logs and mode-specific details for read-only history views) are not evidenced as implemented in the stored model/builders shown.",
+  "generatedAt": "2026-02-13T19:16:12.366Z",
+  "summary": "Diff implements substantial APA 9-ball Equalizer UI/scoring changes (skill-level points-to-win mapping, rack total validation with dead balls, defensive shots, innings/PPI display, match-point outcome types) and updates branding from “8” to “9”. Backend types were expanded with an APA 9-ball match variant and a migration module was added, but some requirements (notably login persistence regression fix details and custom/user-provided match-point thresholds) are not clearly evidenced, and the migration logic appears incomplete/incorrect per the diff summary.",
   "missing_requirements": [
     {
-      "id": "REQ-3",
-      "requirement": "Persist per-visit/inning events for APA Practice and show them later in history details (saved log/metrics).",
-      "reason": "The APA Practice UI captures `innings` in session state, but the builder that creates the persisted backend record does not include the `innings` log (it only maps innings length/total points into attempts/makes), so a read-only details view cannot show the saved inning log from the canister.",
+      "id": "REQ-12",
+      "requirement": "Fix regression where previously authenticated users are unexpectedly logged out after reload/update; sessions persist across reloads/routine redeploys until delegation expires or user logs out; show clear English message if session expired; do not edit immutable hook files (compose/wrap instead).",
+      "reason": "AuthGate was modified to show an initializing spinner and updated branding, but the diff summary does not show any change that would ensure delegation/session persistence across reloads/redeploys, nor any explicit handling/message for expired/invalid delegations. No wrapper/composition mechanism beyond using the existing hook is evidenced.",
       "evidence": [
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/lib/matches/matchBuilders.ts"
+        "frontend/src/components/auth/AuthGate.tsx",
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Unified data model stores mode-specific scoring payload sufficient to reopen/view saved details for each mode.",
-      "reason": "While the backend types include mode-specific fields, the frontend builders shown for APA Practice do not store the mode-specific scoring payload that the UI captures (e.g., target/race, per-inning log). This undermines the 'open a prior game to view its saved details' acceptance criteria for APA Practice.",
+      "id": "REQ-15",
+      "requirement": "Use the exact user-provided SL-specific threshold ranges (SL1–SL9) for APA 20-point match result conversion (winner 12–20 / loser 0–8).",
+      "reason": "The implementation introduces a hard-coded DEFAULT_MATCH_POINT_CHART in code; the diff summary shows no mechanism for using “user-provided” thresholds (e.g., UI input, configuration, persistence, or injection of a provided chart).",
       "evidence": [
-        "frontend/src/lib/matches/matchBuilders.ts",
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
+        "frontend/src/lib/apa/apaMatchPoints.ts"
       ]
     },
     {
-      "id": "REQ-4",
-      "requirement": "Implement Accepting Gifts scoring logic according to user-provided rules.",
-      "reason": "The rules panel text is generic and explicitly says scoring can be customized; the in-progress screen appears to only track a numeric score/attempts without any concrete rule-driven scoring logic tied to provided rules (none are present in the request).",
+      "id": "REQ-16",
+      "requirement": "If changing backend stable types requires a state upgrade, add a conditional migration in backend/migration.mo to preserve existing saved matches without traps (conditional migration policy).",
+      "reason": "A new backend/migration.mo was added, but its run() function maps OldMatchRecord to NewMatchRecord by returning oldRecord unchanged, despite the variant type set differing (NewMatchRecord adds #apaNineBall). From the diff summary alone, this migration does not demonstrate a conditional/compatible transformation to ensure safe upgrades and preservation without traps.",
       "evidence": [
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/lib/matches/matchBuilders.ts"
+        "backend/migration.mo",
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Internet Identity authentication gate (mandatory login) and login/logout UI.",
-      "reason": "The BuildRequest states Internet Identity is supported but 'not required unless requested'; the diff introduces an AuthGate that blocks the app when not authenticated and adds login/logout controls.",
-      "evidence": [
-        "frontend/src/components/auth/AuthGate.tsx",
-        "frontend/src/components/auth/LoginButton.tsx",
-        "frontend/src/main.tsx"
-      ]
-    },
-    {
-      "description": "User profile creation/setup flow and backend user profile storage.",
-      "reason": "User profiles are not part of the requested pool scorekeeper requirements; the diff adds profile CRUD and a forced profile setup dialog.",
+      "description": "Backend APA nine-ball match schema includes many extra fields (seasonType, matchType, matchBehaviorPhase, winPercentage, isPlayerOfMatch, pointsEarnedRunningTotal, TeamStats with penalties/forfeits, rack fields like validBreak/breakMaiden/ballsOnBreak/runOut, etc.) beyond the requested persisted fields for APA practice (SLs, points-to-win, per-rack ball/dead-ball points, defensive shots, innings/PPI, match-point conversion).",
+      "reason": "REQ-16 asks to persist APA practice fields needed to reconstruct scoring/results; the diff adds a significantly more elaborate schema not requested and not tied to stated acceptance criteria.",
       "evidence": [
         "backend/main.mo",
-        "frontend/src/components/auth/ProfileSetupDialog.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "backend/migration.mo",
+        "frontend/src/lib/matches/matchBuilders.ts"
       ]
     },
     {
-      "description": "Access-control/admin-token initialization mechanism in the frontend actor creation flow.",
-      "reason": "The BuildRequest does not request role-based access control or an admin-token initialization path; the diff adds `_initializeAccessControlWithSecret` usage and related authorization mixins.",
+      "description": "Straight Shot “moving average (last 10 sessions) showing stroke performance trends.”",
+      "reason": "Not requested by REQ-12–REQ-17 and not part of the stated goals; appears as an additional analytics feature.",
       "evidence": [
-        "frontend/src/hooks/useActor.ts",
-        "backend/main.mo"
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Caffeine.ai promotional footer content.",
-      "reason": "Not requested as part of the app requirements and adds external promotional link/content.",
+      "description": "Footer branding includes “Built with ❤️ using caffeine.ai” link.",
+      "reason": "Not requested by REQ-12–REQ-17; adds new branding/copy not specified in the BuildRequest.",
       "evidence": [
         "frontend/src/components/layout/AppLayout.tsx"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.68,
   "changed_files": [
-    "all_files_summary.json",
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/index.css",
-    "frontend/index.html",
-    "frontend/src/App.tsx",
+    "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+    "frontend/src/components/apa/ApaResultsSummary.tsx",
     "frontend/src/components/auth/AuthGate.tsx",
-    "frontend/src/components/auth/LoginButton.tsx",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/components/matches/DeleteMatchButton.tsx",
-    "frontend/src/components/matches/EndMatchDialog.tsx",
     "frontend/src/components/matches/MatchSummaryCard.tsx",
-    "frontend/src/components/navigation/ModeCard.tsx",
-    "frontend/src/hooks/useActor.ts",
-    "frontend/src/hooks/useInternetIdentity.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/index.css",
+    "frontend/src/lib/apa/apaEqualizer.ts",
+    "frontend/src/lib/apa/apaMatchPoints.ts",
+    "frontend/src/lib/apa/apaScoring.ts",
     "frontend/src/lib/matches/matchBuilders.ts",
-    "frontend/src/main.tsx",
     "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
     "frontend/src/pages/apa/PracticeGamePage.tsx",
     "frontend/src/pages/apa/PracticeStartPage.tsx",
     "frontend/src/pages/history/MatchDetailsPage.tsx",
-    "frontend/src/pages/history/MatchHistoryPage.tsx",
-    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-    "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
-    "frontend/src/utils/urlParams.ts",
-    "frontend/tailwind.config.js",
     "project_state.json"
   ]
 }

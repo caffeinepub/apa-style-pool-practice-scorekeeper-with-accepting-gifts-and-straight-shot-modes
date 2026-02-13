@@ -27,11 +27,11 @@ export default function AuthGate({ children }: AuthGateProps) {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600">
-              <span className="text-3xl font-bold text-white">8</span>
+              <span className="text-3xl font-bold text-white">9</span>
             </div>
-            <CardTitle className="text-2xl">Welcome to Pool Scorekeeper</CardTitle>
+            <CardTitle className="text-2xl">Welcome to APA 9-Ball Scorekeeper</CardTitle>
             <CardDescription>
-              Track your APA practice games, Accepting Gifts, and Straight Shot sessions
+              Track your APA 9-ball practice matches with Equalizer scoring, PPI tracking, and match-point conversion
             </CardDescription>
           </CardHeader>
           <CardContent>

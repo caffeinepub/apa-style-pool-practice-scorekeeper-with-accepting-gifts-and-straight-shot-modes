@@ -1,10 +1,18 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "APA pool scorekeeper app for tracking practice games like the official APA Scorekeeper app, with two additional practice modes: Accepting Gifts and Straight Shot.",
-  "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "projectStateVersion": 7,
+  "summary": "APA pool practice scorekeeper app focused on APA 9-ball (not 8-ball), using The Equalizer® point-based scoring with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, and end-of-match team match-point conversion; plus additional practice modes: Accepting Gifts and Straight Shot.",
+  "architectural_notes": [
+    "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
+    "Need explicit rule decision for scratch-on-break when break shot itself doesn’t count (user spec: possibly counts as 1).",
+    "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
+    "APA 9-ball session tracking should support rack-by-rack 10-point accounting: player A points + player B points + dead balls = 10 each rack; include 9-ball worth 2, dead balls worth 0, and support defensive shots + innings for correct PPI.",
+    "APA 9-ball rules constraints to encode: no push-outs (standard handicapped APA 9-ball), 9-on-the-snap ends rack with 2 points, three consecutive fouls within a rack loses the rack and remaining balls become dead."
+  ],
+  "known_issues": [
+    "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
@@ -53,6 +61,86 @@
         "REQ-7"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-straight-shot-mode-copy-and-naming-so-it-does-not-imply-the-game-is-straight-pool-ensure-all-user-facing-text-refers-to-it-as-a-stroke-counting-drill-and-describes-the-correct-drill-rules-in-english",
+      "title": "Update the Straight Shot mode copy and naming so it does not imply the game is \"straight pool\"; ensure all user-facing text refers to it as a stroke-counting drill and describes the correct drill rules in English.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-straight-shot-strokes-drill-rule-tracking-in-the-active-straight-shot-session-count-strokes-shots-apply-win-condition-of-20-strokes-shots-or-under-require-pocketing-all-balls-with-the-8-ball-last-rules-display-session-completion-apply-scratch-penalty-as-2-shots-and-ensure-the-break-shot-does-not-count-as-a-shot-explicitly-handle-and-document-the-scratch-on-break-case-per-the-user-note",
+      "title": "Implement Straight Shot (strokes drill) rule tracking in the active Straight Shot session: count strokes/shots, apply win condition of 20 strokes/shots or under, require pocketing all balls with the 8-ball last (rules display + session completion), apply scratch penalty as +2 shots, and ensure the break shot does not count as a shot; explicitly handle and document the \"scratch on break\" case per the user note.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-persisted-straight-shot-match-data-builder-saved-match-payload-so-straight-shot-history-reflects-stroke-based-tracking-including-scratch-impact-instead-of-the-current-attempts-makes-accuracy-model",
+      "title": "Update persisted Straight Shot match data (builder + saved match payload) so Straight Shot history reflects stroke-based tracking (including scratch impact) instead of the current attempts/makes accuracy model.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-moving-average-tracking-and-display-for-the-straight-shot-strokes-drill-based-on-saved-straight-shot-match-history-for-the-signed-in-user",
+      "title": "Add moving average tracking and display for the Straight Shot strokes drill based on saved Straight Shot match history for the signed-in user.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-regression-where-a-previously-authenticated-user-is-unexpectedly-logged-out-or-forced-to-re-authenticate-after-an-app-update-reload-so-that-internet-identity-sessions-persist-as-expected-across-page-reloads-and-routine-redeploys-until-the-delegation-expires-or-the-user-explicitly-logs-out",
+      "title": "Investigate and fix the regression where a previously authenticated user is unexpectedly logged out (or forced to re-authenticate) after an app update/reload, so that Internet Identity sessions persist as expected across page reloads and routine redeploys (until the delegation expires or the user explicitly logs out).",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-all-apa-practice-ui-logic-that-treats-apa-as-a-race-to-x-format-and-update-the-apa-practice-start-and-game-screens-to-be-apa-9-ball-equalizer-point-based-tracking-points-to-win-by-skill-level-rather-than-a-rack-race",
+      "title": "Remove all APA Practice UI/logic that treats APA as a 'race to X' format, and update the APA Practice start and game screens to be APA 9-ball Equalizer point-based tracking (points-to-win by skill level) rather than a rack race.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-apa-9-ball-rack-by-rack-scoring-capture-in-the-apa-practice-flow-including-10-total-points-per-rack-1-8-1-point-each-9-ball-2-points-dead-balls-tracked-as-0-points-and-defensive-shots-tracking-in-a-way-that-mirrors-core-apa-scorekeeper-behaviors-for-practice-use",
+      "title": "Implement APA 9-ball rack-by-rack scoring capture in the APA Practice flow, including: 10 total points per rack (1–8 = 1 point each, 9-ball = 2 points), dead balls tracked as 0 points, and defensive shots tracking, in a way that mirrors core APA scorekeeper behaviors for practice use.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-at-the-end-of-an-apa-9-ball-practice-match-calculate-and-display-apa-20-point-match-result-conversion-winner-12-20-loser-0-8-using-the-user-provided-sl-specific-chart-thresholds-based-on-the-losing-player-s-ball-points-earned-relative-to-their-sl-goal",
+      "title": "At the end of an APA 9-ball practice match, calculate and display APA 20-point match result conversion (winner 12–20 / loser 0–8) using the user-provided SL-specific chart thresholds based on the losing player’s ball points earned relative to their SL goal.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-persisted-match-data-structures-so-apa-practice-saved-matches-store-the-new-apa-9-ball-equalizer-fields-skill-levels-points-to-win-targets-per-rack-scoring-with-dead-balls-defensive-shots-innings-ppi-and-match-point-conversion-outcome-and-ensure-match-history-and-match-details-render-a-correct-apa-9-ball-summary-for-these-matches",
+      "title": "Update persisted match data structures so APA Practice saved matches store the new APA 9-ball Equalizer fields (skill levels, points-to-win targets, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) and ensure Match History and Match Details render a correct APA 9-ball summary for these matches.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-any-app-branding-elements-that-incorrectly-imply-8-ball-for-an-apa-9-ball-focused-scorekeeper-e-g-the-8-badge-in-the-header-login-card-while-keeping-all-user-facing-text-in-english",
+      "title": "Update any app branding elements that incorrectly imply 8-ball for an APA 9-ball-focused scorekeeper (e.g., the '8' badge in the header/login card), while keeping all user-facing text in English.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -80,6 +168,18 @@
       "reqIds": [
         "REQ-2"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Update Straight Shot (drill) mode rules and tracking: count strokes with win condition <=20; pocket all balls with 8-ball last; scratches add +2 shots (break shot doesn’t count; clarify scratch-on-break handling); track and display moving average of strokes over time; ensure naming/description doesn’t imply 'straight pool'.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Correct APA mode to be APA 9-ball Equalizer scoring (points-to-win by skill level), including per-rack 10-point accounting (balls + dead balls), defensive shots, innings, PPI calculation, and 20-point match-point conversion (12–20 winner / 0–8 loser). Remove any 'race to X' UI/logic.",
+      "reqIds": [],
       "status": "pending"
     }
   ],

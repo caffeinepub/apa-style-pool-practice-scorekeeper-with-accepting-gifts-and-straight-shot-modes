@@ -1,240 +1,206 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "APA-style pool practice scorekeeper (APA Practice, Accepting Gifts, Straight Shot) — frontend",
+  "title": "Login persistence fix + APA 9-ball Equalizer scoring corrections (frontend)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Create core navigation and information architecture for three scoring modes plus Match History, including start/new-game and in-progress screens per mode.",
+      "id": "REQ-12",
+      "summary": "Fix Internet Identity session persistence across reloads/redeploys and show clear session-expired messaging without editing immutable auth hooks.",
       "acceptanceCriteria": [
-        "App has a clear home screen with entries for: APA Practice, Accepting Gifts, Straight Shot, and Match History.",
-        "Each mode has a dedicated start/new-game screen and a dedicated in-progress game screen (even if some scoring details are placeholders until rules are provided)."
+        "After logging in once, refreshing the page keeps the user authenticated (AuthGate does not return to the login prompt).",
+        "Navigating between routes does not clear authentication state.",
+        "A user is only logged out when they click Logout, or when the delegation is actually expired/invalid (and the UI provides a clear, English message indicating the session expired).",
+        "No changes are made to immutable hook files; fixes are implemented via safe composition/wrappers where needed."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "create",
-          "description": "Create the app shell and routing (home, per-mode start + in-progress, rules/details as needed, history list + details). Include an authentication gate consistent with the selected authorization component requirements (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "create",
-          "description": "Create a shared layout (header + content + primary actions area) used by all primary screens for consistent information architecture and navigation."
-        },
-        {
-          "path": "frontend/src/components/navigation/ModeCard.tsx",
-          "operation": "create",
-          "description": "Create a reusable navigation card component for mode entry points on the Home screen. Use shadcn-ui components (e.g., Card/Button) for consistent styling (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "create",
-          "description": "Create a home screen with entries for APA Practice, Accepting Gifts, Straight Shot, and Match History, wired to routes."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "operation": "create",
-          "description": "Create APA Practice start/new-game screen (player names + match target) and wire navigation into the in-progress screen."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "create",
-          "description": "Create APA Practice in-progress screen scaffold to host scoring controls and inning log (details implemented under REQ-3)."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "create",
-          "description": "Create Accepting Gifts start/new-game screen and wire navigation into the in-progress screen."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-          "operation": "create",
-          "description": "Create Accepting Gifts in-progress screen scaffold (details implemented under REQ-4)."
-        },
-        {
-          "path": "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
-          "operation": "create",
-          "description": "Create Straight Shot start/new-game screen and wire navigation into the in-progress screen."
-        },
-        {
-          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-          "operation": "create",
-          "description": "Create Straight Shot in-progress screen scaffold (details implemented under REQ-5)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Implement APA-style practice scorekeeping UI + data capture (players, target, score controls, per-visit/inning event log) with save-to-history behavior via backend calls.",
-      "acceptanceCriteria": [
-        "User can start an APA Practice game by entering player names and a match target (e.g., race/points goal).",
-        "During the game, user can increment/decrement each player’s score and record per-visit/inning events in a simple log.",
-        "User can end the game and it is saved to history with final score and basic summary."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
-          "operation": "modify",
-          "description": "Implement form fields for player names and match target, plus optional notes; validate required fields; create a new in-progress practice match state and navigate into the in-progress game screen. Use shadcn-ui Form/Input/Button where available (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Implement APA Practice scoring controls (increment/decrement for each player), display current target, and add a simple per-visit/inning log entry UI (append/remove). Provide actions to save progress and to end match (final save) using backendInterface saveMatch/updateMatch (via shared hooks). Use shadcn-ui components (cards, buttons, inputs) for consistent controls (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/lib/matches/matchBuilders.ts",
-          "operation": "create",
-          "description": "Add frontend helpers to build MatchRecord payloads for apaPractice using the backend.d.ts types (mode, base fields, and practice payload fields like attempts/makes/streaks as needed). Keep logic UI-focused; persistence is done via the existing backendInterface methods."
-        },
-        {
-          "path": "frontend/src/hooks/useMatches.ts",
-          "operation": "create",
-          "description": "Create React Query hooks for match persistence and retrieval: list matches, get match, save match, update match, delete match using backendInterface (getAllMatches/getMatch/saveMatch/updateMatch/deleteMatch)."
-        },
-        {
-          "path": "frontend/src/components/matches/EndMatchDialog.tsx",
-          "operation": "create",
-          "description": "Create a reusable confirmation dialog for ending/completing a match and saving it. Use shadcn-ui Dialog/Button to standardize primary actions (Verify the component's usage instructions before implementing)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add Accepting Gifts mode screens with in-app rules panel and scoring inputs; support saving completed games to history using backend calls.",
-      "acceptanceCriteria": [
-        "User can start an Accepting Gifts game and save it to history.",
-        "The in-progress screen supports whatever scoring inputs are required by the provided Accepting Gifts rules.",
-        "The rules for Accepting Gifts are visible in-app from the mode screens (as a Rules panel/section)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
-          "operation": "create",
-          "description": "Create an in-app Rules panel/section component for Accepting Gifts that can be shown from the start and in-progress screens. Use shadcn-ui Card/Accordion for a readable rules layout (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "modify",
-          "description": "Add player/notes inputs for starting an Accepting Gifts game and include the Rules panel access/visibility. Initialize Accepting Gifts match state and navigate to in-progress."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-          "operation": "modify",
-          "description": "Implement Accepting Gifts in-progress tracking UI (e.g., score input, completion status, and a rulesReference field per backend.d.ts). Include the Rules panel in the screen. Add save/update and complete actions via shared match hooks."
-        },
-        {
-          "path": "frontend/src/lib/matches/matchBuilders.ts",
-          "operation": "modify",
-          "description": "Extend match builder helpers to construct Accepting Gifts MatchRecord payloads (score, completionStatus, rulesReference) aligned with backend.d.ts."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Add Straight Shot mode screens with metric tracking (attempts/makes/streaks/time as applicable) and history summaries using backend calls.",
-      "acceptanceCriteria": [
-        "User can start a Straight Shot game and save it to history.",
-        "Straight Shot in-progress screen supports tracking a defined set of metrics and shows a running summary.",
-        "Completed Straight Shot games appear in history with a summary of the tracked metrics."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
-          "operation": "modify",
-          "description": "Add player/notes inputs for starting a Straight Shot game; initialize default metric state (attempts/makes/streaks/completionTime as supported by backend.d.ts) and navigate to in-progress. Use shadcn-ui form components for consistency (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-          "operation": "modify",
-          "description": "Implement Straight Shot metric tracking controls (increment/decrement attempts/makes; optional streak tracking; show running summary like make %, current streak, totals). Add save/update and complete actions via shared match hooks."
-        },
-        {
-          "path": "frontend/src/lib/matches/matchBuilders.ts",
-          "operation": "modify",
-          "description": "Extend match builder helpers to construct Straight Shot MatchRecord payloads (attempts, makes, optional completionTime/streaks) aligned with backend.d.ts."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Add Match History UI with mode filtering and read-only match detail views per mode.",
-      "acceptanceCriteria": [
-        "History list can be filtered by mode and ‘All’.",
-        "Each game row/card shows date/time and player names.",
-        "Tapping a game opens a read-only details view showing the saved log/metrics for that mode."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
-          "operation": "create",
-          "description": "Create Match History screen that lists matches in reverse-chronological order using useMatches hooks, with filter controls for All/APA Practice/Accepting Gifts/Straight Shot. Use shadcn-ui Tabs/Select and Card for filtering + summaries (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
-          "operation": "create",
-          "description": "Create a read-only match details view that renders appropriate sections per mode (APA: target/score/log; Accepting Gifts: score/status/rules reference; Straight Shot: attempts/makes/streaks/summary). Wire to route navigation from history list."
-        },
-        {
-          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "operation": "create",
-          "description": "Create a compact summary card component for history rows (date/time, players, and mode-specific brief summary). Use shadcn-ui Card and typography styles for consistency (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/components/matches/DeleteMatchButton.tsx",
-          "operation": "create",
-          "description": "Create a delete control for match records (used from history details and/or list) that calls deleteMatch via useMatches hooks and updates cached lists. Use shadcn-ui AlertDialog/Button for confirmation (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Match History and Match Details routes into the app router and add navigation entry from the Home screen."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Apply cohesive visual theme and consistent component styling suitable for a pool practice utility (non-blue/purple primary palette).",
-      "acceptanceCriteria": [
-        "All primary screens share a consistent layout system (header + content area + primary actions).",
-        "Color palette is consistent and not primarily blue/purple.",
-        "Forms, cards, and scoring controls look consistent across modes."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "create",
-          "description": "Establish global theme tokens and base typography/spacing for the app (favor neutral + green/teal accents; avoid blue/purple as primary). Ensure shadcn-ui theme variables (if used) align with the palette (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
-          "operation": "modify",
-          "description": "Adjust Tailwind theme configuration (colors, border radius, font family) to support the chosen non-blue/purple primary palette and consistent UI tokens across screens."
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Apply consistent header styles, spacing rhythm, and standardized primary/secondary action placements across screens."
-        },
         {
           "path": "frontend/src/components/auth/AuthGate.tsx",
-          "operation": "create",
-          "description": "Add an auth gating wrapper that requires login before showing any application data, consistent with the selected authorization component guidance. Include graceful handling for unauthorized/guest states and backend authorization errors (Verify the component's usage instructions before implementing)."
+          "operation": "modify",
+          "description": "Add a persistence-safe gating layer that avoids showing the login prompt until the app has completed a secondary “session restore” check, and present a clear English message when the session is actually expired/invalid. Use the authorization component guidance for auth UX/error handling; verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/auth/LoginButton.tsx",
-          "operation": "create",
-          "description": "Create a login/logout button using the existing useInternetIdentity hook and clear cached React Query data on logout as required by the authorization component guidance (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "operation": "create",
-          "description": "Create a first-login profile setup dialog to collect and save a user name via getCallerUserProfile/saveCallerUserProfile, using the recommended anti-flash loading pattern from the authorization component guidance (Verify the component's usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Integrate AppLayout theme usage and include LoginButton + ProfileSetupDialog in the app shell so all screens inherit consistent styling and authentication UX (Verify the component's usage instructions before implementing)."
+          "description": "Ensure logout is the only explicit UI action that clears cached app data, and add user-friendly handling for auth errors (including expired delegation) while keeping behavior aligned with authorization component logout guidance; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Reduce unnecessary actor recreation/refetch churn across reloads and route navigation (so auth-dependent queries don’t flap), while keeping identity-driven actor creation intact."
+        },
+        {
+          "path": "frontend/src/components/auth/AuthPersistenceGate.tsx",
+          "operation": "create",
+          "description": "Create a small wrapper component used by AuthGate to perform a one-time, client-side session restore check and to centralize session-expired messaging without changing immutable auth hook files. Use shadcn-ui primitives already present for consistent loading/error UI; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "summary": "Replace APA Practice 'race to X' model with APA 9-ball Equalizer points-to-win by skill level (SL1–SL9).",
+      "acceptanceCriteria": [
+        "The APA Practice Start page no longer labels the target as 'Race to' and does not use a rack-race target model.",
+        "The APA Practice Game page no longer displays 'Race to {target}'.",
+        "Users can set each player skill level (SL 1–9) and the UI displays the correct points-to-win target for each player (SL1=14, SL2=19, SL3=25, SL4=31, SL5=38, SL6=46, SL7=55, SL8=65, SL9=75).",
+        "The match ends based on reaching the required point total (not based on a rack count)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/apa/apaEqualizer.ts",
+          "operation": "create",
+          "description": "Add APA 9-ball Equalizer helpers for SL-to-points-to-win mapping (SL1–SL9), validation utilities, and shared labeling (no 'race to' language)."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "operation": "modify",
+          "description": "Replace the 'Race to' target input with per-player SL (1–9) inputs and computed points-to-win targets, stored into session state for the APA practice flow. Use shadcn-ui form components for consistent inputs; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Update game header and win condition to use points-to-win per player derived from SL (no rack race text), and ensure totals are tracked in APA 9-ball points rather than racks."
+        }
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "summary": "Implement APA 9-ball rack-by-rack scoring capture (10 points per rack with dead balls), defensive shots, innings, and PPI calculation.",
+      "acceptanceCriteria": [
+        "For each rack, the UI supports recording ball points for the active shooter, including recording a 9-ball worth 2 points.",
+        "For each rack, the UI supports recording dead balls (0 points) such that rack accounting is always enforced: playerA_points + playerB_points + dead_balls = 10.",
+        "The UI supports recording defensive shots per player (count).",
+        "Innings are tracked in an APA-appropriate way for point-per-inning (PPI) calculation (the UI clearly indicates what counts as an inning).",
+        "The app calculates and displays PPI for each player using the captured points and innings."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/apa/apaScoring.ts",
+          "operation": "create",
+          "description": "Implement APA rack accounting (10 total points per rack; 1–8=1 each; 9-ball=2; dead balls=0), per-rack validation (A+B+dead=10), inning tracking helpers, and PPI calculation utilities."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Replace the current generic inning/score adjustment UI with a rack-by-rack scoring capture UI that enforces 10-point rack accounting, supports dead balls, tracks defensive shots per player, clearly defines/records innings, and displays live totals + PPI for each player. Use shadcn-ui Cards/Inputs/Dialogs for the scoring workflow; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "operation": "create",
+          "description": "Create a focused rack scoring panel component used by PracticeGamePage to capture per-rack points (including 9-ball=2), dead balls, and inning boundaries with enforced rack totals. Use shadcn-ui primitives for layout and validation feedback; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/apa/ApaDefensiveShotsControl.tsx",
+          "operation": "create",
+          "description": "Create a reusable control for incrementing/decrementing defensive shots per player, used in the APA Practice game UI. Use shadcn-ui Button/Input patterns; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "summary": "Compute and display APA 20-point match result conversion at match end using user-provided SL chart thresholds, and show full APA match summary without 'race to' terminology.",
+      "acceptanceCriteria": [
+        "On match completion, the results screen shows: both players’ SL, required points-to-win, points earned, defensive shots, innings, PPI, and the computed team match points for winner and loser.",
+        "The conversion uses the exact threshold ranges provided by the user for SL1–SL9 and produces one of: 20-0, 19-1, 18-2, 17-3, 16-4, 15-5, 14-6, 13-7, 12-8.",
+        "No 'race to X' terminology appears anywhere in the APA results UI."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/apa/apaMatchPoints.ts",
+          "operation": "create",
+          "description": "Add match-point conversion logic that takes a user-supplied threshold chart (by SL) and computes winner/loser match points in the 12–20 / 0–8 outcomes, without hardcoding unprovided chart ranges."
+        },
+        {
+          "path": "frontend/src/components/apa/ApaMatchPointChartEditor.tsx",
+          "operation": "create",
+          "description": "Add an in-flow UI (used on APA start and/or end flow) that lets users input/edit the SL-specific threshold chart used for 20-point conversion and persists it locally for reuse. Use shadcn-ui form and dialog components for a clean editor; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/apa/ApaResultsSummary.tsx",
+          "operation": "create",
+          "description": "Create a results summary component that displays SL, points-to-win, points earned, defensive shots, innings, PPI, and computed match points for both players, ensuring no rack-race language. Use shadcn-ui Cards/Badges for clear presentation; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "On match completion (when a player reaches their points-to-win), show the APA results summary (including match-point conversion via the user-provided chart), and keep all visible copy in English with no 'race to' terminology."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "operation": "modify",
+          "description": "Provide access to the match-point conversion chart editor (so the user can supply/adjust thresholds before play) while keeping the start flow focused on APA 9-ball points-to-win by SL. Use shadcn-ui Dialog/Accordion patterns if needed; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "summary": "Update APA Practice saved match payloads to include APA 9-ball Equalizer fields and update Match History/Details to render APA 9-ball summaries correctly.",
+      "acceptanceCriteria": [
+        "Saving an APA Practice match persists the APA 9-ball-specific fields needed to reconstruct scoring and results (including dead balls and defensive shots).",
+        "Match History summary cards for APA matches show APA-relevant stats (points earned/required and/or PPI) rather than the current practice attempts/makes placeholders.",
+        "Match Details for APA matches displays the full APA 9-ball summary and end-of-match match-point conversion.",
+        "If changing backend stable types requires a state upgrade, add a conditional migration in backend/migration.mo to preserve existing saved matches without traps (policy: conditional)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/matches/matchBuilders.ts",
+          "operation": "modify",
+          "description": "Update the APA Practice match builder to save APA 9-ball Equalizer match records (including SLs, points-to-win, per-rack scoring with dead balls, defensive shots, innings/PPI, and match-point conversion outcome) using the appropriate MatchRecord variant, while avoiding changes to other modes unless strictly needed."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Wire the new APA match state into saving logic so the persisted match contains full rack-by-rack and results data, and ensure sessionStorage state can reconstruct ongoing games."
+        },
+        {
+          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "operation": "modify",
+          "description": "Update APA match summary rendering to show APA-relevant stats (e.g., points earned vs points-to-win and/or PPI) using available APA match info fields, instead of attempts/makes placeholders."
+        },
+        {
+          "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
+          "operation": "modify",
+          "description": "Update the APA match details section to display a full APA 9-ball summary (SL, points-to-win, points earned, defensive shots, innings, PPI, and match-point conversion) and remove any rack-race language."
+        },
+        {
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
+          "operation": "modify",
+          "description": "Ensure the APA tab/list presentation aligns with the updated APA match summaries and remains readable with the new APA stats."
+        }
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "summary": "Update branding to reflect APA 9-ball focus (remove 8-ball '8' badges) and ensure all user-facing text is English and free of rack-race language in APA mode.",
+      "acceptanceCriteria": [
+        "The header badge and login screen badge no longer show an '8' if the intended primary mode is APA 9-ball.",
+        "No user-facing copy suggests APA mode is 8-ball or uses rack-race language.",
+        "All updated/added user-facing text is English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Update the header badge branding from an '8' to a 9-ball/APA-appropriate mark (text-only) while keeping the rest of the layout intact and all copy in English."
+        },
+        {
+          "path": "frontend/src/components/auth/AuthGate.tsx",
+          "operation": "modify",
+          "description": "Update the unauthenticated login card badge branding to remove the '8' and ensure login screen copy reflects APA 9-ball focus and remains English-only."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Review and adjust any homepage copy that implies 8-ball or rack races for APA mode, keeping English-only text and maintaining existing navigation."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "operation": "modify",
+          "description": "Remove remaining 'Race to' wording and ensure APA start UI text is consistent with APA 9-ball Equalizer points-based tracking and English-only copy."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Remove remaining 'Race to' wording and ensure APA in-game UI text is consistent with points-to-win and English-only copy."
         }
       ]
     }

@@ -9,9 +9,9 @@ export default function AppLayout() {
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600">
-              <span className="text-xl font-bold text-white">8</span>
+              <span className="text-xl font-bold text-white">9</span>
             </div>
-            <h1 className="text-xl font-bold tracking-tight">Pool Scorekeeper</h1>
+            <h1 className="text-xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
           </div>
           <LoginButton />
         </div>
@@ -21,7 +21,7 @@ export default function AppLayout() {
       </main>
       <footer className="mt-16 border-t border-border/40 py-8">
         <div className="container px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Pool Scorekeeper. Built with ❤️ using{' '}
+          <p>© {new Date().getFullYear()} APA 9-Ball Scorekeeper. Built with ❤️ using{' '}
             <a
               href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"

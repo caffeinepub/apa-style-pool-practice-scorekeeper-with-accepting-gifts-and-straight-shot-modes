@@ -2,23 +2,35 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Minus, Trophy } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Trophy } from 'lucide-react';
 import { useSaveMatch } from '../../hooks/useQueries';
-import { buildApaPracticeMatch } from '../../lib/matches/matchBuilders';
+import { buildApaNineBallMatch } from '../../lib/matches/matchBuilders';
 import EndMatchDialog from '../../components/matches/EndMatchDialog';
+import ApaRackScoringPanel from '../../components/apa/ApaRackScoringPanel';
+import ApaResultsSummary from '../../components/apa/ApaResultsSummary';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { toast } from 'sonner';
+import type { RackData } from '../../lib/apa/apaScoring';
+import { calculatePPI, formatPPI } from '../../lib/apa/apaScoring';
+import { calculateMatchPoints } from '../../lib/apa/apaMatchPoints';
+import { formatSkillLevel } from '../../lib/apa/apaEqualizer';
 
 interface GameState {
   player1: string;
   player2: string;
-  target: number;
+  player1SL: number;
+  player2SL: number;
+  player1Target: number;
+  player2Target: number;
   notes?: string;
-  score1: number;
-  score2: number;
-  innings: Array<{ player: number; points: number; description: string }>;
+  player1Points: number;
+  player2Points: number;
+  player1Innings: number;
+  player2Innings: number;
+  player1DefensiveShots: number;
+  player2DefensiveShots: number;
+  racks: RackData[];
 }
 
 export default function PracticeGamePage() {
@@ -26,14 +38,17 @@ export default function PracticeGamePage() {
   const { identity } = useInternetIdentity();
   const saveMatch = useSaveMatch();
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [inningPoints, setInningPoints] = useState('');
-  const [inningDesc, setInningDesc] = useState('');
-  const [activePlayer, setActivePlayer] = useState<1 | 2>(1);
+  const [matchComplete, setMatchComplete] = useState(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('apaPracticeGame');
     if (saved) {
-      setGameState(JSON.parse(saved));
+      const state = JSON.parse(saved);
+      setGameState(state);
+      // Check if match is already complete
+      if (state.player1Points >= state.player1Target || state.player2Points >= state.player2Target) {
+        setMatchComplete(true);
+      }
     } else {
       navigate({ to: '/apa-practice/start' });
     }
@@ -45,50 +60,75 @@ export default function PracticeGamePage() {
     }
   }, [gameState]);
 
-  const adjustScore = (player: 1 | 2, delta: number) => {
+  const handleRackComplete = (data: {
+    player1Points: number;
+    player2Points: number;
+    deadBalls: number;
+    player1Innings: number;
+    player2Innings: number;
+    player1DefensiveShots: number;
+    player2DefensiveShots: number;
+  }) => {
     if (!gameState) return;
-    const newScore = player === 1 ? gameState.score1 + delta : gameState.score2 + delta;
-    if (newScore < 0) return;
 
-    setGameState({
+    const newRack: RackData = {
+      rackNumber: gameState.racks.length + 1,
+      playerA: {
+        points: data.player1Points,
+        defensiveShots: data.player1DefensiveShots,
+        innings: data.player1Innings,
+      },
+      playerB: {
+        points: data.player2Points,
+        defensiveShots: data.player2DefensiveShots,
+        innings: data.player2Innings,
+      },
+      deadBalls: data.deadBalls,
+    };
+
+    const newState = {
       ...gameState,
-      score1: player === 1 ? newScore : gameState.score1,
-      score2: player === 2 ? newScore : gameState.score2,
-    });
-  };
+      player1Points: gameState.player1Points + data.player1Points,
+      player2Points: gameState.player2Points + data.player2Points,
+      player1Innings: gameState.player1Innings + data.player1Innings,
+      player2Innings: gameState.player2Innings + data.player2Innings,
+      player1DefensiveShots: gameState.player1DefensiveShots + data.player1DefensiveShots,
+      player2DefensiveShots: gameState.player2DefensiveShots + data.player2DefensiveShots,
+      racks: [...gameState.racks, newRack],
+    };
 
-  const addInning = () => {
-    if (!gameState || !inningPoints) return;
-    const points = parseInt(inningPoints);
-    if (isNaN(points) || points < 0) return;
+    setGameState(newState);
 
-    const newInnings = [
-      ...gameState.innings,
-      { player: activePlayer, points, description: inningDesc.trim() },
-    ];
-
-    setGameState({
-      ...gameState,
-      innings: newInnings,
-      score1: activePlayer === 1 ? gameState.score1 + points : gameState.score1,
-      score2: activePlayer === 2 ? gameState.score2 + points : gameState.score2,
-    });
-
-    setInningPoints('');
-    setInningDesc('');
+    // Check if match is complete
+    if (newState.player1Points >= newState.player1Target || newState.player2Points >= newState.player2Target) {
+      setMatchComplete(true);
+      toast.success('Match Complete!');
+    }
   };
 
   const handleEndMatch = async () => {
     if (!gameState || !identity) return;
 
-    const { matchId, matchRecord } = buildApaPracticeMatch({
+    const player1Won = gameState.player1Points >= gameState.player1Target;
+    const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
+    const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
+    const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
+
+    const { matchId, matchRecord } = buildApaNineBallMatch({
       player1: gameState.player1,
       player2: gameState.player2,
-      score1: gameState.score1,
-      score2: gameState.score2,
+      player1SL: gameState.player1SL,
+      player2SL: gameState.player2SL,
+      player1Points: gameState.player1Points,
+      player2Points: gameState.player2Points,
+      player1Innings: gameState.player1Innings,
+      player2Innings: gameState.player2Innings,
+      player1DefensiveShots: gameState.player1DefensiveShots,
+      player2DefensiveShots: gameState.player2DefensiveShots,
+      racks: gameState.racks,
       notes: gameState.notes,
-      innings: gameState.innings,
       identity,
+      matchPointOutcome,
     });
 
     await saveMatch.mutateAsync({ matchId, matchRecord });
@@ -101,7 +141,60 @@ export default function PracticeGamePage() {
     return null;
   }
 
-  const winner = gameState.score1 >= gameState.target ? 1 : gameState.score2 >= gameState.target ? 2 : null;
+  const player1Won = gameState.player1Points >= gameState.player1Target;
+  const player2Won = gameState.player2Points >= gameState.player2Target;
+  const player1PPI = calculatePPI(gameState.player1Points, gameState.player1Innings);
+  const player2PPI = calculatePPI(gameState.player2Points, gameState.player2Innings);
+
+  if (matchComplete) {
+    const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
+    const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
+    const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
+
+    return (
+      <div className="mx-auto max-w-4xl space-y-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate({ to: '/' })}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Button>
+
+        <ApaResultsSummary
+          player1={{
+            name: gameState.player1,
+            skillLevel: gameState.player1SL,
+            pointsNeeded: gameState.player1Target,
+            pointsEarned: gameState.player1Points,
+            defensiveShots: gameState.player1DefensiveShots,
+            innings: gameState.player1Innings,
+            ppi: player1PPI,
+            isWinner: player1Won,
+          }}
+          player2={{
+            name: gameState.player2,
+            skillLevel: gameState.player2SL,
+            pointsNeeded: gameState.player2Target,
+            pointsEarned: gameState.player2Points,
+            defensiveShots: gameState.player2DefensiveShots,
+            innings: gameState.player2Innings,
+            ppi: player2PPI,
+            isWinner: player2Won,
+          }}
+          matchPointOutcome={matchPointOutcome}
+        />
+
+        <div className="flex justify-center">
+          <Button onClick={handleEndMatch} size="lg" className="gap-2">
+            <Trophy className="h-5 w-5" />
+            Save Match & Return to History
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -115,147 +208,110 @@ export default function PracticeGamePage() {
       </Button>
 
       <div className="text-center">
-        <h1 className="text-2xl font-bold">APA Practice Match</h1>
-        <p className="text-muted-foreground">Race to {gameState.target}</p>
+        <h1 className="text-2xl font-bold">APA 9-Ball Practice Match</h1>
+        <p className="text-muted-foreground">Rack {gameState.racks.length + 1}</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className={activePlayer === 1 ? 'ring-2 ring-emerald-500' : ''}>
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>{gameState.player1}</span>
-              {winner === 1 && <Trophy className="h-5 w-5 text-yellow-500" />}
+              {player1Won && <Trophy className="h-5 w-5 text-yellow-500" />}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Skill Level</span>
+              <Badge variant="secondary">{formatSkillLevel(gameState.player1SL)}</Badge>
+            </div>
             <div className="text-center">
-              <div className="text-5xl font-bold">{gameState.score1}</div>
-              <div className="text-sm text-muted-foreground">Score</div>
+              <div className="text-5xl font-bold text-emerald-600">{gameState.player1Points}</div>
+              <div className="text-sm text-muted-foreground">of {gameState.player1Target} points</div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => adjustScore(1, -1)}
-                variant="outline"
-                className="flex-1"
-                disabled={gameState.score1 === 0}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => adjustScore(1, 1)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Innings:</span>
+                <span className="font-semibold">{gameState.player1Innings}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">PPI:</span>
+                <span className="font-semibold">{formatPPI(player1PPI)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Defensive Shots:</span>
+                <span className="font-semibold">{gameState.player1DefensiveShots}</span>
+              </div>
             </div>
-            <Button
-              onClick={() => setActivePlayer(1)}
-              variant={activePlayer === 1 ? 'default' : 'outline'}
-              className="w-full"
-            >
-              Active Player
-            </Button>
           </CardContent>
         </Card>
 
-        <Card className={activePlayer === 2 ? 'ring-2 ring-emerald-500' : ''}>
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>{gameState.player2}</span>
-              {winner === 2 && <Trophy className="h-5 w-5 text-yellow-500" />}
+              {player2Won && <Trophy className="h-5 w-5 text-yellow-500" />}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Skill Level</span>
+              <Badge variant="secondary">{formatSkillLevel(gameState.player2SL)}</Badge>
+            </div>
             <div className="text-center">
-              <div className="text-5xl font-bold">{gameState.score2}</div>
-              <div className="text-sm text-muted-foreground">Score</div>
+              <div className="text-5xl font-bold text-emerald-600">{gameState.player2Points}</div>
+              <div className="text-sm text-muted-foreground">of {gameState.player2Target} points</div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => adjustScore(2, -1)}
-                variant="outline"
-                className="flex-1"
-                disabled={gameState.score2 === 0}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => adjustScore(2, 1)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Innings:</span>
+                <span className="font-semibold">{gameState.player2Innings}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">PPI:</span>
+                <span className="font-semibold">{formatPPI(player2PPI)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Defensive Shots:</span>
+                <span className="font-semibold">{gameState.player2DefensiveShots}</span>
+              </div>
             </div>
-            <Button
-              onClick={() => setActivePlayer(2)}
-              variant={activePlayer === 2 ? 'default' : 'outline'}
-              className="w-full"
-            >
-              Active Player
-            </Button>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Inning</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="points">Points Scored</Label>
-              <Input
-                id="points"
-                type="number"
-                min="0"
-                value={inningPoints}
-                onChange={(e) => setInningPoints(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="desc">Description (Optional)</Label>
-              <Input
-                id="desc"
-                value={inningDesc}
-                onChange={(e) => setInningDesc(e.target.value)}
-                placeholder="e.g., Run out"
-              />
-            </div>
-          </div>
-          <Button
-            onClick={addInning}
-            disabled={!inningPoints}
-            className="w-full"
-          >
-            Add Inning for {activePlayer === 1 ? gameState.player1 : gameState.player2}
-          </Button>
-        </CardContent>
-      </Card>
+      <ApaRackScoringPanel
+        rackNumber={gameState.racks.length + 1}
+        player1Name={gameState.player1}
+        player2Name={gameState.player2}
+        onRackComplete={handleRackComplete}
+      />
 
-      {gameState.innings.length > 0 && (
+      {gameState.racks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Inning Log</CardTitle>
+            <CardTitle>Rack History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {gameState.innings.map((inning, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <span className="font-medium">
-                      {inning.player === 1 ? gameState.player1 : gameState.player2}
-                    </span>
-                    {inning.description && (
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        - {inning.description}
-                      </span>
+              {gameState.racks.map((rack) => (
+                <div key={rack.rackNumber} className="rounded-lg border p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="font-semibold">Rack {rack.rackNumber}</span>
+                    {rack.deadBalls > 0 && (
+                      <Badge variant="outline">{rack.deadBalls} dead</Badge>
                     )}
                   </div>
-                  <span className="font-bold">{inning.points}</span>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">{gameState.player1}</p>
+                      <p className="font-semibold">{rack.playerA.points} pts, {rack.playerA.innings} inn</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{gameState.player2}</p>
+                      <p className="font-semibold">{rack.playerB.points} pts, {rack.playerB.innings} inn</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
