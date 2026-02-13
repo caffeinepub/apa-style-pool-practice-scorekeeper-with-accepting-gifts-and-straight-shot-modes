@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "APA pool scorekeeper app for tracking practice games like the official APA Scorekeeper app, with two additional practice modes: Accepting Gifts and Straight Shot.",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
+      "title": "Create the core app navigation and information architecture for a pool scorekeeper app with three modes: (1) APA-style practice scorekeeping similar to the official APA Scorekeeper app, (2) Accepting Gifts, and (3) Straight Shot.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-an-apa-style-practice-scorekeeping-flow-ui-data-capture-that-lets-a-user-track-a-practice-match-in-a-way-that-is-recognizable-and-usable-as-an-apa-style-scorekeeper-for-practice-including-at-minimum-players-race-target-or-equivalent-match-goal-current-score-and-per-visit-inning-events-entry",
+      "title": "Build an APA-style practice scorekeeping flow (UI + data capture) that lets a user track a practice match in a way that is recognizable and usable as an APA-style scorekeeper for practice, including at minimum: players, race/target (or equivalent match goal), current score, and per-visit/inning events entry.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-accepting-gifts-mode-with-end-to-end-creation-in-progress-tracking-and-completion-saving-include-a-dedicated-screen-to-display-the-accepting-gifts-rules-and-scoring-method-and-implement-the-scoring-logic-according-to-the-user-provided-rules",
+      "title": "Add an Accepting Gifts mode with end-to-end creation, in-progress tracking, and completion saving; include a dedicated screen to display the Accepting Gifts rules and scoring method, and implement the scoring logic according to the user-provided rules.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-straight-shot-mode-with-end-to-end-creation-in-progress-tracking-and-completion-saving-implement-the-scoring-inputs-and-summary-appropriate-for-a-straight-shot-practice-game-e-g-attempts-makes-streaks-or-other-metrics-with-exact-tracked-fields-configurable-based-on-user-clarification",
+      "title": "Add a Straight Shot mode with end-to-end creation, in-progress tracking, and completion saving; implement the scoring inputs and summary appropriate for a Straight Shot practice game (e.g., attempts, makes, streaks, or other metrics), with exact tracked fields configurable based on user clarification.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-match-history-ui-that-filters-by-mode-apa-practice-accepting-gifts-straight-shot-and-shows-a-compact-summary-card-per-game-date-players-final-result-summary",
+      "title": "Add a Match History UI that filters by mode (APA Practice / Accepting Gifts / Straight Shot) and shows a compact summary card per game (date, players, final result/summary).",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-cohesive-visual-theme-and-component-styling-across-the-app-typography-spacing-button-styles-cards-and-headers-suitable-for-a-pool-practice-utility-avoid-a-blue-purple-primary-palette-unless-explicitly-requested-later",
+      "title": "Apply a cohesive visual theme and component styling across the app (typography, spacing, button styles, cards, and headers) suitable for a pool practice utility; avoid a blue/purple primary palette unless explicitly requested later.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Create an APA-style pool scorekeeper app to track practice games similar to the official APA Scorekeeper app.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add an additional scoring/match-tracking mode for the 'Accepting Gifts' pool game.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add an additional scoring/match-tracking mode for the 'Straight Shot' pool game.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Implement backend persistence for practice games and match history, supporting all three modes with a unified data model that stores: mode, date/time, players (names), optional notes, and a mode-specific scoring payload.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "APA-style pool practice scorekeeper with Accepting Gifts and Straight Shot modes",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

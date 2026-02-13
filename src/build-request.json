@@ -1,0 +1,147 @@
+{
+  "kind": "build_request",
+  "title": "APA-style pool practice scorekeeper with Accepting Gifts and Straight Shot modes",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Create the core app navigation and information architecture for a pool scorekeeper app with three modes: (1) APA-style practice scorekeeping similar to the official APA Scorekeeper app, (2) Accepting Gifts, and (3) Straight Shot.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "i need to create an apa pool scorekeeper app for me to keep track of practice games like the official apa scorekeeper app. I also want to have two additional modes that keep track of a game called accepting gifts.... and a straight shot pool game."
+        ]
+      },
+      "acceptanceCriteria": [
+        "App has a clear home screen with entries for: APA Practice, Accepting Gifts, Straight Shot, and Match History.",
+        "Each mode has a dedicated start/new-game screen and a dedicated in-progress game screen (even if some scoring details are placeholders until rules are provided)."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Implement backend persistence for practice games and match history, supporting all three modes with a unified data model that stores: mode, date/time, players (names), optional notes, and a mode-specific scoring payload.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "i need to create an apa pool scorekeeper app for me to keep track of practice games like the official apa scorekeeper app.  I also want to have two additional modes that keep track of a game called accepting gifts.... and a straight shot pool game."
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can create a new game record for any of the three modes and it is stored in the canister.",
+        "User can list prior games in reverse-chronological order.",
+        "User can open a prior game to view its saved details.",
+        "User can delete a prior game."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Build an APA-style practice scorekeeping flow (UI + data capture) that lets a user track a practice match in a way that is recognizable and usable as an APA-style scorekeeper for practice, including at minimum: players, race/target (or equivalent match goal), current score, and per-visit/inning events entry.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "apa pool scorekeeper app for me to keep track of practice games like the official apa scorekeeper app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can start an APA Practice game by entering player names and a match target (e.g., race/points goal).",
+        "During the game, user can increment/decrement each player’s score and record per-visit/inning events in a simple log.",
+        "User can end the game and it is saved to history with final score and basic summary."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add an Accepting Gifts mode with end-to-end creation, in-progress tracking, and completion saving; include a dedicated screen to display the Accepting Gifts rules and scoring method, and implement the scoring logic according to the user-provided rules.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Here is a description of accepting gifts.:"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can start an Accepting Gifts game and save it to history.",
+        "The in-progress screen supports whatever scoring inputs are required by the provided Accepting Gifts rules.",
+        "The rules for Accepting Gifts are visible in-app from the mode screens (as a Rules panel/section)."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add a Straight Shot mode with end-to-end creation, in-progress tracking, and completion saving; implement the scoring inputs and summary appropriate for a Straight Shot practice game (e.g., attempts, makes, streaks, or other metrics), with exact tracked fields configurable based on user clarification.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "...and a straight shot pool game."
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can start a Straight Shot game and save it to history.",
+        "Straight Shot in-progress screen supports tracking a defined set of metrics and shows a running summary.",
+        "Completed Straight Shot games appear in history with a summary of the tracked metrics."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Add a Match History UI that filters by mode (APA Practice / Accepting Gifts / Straight Shot) and shows a compact summary card per game (date, players, final result/summary).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "keep track of practice games"
+        ]
+      },
+      "acceptanceCriteria": [
+        "History list can be filtered by mode and ‘All’.",
+        "Each game row/card shows date/time and player names.",
+        "Tapping a game opens a read-only details view showing the saved log/metrics for that mode."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Apply a cohesive visual theme and component styling across the app (typography, spacing, button styles, cards, and headers) suitable for a pool practice utility; avoid a blue/purple primary palette unless explicitly requested later.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "apa pool scorekeeper app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All primary screens share a consistent layout system (header + content area + primary actions).",
+        "Color palette is consistent and not primarily blue/purple.",
+        "Forms, cards, and scoring controls look consistent across modes."
+      ]
+    }
+  ],
+  "constraints": [
+    "Use English for any user-facing text.",
+    "Backend must remain a single Motoko actor (no additional backend services).",
+    "Do not edit files under frontend immutablePaths; compose existing UI components instead."
+  ],
+  "nonGoals": [
+    "Integrating with or cloning any proprietary APA Scorekeeper backend/services.",
+    "Real-time multiplayer syncing or chat.",
+    "Third-party authentication providers (only Internet Identity is supported, but not required unless requested)."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

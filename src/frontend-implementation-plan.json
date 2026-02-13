@@ -1,0 +1,242 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "APA-style pool practice scorekeeper (APA Practice, Accepting Gifts, Straight Shot) — frontend",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Create core navigation and information architecture for three scoring modes plus Match History, including start/new-game and in-progress screens per mode.",
+      "acceptanceCriteria": [
+        "App has a clear home screen with entries for: APA Practice, Accepting Gifts, Straight Shot, and Match History.",
+        "Each mode has a dedicated start/new-game screen and a dedicated in-progress game screen (even if some scoring details are placeholders until rules are provided)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "create",
+          "description": "Create the app shell and routing (home, per-mode start + in-progress, rules/details as needed, history list + details). Include an authentication gate consistent with the selected authorization component requirements (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "operation": "create",
+          "description": "Create a shared layout (header + content + primary actions area) used by all primary screens for consistent information architecture and navigation."
+        },
+        {
+          "path": "frontend/src/components/navigation/ModeCard.tsx",
+          "operation": "create",
+          "description": "Create a reusable navigation card component for mode entry points on the Home screen. Use shadcn-ui components (e.g., Card/Button) for consistent styling (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "create",
+          "description": "Create a home screen with entries for APA Practice, Accepting Gifts, Straight Shot, and Match History, wired to routes."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "operation": "create",
+          "description": "Create APA Practice start/new-game screen (player names + match target) and wire navigation into the in-progress screen."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "create",
+          "description": "Create APA Practice in-progress screen scaffold to host scoring controls and inning log (details implemented under REQ-3)."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "operation": "create",
+          "description": "Create Accepting Gifts start/new-game screen and wire navigation into the in-progress screen."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "operation": "create",
+          "description": "Create Accepting Gifts in-progress screen scaffold (details implemented under REQ-4)."
+        },
+        {
+          "path": "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
+          "operation": "create",
+          "description": "Create Straight Shot start/new-game screen and wire navigation into the in-progress screen."
+        },
+        {
+          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "operation": "create",
+          "description": "Create Straight Shot in-progress screen scaffold (details implemented under REQ-5)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Implement APA-style practice scorekeeping UI + data capture (players, target, score controls, per-visit/inning event log) with save-to-history behavior via backend calls.",
+      "acceptanceCriteria": [
+        "User can start an APA Practice game by entering player names and a match target (e.g., race/points goal).",
+        "During the game, user can increment/decrement each player’s score and record per-visit/inning events in a simple log.",
+        "User can end the game and it is saved to history with final score and basic summary."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "operation": "modify",
+          "description": "Implement form fields for player names and match target, plus optional notes; validate required fields; create a new in-progress practice match state and navigate into the in-progress game screen. Use shadcn-ui Form/Input/Button where available (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Implement APA Practice scoring controls (increment/decrement for each player), display current target, and add a simple per-visit/inning log entry UI (append/remove). Provide actions to save progress and to end match (final save) using backendInterface saveMatch/updateMatch (via shared hooks). Use shadcn-ui components (cards, buttons, inputs) for consistent controls (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/lib/matches/matchBuilders.ts",
+          "operation": "create",
+          "description": "Add frontend helpers to build MatchRecord payloads for apaPractice using the backend.d.ts types (mode, base fields, and practice payload fields like attempts/makes/streaks as needed). Keep logic UI-focused; persistence is done via the existing backendInterface methods."
+        },
+        {
+          "path": "frontend/src/hooks/useMatches.ts",
+          "operation": "create",
+          "description": "Create React Query hooks for match persistence and retrieval: list matches, get match, save match, update match, delete match using backendInterface (getAllMatches/getMatch/saveMatch/updateMatch/deleteMatch)."
+        },
+        {
+          "path": "frontend/src/components/matches/EndMatchDialog.tsx",
+          "operation": "create",
+          "description": "Create a reusable confirmation dialog for ending/completing a match and saving it. Use shadcn-ui Dialog/Button to standardize primary actions (Verify the component's usage instructions before implementing)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add Accepting Gifts mode screens with in-app rules panel and scoring inputs; support saving completed games to history using backend calls.",
+      "acceptanceCriteria": [
+        "User can start an Accepting Gifts game and save it to history.",
+        "The in-progress screen supports whatever scoring inputs are required by the provided Accepting Gifts rules.",
+        "The rules for Accepting Gifts are visible in-app from the mode screens (as a Rules panel/section)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+          "operation": "create",
+          "description": "Create an in-app Rules panel/section component for Accepting Gifts that can be shown from the start and in-progress screens. Use shadcn-ui Card/Accordion for a readable rules layout (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "operation": "modify",
+          "description": "Add player/notes inputs for starting an Accepting Gifts game and include the Rules panel access/visibility. Initialize Accepting Gifts match state and navigate to in-progress."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "operation": "modify",
+          "description": "Implement Accepting Gifts in-progress tracking UI (e.g., score input, completion status, and a rulesReference field per backend.d.ts). Include the Rules panel in the screen. Add save/update and complete actions via shared match hooks."
+        },
+        {
+          "path": "frontend/src/lib/matches/matchBuilders.ts",
+          "operation": "modify",
+          "description": "Extend match builder helpers to construct Accepting Gifts MatchRecord payloads (score, completionStatus, rulesReference) aligned with backend.d.ts."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add Straight Shot mode screens with metric tracking (attempts/makes/streaks/time as applicable) and history summaries using backend calls.",
+      "acceptanceCriteria": [
+        "User can start a Straight Shot game and save it to history.",
+        "Straight Shot in-progress screen supports tracking a defined set of metrics and shows a running summary.",
+        "Completed Straight Shot games appear in history with a summary of the tracked metrics."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
+          "operation": "modify",
+          "description": "Add player/notes inputs for starting a Straight Shot game; initialize default metric state (attempts/makes/streaks/completionTime as supported by backend.d.ts) and navigate to in-progress. Use shadcn-ui form components for consistency (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "operation": "modify",
+          "description": "Implement Straight Shot metric tracking controls (increment/decrement attempts/makes; optional streak tracking; show running summary like make %, current streak, totals). Add save/update and complete actions via shared match hooks."
+        },
+        {
+          "path": "frontend/src/lib/matches/matchBuilders.ts",
+          "operation": "modify",
+          "description": "Extend match builder helpers to construct Straight Shot MatchRecord payloads (attempts, makes, optional completionTime/streaks) aligned with backend.d.ts."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Add Match History UI with mode filtering and read-only match detail views per mode.",
+      "acceptanceCriteria": [
+        "History list can be filtered by mode and ‘All’.",
+        "Each game row/card shows date/time and player names.",
+        "Tapping a game opens a read-only details view showing the saved log/metrics for that mode."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
+          "operation": "create",
+          "description": "Create Match History screen that lists matches in reverse-chronological order using useMatches hooks, with filter controls for All/APA Practice/Accepting Gifts/Straight Shot. Use shadcn-ui Tabs/Select and Card for filtering + summaries (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
+          "operation": "create",
+          "description": "Create a read-only match details view that renders appropriate sections per mode (APA: target/score/log; Accepting Gifts: score/status/rules reference; Straight Shot: attempts/makes/streaks/summary). Wire to route navigation from history list."
+        },
+        {
+          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "operation": "create",
+          "description": "Create a compact summary card component for history rows (date/time, players, and mode-specific brief summary). Use shadcn-ui Card and typography styles for consistency (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/components/matches/DeleteMatchButton.tsx",
+          "operation": "create",
+          "description": "Create a delete control for match records (used from history details and/or list) that calls deleteMatch via useMatches hooks and updates cached lists. Use shadcn-ui AlertDialog/Button for confirmation (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire Match History and Match Details routes into the app router and add navigation entry from the Home screen."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Apply cohesive visual theme and consistent component styling suitable for a pool practice utility (non-blue/purple primary palette).",
+      "acceptanceCriteria": [
+        "All primary screens share a consistent layout system (header + content area + primary actions).",
+        "Color palette is consistent and not primarily blue/purple.",
+        "Forms, cards, and scoring controls look consistent across modes."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "create",
+          "description": "Establish global theme tokens and base typography/spacing for the app (favor neutral + green/teal accents; avoid blue/purple as primary). Ensure shadcn-ui theme variables (if used) align with the palette (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Adjust Tailwind theme configuration (colors, border radius, font family) to support the chosen non-blue/purple primary palette and consistent UI tokens across screens."
+        },
+        {
+          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Apply consistent header styles, spacing rhythm, and standardized primary/secondary action placements across screens."
+        },
+        {
+          "path": "frontend/src/components/auth/AuthGate.tsx",
+          "operation": "create",
+          "description": "Add an auth gating wrapper that requires login before showing any application data, consistent with the selected authorization component guidance. Include graceful handling for unauthorized/guest states and backend authorization errors (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/components/auth/LoginButton.tsx",
+          "operation": "create",
+          "description": "Create a login/logout button using the existing useInternetIdentity hook and clear cached React Query data on logout as required by the authorization component guidance (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "operation": "create",
+          "description": "Create a first-login profile setup dialog to collect and save a user name via getCallerUserProfile/saveCallerUserProfile, using the recommended anti-flash loading pattern from the authorization component guidance (Verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Integrate AppLayout theme usage and include LoginButton + ProfileSetupDialog in the app shell so all screens inherit consistent styling and authentication UX (Verify the component's usage instructions before implementing)."
+        }
+      ]
+    }
+  ]
+}

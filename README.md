@@ -1,2 +1,3 @@
-# apa-style-pool-practice-scorekeeper-with-accepting-gifts-and-straight-shot-modes
-Exported from Caffeine project: APA-style pool practice scorekeeper with Accepting Gifts and Straight Shot modes
+## APA-style pool practice scorekeeper with Accepting Gifts and Straight Shot modes
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`

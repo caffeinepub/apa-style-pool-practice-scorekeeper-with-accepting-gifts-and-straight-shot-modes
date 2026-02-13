@@ -1,0 +1,107 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-13T18:43:16.673Z",
+  "summary": "The diff adds a full routed frontend shell (home + three modes + history), a consistent emerald/teal theme, and a Motoko backend with match/history types plus additional authentication/profile/access-control infrastructure. Core CRUD hooks and pages are referenced, but some key scoring/persistence details required by the spec (notably persisting APA per-inning logs and mode-specific details for read-only history views) are not evidenced as implemented in the stored model/builders shown.",
+  "missing_requirements": [
+    {
+      "id": "REQ-3",
+      "requirement": "Persist per-visit/inning events for APA Practice and show them later in history details (saved log/metrics).",
+      "reason": "The APA Practice UI captures `innings` in session state, but the builder that creates the persisted backend record does not include the `innings` log (it only maps innings length/total points into attempts/makes), so a read-only details view cannot show the saved inning log from the canister.",
+      "evidence": [
+        "frontend/src/pages/apa/PracticeGamePage.tsx",
+        "frontend/src/lib/matches/matchBuilders.ts"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Unified data model stores mode-specific scoring payload sufficient to reopen/view saved details for each mode.",
+      "reason": "While the backend types include mode-specific fields, the frontend builders shown for APA Practice do not store the mode-specific scoring payload that the UI captures (e.g., target/race, per-inning log). This undermines the 'open a prior game to view its saved details' acceptance criteria for APA Practice.",
+      "evidence": [
+        "frontend/src/lib/matches/matchBuilders.ts",
+        "frontend/src/pages/apa/PracticeGamePage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Implement Accepting Gifts scoring logic according to user-provided rules.",
+      "reason": "The rules panel text is generic and explicitly says scoring can be customized; the in-progress screen appears to only track a numeric score/attempts without any concrete rule-driven scoring logic tied to provided rules (none are present in the request).",
+      "evidence": [
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/lib/matches/matchBuilders.ts"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Internet Identity authentication gate (mandatory login) and login/logout UI.",
+      "reason": "The BuildRequest states Internet Identity is supported but 'not required unless requested'; the diff introduces an AuthGate that blocks the app when not authenticated and adds login/logout controls.",
+      "evidence": [
+        "frontend/src/components/auth/AuthGate.tsx",
+        "frontend/src/components/auth/LoginButton.tsx",
+        "frontend/src/main.tsx"
+      ]
+    },
+    {
+      "description": "User profile creation/setup flow and backend user profile storage.",
+      "reason": "User profiles are not part of the requested pool scorekeeper requirements; the diff adds profile CRUD and a forced profile setup dialog.",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    },
+    {
+      "description": "Access-control/admin-token initialization mechanism in the frontend actor creation flow.",
+      "reason": "The BuildRequest does not request role-based access control or an admin-token initialization path; the diff adds `_initializeAccessControlWithSecret` usage and related authorization mixins.",
+      "evidence": [
+        "frontend/src/hooks/useActor.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Caffeine.ai promotional footer content.",
+      "reason": "Not requested as part of the app requirements and adds external promotional link/content.",
+      "evidence": [
+        "frontend/src/components/layout/AppLayout.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.64,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/auth/AuthGate.tsx",
+    "frontend/src/components/auth/LoginButton.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/components/layout/AppLayout.tsx",
+    "frontend/src/components/matches/DeleteMatchButton.tsx",
+    "frontend/src/components/matches/EndMatchDialog.tsx",
+    "frontend/src/components/matches/MatchSummaryCard.tsx",
+    "frontend/src/components/navigation/ModeCard.tsx",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/lib/matches/matchBuilders.ts",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+    "frontend/src/pages/apa/PracticeGamePage.tsx",
+    "frontend/src/pages/apa/PracticeStartPage.tsx",
+    "frontend/src/pages/history/MatchDetailsPage.tsx",
+    "frontend/src/pages/history/MatchHistoryPage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}

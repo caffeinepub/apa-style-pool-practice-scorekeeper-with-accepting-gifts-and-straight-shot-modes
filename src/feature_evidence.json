@@ -1,0 +1,146 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
+      "featureTitle": "Create the core app navigation and information architecture for a pool scorekeeper app with three modes: (1) APA-style practice scorekeeping similar to the official APA Scorekeeper app, (2) Accepting Gifts, and (3) Straight Shot.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/components/navigation/ModeCard.tsx",
+        "frontend/src/pages/HomePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+        "frontend/src/pages/apa/PracticeGamePage.tsx",
+        "frontend/src/pages/apa/PracticeStartPage.tsx",
+        "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+        "frontend/src/pages/straight-shot/StraightShotStartPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-an-apa-style-practice-scorekeeping-flow-ui-data-capture-that-lets-a-user-track-a-practice-match-in-a-way-that-is-recognizable-and-usable-as-an-apa-style-scorekeeper-for-practice-including-at-minimum-players-race-target-or-equivalent-match-goal-current-score-and-per-visit-inning-events-entry",
+      "featureTitle": "Build an APA-style practice scorekeeping flow (UI + data capture) that lets a user track a practice match in a way that is recognizable and usable as an APA-style scorekeeper for practice, including at minimum: players, race/target (or equivalent match goal), current score, and per-visit/inning events entry.",
+      "files": [
+        "frontend/src/components/matches/EndMatchDialog.tsx",
+        "frontend/src/lib/matches/matchBuilders.ts",
+        "frontend/src/pages/apa/PracticeGamePage.tsx",
+        "frontend/src/pages/apa/PracticeStartPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-accepting-gifts-mode-with-end-to-end-creation-in-progress-tracking-and-completion-saving-include-a-dedicated-screen-to-display-the-accepting-gifts-rules-and-scoring-method-and-implement-the-scoring-logic-according-to-the-user-provided-rules",
+      "featureTitle": "Add an Accepting Gifts mode with end-to-end creation, in-progress tracking, and completion saving; include a dedicated screen to display the Accepting Gifts rules and scoring method, and implement the scoring logic according to the user-provided rules.",
+      "files": [
+        "frontend/src/lib/matches/matchBuilders.ts",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-straight-shot-mode-with-end-to-end-creation-in-progress-tracking-and-completion-saving-implement-the-scoring-inputs-and-summary-appropriate-for-a-straight-shot-practice-game-e-g-attempts-makes-streaks-or-other-metrics-with-exact-tracked-fields-configurable-based-on-user-clarification",
+      "featureTitle": "Add a Straight Shot mode with end-to-end creation, in-progress tracking, and completion saving; implement the scoring inputs and summary appropriate for a Straight Shot practice game (e.g., attempts, makes, streaks, or other metrics), with exact tracked fields configurable based on user clarification.",
+      "files": [
+        "frontend/src/lib/matches/matchBuilders.ts",
+        "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+        "frontend/src/pages/straight-shot/StraightShotStartPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-match-history-ui-that-filters-by-mode-apa-practice-accepting-gifts-straight-shot-and-shows-a-compact-summary-card-per-game-date-players-final-result-summary",
+      "featureTitle": "Add a Match History UI that filters by mode (APA Practice / Accepting Gifts / Straight Shot) and shows a compact summary card per game (date, players, final result/summary).",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/matches/DeleteMatchButton.tsx",
+        "frontend/src/components/matches/MatchSummaryCard.tsx",
+        "frontend/src/pages/history/MatchDetailsPage.tsx",
+        "frontend/src/pages/history/MatchHistoryPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-a-cohesive-visual-theme-and-component-styling-across-the-app-typography-spacing-button-styles-cards-and-headers-suitable-for-a-pool-practice-utility-avoid-a-blue-purple-primary-palette-unless-explicitly-requested-later",
+      "featureTitle": "Apply a cohesive visual theme and component styling across the app (typography, spacing, button styles, cards, and headers) suitable for a pool practice utility; avoid a blue/purple primary palette unless explicitly requested later.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/auth/AuthGate.tsx",
+        "frontend/src/components/auth/LoginButton.tsx",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    }
+  ]
+}
