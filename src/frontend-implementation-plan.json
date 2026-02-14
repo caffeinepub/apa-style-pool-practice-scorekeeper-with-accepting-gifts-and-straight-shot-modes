@@ -1,49 +1,129 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Persist Official APA Match Log form inputs and render saved entries in History/Details",
+  "title": "Fix match saving regression (frontend hardening + schema alignment)",
   "requirements": [
     {
-      "id": "REQ-65",
-      "summary": "Persist Official APA Match Log form inputs by wiring the Save button to useSaveMatch and navigate to the saved match.",
+      "id": "REQ-99",
+      "summary": "Identify and fix the save regression across all saving modes, ensuring save succeeds and failures surface clear error text.",
       "acceptanceCriteria": [
-        "Clicking “Save Match” sends the current in-component form state to the backend using the existing React Query mutation pattern (`useSaveMatch`).",
-        "The current placeholder behavior/message (\"Saving functionality is not implemented yet...\") is removed and replaced with real save UX (disabled button/spinner while saving, and an English error message on failure).",
-        "Client-side validation already present continues to block saving when numeric fields are invalid (e.g., negative or non-numeric).",
-        "On successful save, the user sees an English confirmation (e.g., “Match saved”) and the UI navigates to a stable route where the user can find the saved entry (either the Match History list or the new Match Details page for that match ID)."
+        "From each mode’s normal end-of-session flow, saving succeeds and the new match appears in Match History without errors.",
+        "If saving fails for any reason, the UI displays a clear English error message that includes the underlying error text when available (not only a generic failure).",
+        "No backend call involved in saving (saveMatch/updateMatch) traps during normal usage for an authenticated user with access."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/errorText.ts",
+          "operation": "create",
+          "description": "Add a small helper to extract a readable English error string from unknown errors (including nested/serialized backend error text) so save flows can display the underlying reason when available."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Instrument and harden save/update mutations to (a) avoid false negatives caused by stale fetching flags, and (b) reliably surface the underlying error text (rethrow enriched Error messages) so pages/components can display actionable English errors."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Update APA Practice end-of-session save flow to catch save failures and show a clear English error message including underlying error text; ensure success path still navigates to Match History and the new match appears."
+        },
+        {
+          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "operation": "modify",
+          "description": "Update Straight Shot end-of-session save flow to show a clear English error message including underlying error text (instead of generic failure) and ensure the saved match is visible in Match History on success."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "operation": "modify",
+          "description": "Update Accepting Gifts end-of-session save flow to show a clear English error message including underlying error text for both the save and the completion/baseline persistence step; ensure success returns to Match History with the new match present."
+        },
+        {
+          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
+          "operation": "modify",
+          "description": "Update Official/Real APA Match Log save/update flow to include the underlying error text in the UI on failure, and verify the normal save path navigates to the saved match details page."
+        }
+      ]
+    },
+    {
+      "id": "REQ-100",
+      "summary": "Fix frontend schema/type mismatches affecting saving and rendering of Official/Real APA Match Logs, ensuring compatibility with stored data and generated bindings.",
+      "acceptanceCriteria": [
+        "Saving an Official/Real APA Match Log via the form succeeds and navigates to the saved match details page.",
+        "Match History list rendering and Match Details rendering work for newly saved Official/Real APA Match Logs and for previously saved ones.",
+        "The backend `convertToApiMatch` projection for `#officialApaMatchLog` returns a consistent `officialApaMatchLogData` object with only the supported fields, and does not require any removed fields to exist.",
+        "The frontend generated types/IDL bindings compile cleanly after the schema alignment."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/matches/matchBuilders.ts",
           "operation": "modify",
-          "description": "Add a builder for the Official/Real APA match log that generates a matchId and constructs a MatchLogRecord with __kind__ = \"officialApaMatchLog\", mapping the provided form fields into the OfficialApaMatchLog payload (store values as entered, no extra calculations)."
-        },
-        {
-          "path": "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
-          "operation": "modify",
-          "description": "Replace the current save placeholder with a real save flow: use `useSaveMatch` to submit a MatchLogRecord built from current form state; disable the button and show a saving indicator while the mutation is in progress; show an English error message on failure; on success show an English confirmation (e.g., via the existing Toaster/sonner) and navigate to `/history/$matchId` for the newly saved match. Keep existing numeric validation behavior and block save when any numeric field is invalid."
-        }
-      ]
-    },
-    {
-      "id": "REQ-66",
-      "summary": "Update Match History and Match Details UI to recognize and display Official/Real APA match log entries (summary + full details) without impacting other match modes.",
-      "acceptanceCriteria": [
-        "Official/Real APA match log entries appear in Match History without UI errors and with an English label indicating the mode (e.g., “Official APA Match Log”).",
-        "The summary card for an Official/Real APA match log shows match date (or saved timestamp if date is missing), opponent name, and the key numeric fields (your score/their score and/or points/innings/defensive shots) in a compact format.",
-        "Opening Match Details for an Official/Real APA match log renders all saved fields (match date, opponent name, your score, their score, points, innings, defensive shots, notes) in English.",
-        "Older matches of other modes (APA Practice, Accepting Gifts, Straight Shot) continue to render exactly as before."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "operation": "modify",
-          "description": "Detect Official/Real APA match log entries by the presence of `match.officialApaMatchLogData` and render an English mode label (e.g., “Official APA Match Log”), a compact summary using the saved fields (date or fallback to match.dateTime, opponent name, and key numeric fields), while preserving the existing summaries for APA Practice, Accepting Gifts, and Straight Shot."
+          "description": "Verify the Official/Real APA Match Log builder sends only supported fields (no stale fields such as `points`), uses optional fields consistently, and matches the generated `MatchLogRecord`/`OfficialAPAMatchLog` types."
         },
         {
           "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
           "operation": "modify",
-          "description": "Add a details section for Official/Real APA match log entries when `match.officialApaMatchLogData` exists, rendering all saved fields (match date, opponent name, your score, their score, points, innings, defensive shots, notes) in English. Ensure other match modes' detail rendering remains unchanged."
+          "description": "Harden Official/Real APA Match Log rendering against optional/missing fields and ensure it reads from the current API shape (e.g., `officialApaMatchLogData` when present) so both newly saved and previously saved logs render without runtime errors."
+        },
+        {
+          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "operation": "modify",
+          "description": "Ensure summary rendering for Official/Real APA Match Logs tolerates absent/optional fields and does not assume removed fields exist, preventing Match History rendering failures."
+        },
+        {
+          "path": "frontend/src/lib/matches/effectiveMatchDate.ts",
+          "operation": "modify",
+          "description": "Ensure effective timestamp selection for sorting/display correctly handles Official/Real APA Match Logs (including cases where only the base `dateTime` exists or official date fields are missing), preventing crashes and ensuring stable ordering."
+        },
+        {
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
+          "operation": "modify",
+          "description": "Verify Match History filtering/sorting works when Official/Real APA Match Logs are present and that list rendering does not break due to missing or changed fields."
+        },
+        {
+          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
+          "operation": "modify",
+          "description": "Ensure the form maps field values to the builder in a type-consistent way (including optional skill levels and optional `didWin` derivation) and does not send any stale/unused fields that could cause save failures."
+        }
+      ]
+    },
+    {
+      "id": "REQ-101",
+      "summary": "Harden save flows so UI is not blocked by stale fetching state; fail fast with an English message when actor/identity is not ready; ensure save buttons re-enable after failures.",
+      "acceptanceCriteria": [
+        "When the backend connection is not ready, the user sees an English message like \"Backend connection not ready. Please wait and try again.\" and can successfully save after the actor becomes ready.",
+        "Save buttons re-enable appropriately after transient failures (e.g., a failed attempt does not leave the UI stuck disabled).",
+        "No mode’s save button is disabled solely because of unrelated loading states once the actor is ready."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust save/update mutations so they fail fast only when the actor is genuinely unavailable (not due to stale/global fetching state), and ensure thrown errors use clear English text suitable for UI display."
+        },
+        {
+          "path": "frontend/src/components/matches/EndMatchDialog.tsx",
+          "operation": "modify",
+          "description": "Ensure the dialog does not get stuck in a disabled/spinner state after a failed save attempt (always clears local saving state), allowing users to retry. Keep all user-facing text in English."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Wire actor readiness into the save UI: disable save actions only when backend connection is not ready, show an explicit English error when trying to save without an actor/identity, and ensure buttons re-enable after failures."
+        },
+        {
+          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "operation": "modify",
+          "description": "Wire actor readiness into the save UI: ensure the end/save action is not permanently disabled by unrelated loading states and shows a clear English message if backend connection is not ready; allow retry after transient failures."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "operation": "modify",
+          "description": "Wire actor readiness into the save UI: prevent saves when the backend connection is not ready with a clear English message; ensure end/save actions re-enable after failures and are not blocked by unrelated background mutations."
+        },
+        {
+          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
+          "operation": "modify",
+          "description": "Refine submit button disabled logic so it does not become permanently disabled due to stale actor fetching state; fail fast with the required English message when backend connection is not ready, and allow resubmission after failures."
         }
       ]
     }

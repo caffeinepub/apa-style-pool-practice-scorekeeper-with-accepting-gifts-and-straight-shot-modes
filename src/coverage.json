@@ -1,65 +1,105 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T04:36:28.714Z",
+  "generatedAt": "2026-02-14T23:37:38.308Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-64",
-        "summary": "Add backend persistence support for an Official/Real APA match log record type so the app can save exactly the user-entered fields from the Official APA Match Log form (match date, opponent name, your score, their score, points, innings, defensive shots, notes) using the existing match storage APIs (save, list, fetch, delete) and the existing match-history storage pattern.",
+        "id": "REQ-100",
+        "summary": "Fix any frontend-backend schema/type mismatches that can prevent saving or listing matches, especially for Official/Real APA Match Logs. Ensure the Motoko `ApiMatch.officialApaMatchLogData` shape matches the data actually stored in `APADetailedOfficial` and what the frontend sends via `buildOfficialApaMatchLog` (including removal of any stale fields such as `points` if they are no longer collected/sent).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/matches/matchBuilders.ts",
+          "frontend/src/pages/history/MatchDetailsPage.tsx",
+          "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "frontend/src/lib/matches/effectiveMatchDate.ts",
+          "frontend/src/pages/history/MatchHistoryPage.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/history/MatchDetailsPage.tsx",
+          "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-101",
+        "summary": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/matches/EndMatchDialog.tsx",
+          "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/matches/EndMatchDialog.tsx",
+          "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-102",
+        "summary": "Ensure backend access control does not unexpectedly block saving matches in public mode. When `inviteOnlyMode` is disabled, an authenticated (non-anonymous) caller must be able to save and list matches without being rejected as \"must be approved\".",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-65",
-        "summary": "Wire the Official APA Match Log page (`frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`) Save button to persist the current form inputs via the existing React Query save mutation (`useSaveMatch`) by constructing a MatchLogRecord for the Official/Real APA match log type and submitting it to the backend.",
+        "id": "REQ-99",
+        "summary": "Investigate and fix the regression where the user can no longer save a match. Reproduce the failure for each mode that supports saving (APA Practice, Straight Shot, Accepting Gifts, and Official/Real APA Match Log) and identify whether the failure is caused by frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/matches/matchBuilders.ts",
-          "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx"
+          "frontend/src/utils/errorText.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/matches/matchBuilders.ts",
-          "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-66",
-        "summary": "Update Match History and Match Details UI to recognize and render Official/Real APA match log entries saved from the Official APA Match Log form, showing a compact English summary in history and the full set of saved fields in details.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "frontend/src/pages/history/MatchDetailsPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "frontend/src/pages/history/MatchDetailsPage.tsx"
+          "frontend/src/utils/errorText.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
+    "frontend/src/components/apa/RealApaMatchForm.tsx",
+    "frontend/src/components/matches/EndMatchDialog.tsx",
     "frontend/src/components/matches/MatchSummaryCard.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/lib/matches/matchBuilders.ts",
-    "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/apa/apaAggregateStats.ts",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+    "frontend/src/pages/apa/PracticeGamePage.tsx",
+    "frontend/src/pages/apa/RealApaMatchEditPage.tsx",
     "frontend/src/pages/history/MatchDetailsPage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+    "frontend/src/utils/errorText.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

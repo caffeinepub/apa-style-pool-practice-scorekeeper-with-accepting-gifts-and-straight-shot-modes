@@ -1,78 +1,92 @@
 {
   "kind": "build_request",
-  "title": "Make Official APA Match Log Save button persist the entered inputs (no extra calculations)",
-  "priority": "normal",
+  "title": "Fix regression: matches can no longer be saved",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-64",
-      "text": "Add backend persistence support for an Official/Real APA match log record type so the app can save exactly the user-entered fields from the Official APA Match Log form (match date, opponent name, your score, their score, points, innings, defensive shots, notes) using the existing match storage APIs (save, list, fetch, delete) and the existing match-history storage pattern.",
+      "id": "REQ-99",
+      "text": "Investigate and fix the regression where the user can no longer save a match. Reproduce the failure for each mode that supports saving (APA Practice, Straight Shot, Accepting Gifts, and Official/Real APA Match Log) and identify whether the failure is caused by frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "now i cant save a match anymore"
+        ]
+      },
+      "acceptanceCriteria": [
+        "From each mode’s normal end-of-session flow, saving succeeds and the new match appears in Match History without errors.",
+        "If saving fails for any reason, the UI displays a clear English error message that includes the underlying error text when available (not only a generic failure).",
+        "No backend call involved in saving (saveMatch/updateMatch) traps during normal usage for an authenticated user with access."
+      ]
+    },
+    {
+      "id": "REQ-100",
+      "text": "Fix any frontend-backend schema/type mismatches that can prevent saving or listing matches, especially for Official/Real APA Match Logs. Ensure the Motoko `ApiMatch.officialApaMatchLogData` shape matches the data actually stored in `APADetailedOfficial` and what the frontend sends via `buildOfficialApaMatchLog` (including removal of any stale fields such as `points` if they are no longer collected/sent).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "now i cant save a match anymore"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Saving an Official/Real APA Match Log via the form succeeds and navigates to the saved match details page.",
+        "Match History list rendering and Match Details rendering work for newly saved Official/Real APA Match Logs and for previously saved ones.",
+        "The backend `convertToApiMatch` projection for `#officialApaMatchLog` returns a consistent `officialApaMatchLogData` object with only the supported fields, and does not require any removed fields to exist.",
+        "The frontend generated types/IDL bindings compile cleanly after the schema alignment."
+      ]
+    },
+    {
+      "id": "REQ-101",
+      "text": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "now i cant save a match anymore"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When the backend connection is not ready, the user sees an English message like \"Backend connection not ready. Please wait and try again.\" and can successfully save after the actor becomes ready.",
+        "Save buttons re-enable appropriately after transient failures (e.g., a failed attempt does not leave the UI stuck disabled).",
+        "No mode’s save button is disabled solely because of unrelated loading states once the actor is ready."
+      ]
+    },
+    {
+      "id": "REQ-102",
+      "text": "Ensure backend access control does not unexpectedly block saving matches in public mode. When `inviteOnlyMode` is disabled, an authenticated (non-anonymous) caller must be able to save and list matches without being rejected as \"must be approved\".",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "i mean the save bitton should just save the inputs...yes it should be that simple..."
+          "now i cant save a match anymore"
         ]
       },
       "acceptanceCriteria": [
-        "Backend accepts saving a new match record representing an Official/Real APA match log and stores it in the same matchHistory collection as other modes.",
-        "Backend `getAllMatches()` includes saved Official/Real APA match log entries in its response (with mode set appropriately and all fields mapped into the returned ApiMatch shape).",
-        "Backend `getMatch(matchId)` returns the saved Official/Real APA match log entry with the same values that were provided on save.",
-        "Backend `deleteMatch(matchId)` can delete an Official/Real APA match log entry without affecting other match types.",
-        "No additional computations are performed for this match type (no PPI, no adjusted PPI, no chart/table lookups); values are stored as entered.",
-        "If changing variant/record types requires a state upgrade, add a conditional `backend/migration.mo` update so existing saved matches remain readable after deploy."
-      ]
-    },
-    {
-      "id": "REQ-65",
-      "text": "Wire the Official APA Match Log page (`frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`) Save button to persist the current form inputs via the existing React Query save mutation (`useSaveMatch`) by constructing a MatchLogRecord for the Official/Real APA match log type and submitting it to the backend.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "the save bitton should just save the inputs"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Clicking “Save Match” sends the current in-component form state to the backend using the existing React Query mutation pattern (`useSaveMatch`).",
-        "The current placeholder behavior/message (\"Saving functionality is not implemented yet...\") is removed and replaced with real save UX (disabled button/spinner while saving, and an English error message on failure).",
-        "Client-side validation already present continues to block saving when numeric fields are invalid (e.g., negative or non-numeric).",
-        "On successful save, the user sees an English confirmation (e.g., “Match saved”) and the UI navigates to a stable route where the user can find the saved entry (either the Match History list or the new Match Details page for that match ID)."
-      ]
-    },
-    {
-      "id": "REQ-66",
-      "text": "Update Match History and Match Details UI to recognize and render Official/Real APA match log entries saved from the Official APA Match Log form, showing a compact English summary in history and the full set of saved fields in details.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "should just save the inputs"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Official/Real APA match log entries appear in Match History without UI errors and with an English label indicating the mode (e.g., “Official APA Match Log”).",
-        "The summary card for an Official/Real APA match log shows match date (or saved timestamp if date is missing), opponent name, and the key numeric fields (your score/their score and/or points/innings/defensive shots) in a compact format.",
-        "Opening Match Details for an Official/Real APA match log renders all saved fields (match date, opponent name, your score, their score, points, innings, defensive shots, notes) in English.",
-        "Older matches of other modes (APA Practice, Accepting Gifts, Straight Shot) continue to render exactly as before."
+        "With `inviteOnlyMode = false`, a logged-in user can save a match successfully even if they are not on an approval allowlist.",
+        "Backend error messages related to access/approval do not occur during normal save/list operations in public mode.",
+        "With `inviteOnlyMode = true`, existing approval rules still apply as designed (no regression)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor with all logic in `backend/main.mo` (add/update `backend/migration.mo` only if required by a state upgrade).",
-    "Do not edit files under `frontend/src/components/ui` or any other immutable frontend paths listed in SYSTEM_CONTEXT.",
-    "All user-facing text must be in English.",
-    "Do not introduce any external databases or third-party backend services."
+    "Backend must remain single-actor; all Motoko logic stays in backend/main.mo.",
+    "Only create backend/migration.mo changes if required by a stable type/state upgrade (conditional migration policy).",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead).",
+    "All user-facing text must be in English."
   ],
   "nonGoals": [
-    "Do not implement any Official/Real APA PPI calculations, adjusted PPI calculations, or charting/graphing for Official/Real APA match logs in this step.",
-    "Do not add any new invite-only/approval functionality as part of this save change.",
-    "Do not change existing APA Practice, Accepting Gifts, or Straight Shot scoring rules/logic beyond what is necessary to display the new match type safely."
+    "Adding new match features or new match types beyond restoring the ability to save existing ones.",
+    "Changing the app’s overall UI theme or navigation unrelated to the save regression.",
+    "Introducing external databases or third-party services."
   ],
   "imageRequirements": {
     "required": [],

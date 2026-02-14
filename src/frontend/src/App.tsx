@@ -14,6 +14,7 @@ import MatchDetailsPage from './pages/history/MatchDetailsPage';
 import PlayerAggregateStatsPage from './pages/players/PlayerAggregateStatsPage';
 import OwnerApprovalsPage from './pages/owner/OwnerApprovalsPage';
 import RealApaMatchPlaceholderPage from './pages/apa/RealApaMatchPlaceholderPage';
+import RealApaMatchEditPage from './pages/apa/RealApaMatchEditPage';
 import AuthGate from './components/auth/AuthGate';
 
 const rootRoute = createRootRoute({
@@ -99,6 +100,12 @@ const realApaMatchRoute = createRoute({
   component: RealApaMatchPlaceholderPage,
 });
 
+const realApaMatchEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/real-apa-match/$matchId/edit',
+  component: RealApaMatchEditPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   practiceStartRoute,
@@ -112,6 +119,7 @@ const routeTree = rootRoute.addChildren([
   playerStatsRoute,
   ownerApprovalsRoute,
   realApaMatchRoute,
+  realApaMatchEditRoute,
 ]);
 
 const router = createRouter({ routeTree });

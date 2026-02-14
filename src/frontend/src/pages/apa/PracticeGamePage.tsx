@@ -10,7 +10,9 @@ import EndMatchDialog from '../../components/matches/EndMatchDialog';
 import ApaRackScoringPanel from '../../components/apa/ApaRackScoringPanel';
 import ApaResultsSummary from '../../components/apa/ApaResultsSummary';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { useActor } from '../../hooks/useActor';
 import { toast } from 'sonner';
+import { extractErrorText } from '../../utils/errorText';
 import type { RackData } from '../../lib/apa/apaScoring';
 import { calculatePPI, formatPPI } from '../../lib/apa/apaScoring';
 import { calculateMatchPoints } from '../../lib/apa/apaMatchPoints';
@@ -36,6 +38,7 @@ interface GameState {
 export default function PracticeGamePage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
+  const { actor } = useActor();
   const saveMatch = useSaveMatch();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [matchComplete, setMatchComplete] = useState(false);
@@ -107,34 +110,48 @@ export default function PracticeGamePage() {
   };
 
   const handleEndMatch = async () => {
-    if (!gameState || !identity) return;
+    if (!gameState || !identity) {
+      toast.error('You must be logged in to save a match');
+      return;
+    }
 
-    const player1Won = gameState.player1Points >= gameState.player1Target;
-    const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
-    const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
-    const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
+    if (!actor) {
+      toast.error('Backend connection not ready. Please wait and try again.');
+      return;
+    }
 
-    const { matchId, matchRecord } = buildApaNineBallMatch({
-      player1: gameState.player1,
-      player2: gameState.player2,
-      player1SL: gameState.player1SL,
-      player2SL: gameState.player2SL,
-      player1Points: gameState.player1Points,
-      player2Points: gameState.player2Points,
-      player1Innings: gameState.player1Innings,
-      player2Innings: gameState.player2Innings,
-      player1DefensiveShots: gameState.player1DefensiveShots,
-      player2DefensiveShots: gameState.player2DefensiveShots,
-      racks: gameState.racks,
-      notes: gameState.notes,
-      identity,
-      matchPointOutcome,
-    });
+    try {
+      const player1Won = gameState.player1Points >= gameState.player1Target;
+      const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
+      const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
+      const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
 
-    await saveMatch.mutateAsync({ matchId, matchRecord });
-    sessionStorage.removeItem('apaPracticeGame');
-    toast.success('Match saved successfully!');
-    navigate({ to: '/history' });
+      const { matchId, matchRecord } = buildApaNineBallMatch({
+        player1: gameState.player1,
+        player2: gameState.player2,
+        player1SL: gameState.player1SL,
+        player2SL: gameState.player2SL,
+        player1Points: gameState.player1Points,
+        player2Points: gameState.player2Points,
+        player1Innings: gameState.player1Innings,
+        player2Innings: gameState.player2Innings,
+        player1DefensiveShots: gameState.player1DefensiveShots,
+        player2DefensiveShots: gameState.player2DefensiveShots,
+        racks: gameState.racks,
+        notes: gameState.notes,
+        identity,
+        matchPointOutcome,
+      });
+
+      await saveMatch.mutateAsync({ matchId, matchRecord });
+      sessionStorage.removeItem('apaPracticeGame');
+      toast.success('Match saved successfully!');
+      navigate({ to: '/history' });
+    } catch (error) {
+      const errorText = extractErrorText(error);
+      toast.error(errorText);
+      console.error('Error saving match:', error);
+    }
   };
 
   if (!gameState) {
@@ -150,6 +167,8 @@ export default function PracticeGamePage() {
     const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
     const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
     const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
+
+    const isActorReady = !!actor;
 
     return (
       <div className="mx-auto max-w-4xl space-y-6">
@@ -187,9 +206,14 @@ export default function PracticeGamePage() {
         />
 
         <div className="flex justify-center">
-          <Button onClick={handleEndMatch} size="lg" className="gap-2">
+          <Button 
+            onClick={handleEndMatch} 
+            size="lg" 
+            className="gap-2"
+            disabled={!isActorReady || saveMatch.isPending}
+          >
             <Trophy className="h-5 w-5" />
-            Save Match & Return to History
+            {!isActorReady ? 'Connecting...' : saveMatch.isPending ? 'Saving...' : 'Save Match & Return to History'}
           </Button>
         </div>
       </div>
@@ -319,7 +343,7 @@ export default function PracticeGamePage() {
         </Card>
       )}
 
-      <EndMatchDialog onConfirm={handleEndMatch} />
+      <EndMatchDialog onConfirm={handleEndMatch} disabled={!actor} />
     </div>
   );
 }

@@ -7,13 +7,12 @@ import Time "mo:core/Time";
 import Nat "mo:core/Nat";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
+import Text "mo:core/Text";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -76,9 +75,6 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
-    };
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: User must be approved to access profiles");
     };
@@ -86,9 +82,6 @@ actor {
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
-    };
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: User must be approved to access profiles");
     };
@@ -99,9 +92,6 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: User must be approved to save profiles");
     };
@@ -175,18 +165,20 @@ actor {
     teamStats : [TeamStats];
   };
 
-  type OfficialApaMatchLog = {
+  type OfficialAPAMatchLog = {
     matchId : Text;
     dateTime : Time.Time;
     owner : Principal;
+    playerOneSkillLevel : ?Nat;
+    playerTwoSkillLevel : ?Nat;
     date : Text;
     opponentName : Text;
     myScore : Text;
     theirScore : Text;
-    points : Text;
     innings : Text;
     defensiveShots : Text;
     notes : Text;
+    didWin : ?Bool;
   };
 
   type ApaPlayerStats = {
@@ -245,7 +237,7 @@ actor {
     #acceptingGifts : AcceptingGiftsMatch;
     #straightShot : StraightShotMatch;
     #apaNineBall : ApaNineBallMatch;
-    #officialApaMatchLog : OfficialApaMatchLog;
+    #officialApaMatchLog : OfficialAPAMatchLog;
   };
 
   type BallState = {
@@ -303,16 +295,20 @@ actor {
     setsCompleted : ?Nat;
     finalSetScorePlayer : ?Nat;
     finalSetScoreGhost : ?Nat;
-    officialApaMatchLogData : ?{
-      date : Text;
-      opponentName : Text;
-      myScore : Text;
-      theirScore : Text;
-      points : Text;
-      innings : Text;
-      defensiveShots : Text;
-      notes : Text;
-    };
+    officialApaMatchLogData : ?OfficialAPAMatchLogData;
+  };
+
+  type OfficialAPAMatchLogData = {
+    date : Text;
+    opponentName : Text;
+    myScore : Text;
+    theirScore : Text;
+    innings : Text;
+    defensiveShots : Text;
+    notes : Text;
+    playerOneSkillLevel : ?Nat;
+    playerTwoSkillLevel : ?Nat;
+    didWin : ?Bool;
   };
 
   type APAMatchStatsUiContainer = {
@@ -434,6 +430,35 @@ actor {
   let apaBallState = Map.empty<Int, BallState>();
   var apaStartingPlayer : ?Text = null;
   let agSessions = Map.empty<Principal, AGSession>();
+
+  func getPointsToWin(skillLevel : Nat) : Nat {
+    switch (skillLevel) {
+      case (1) { 14 };
+      case (2) { 19 };
+      case (3) { 25 };
+      case (4) { 31 };
+      case (5) { 38 };
+      case (6) { 46 };
+      case (7) { 55 };
+      case (_) { 1 };
+    };
+  };
+
+  func computeDidWin(playerOneSkillLevel : ?Nat, playerTwoSkillLevel : ?Nat, myScore : Text, theirScore : Text) : ?Bool {
+    switch (playerOneSkillLevel, playerTwoSkillLevel, Nat.fromText(myScore), Nat.fromText(theirScore)) {
+      case (?p1Skill, ?p2Skill, ?myScoreNum, ?theirScoreNum) {
+        let myTargetPoints = getPointsToWin(p1Skill);
+        let theirTargetPoints = getPointsToWin(p2Skill);
+
+        switch (myScoreNum >= myTargetPoints, theirScoreNum >= theirTargetPoints) {
+          case (true, false) { ?true };
+          case (false, true) { ?false };
+          case (_) { null };
+        };
+      };
+      case (_) { null };
+    };
+  };
 
   func convertToApiMatch(matchRecord : MatchLogRecord) : ApiMatch {
     switch (matchRecord) {
@@ -568,7 +593,11 @@ actor {
             matchType = apaMatch.matchType;
             summary = convertToUiSummary(apaMatch.playerStats[0], apaMatch.seasonType, apaMatch.matchType);
             players = List.fromArray<ApaPlayerStats>(apaMatch.playerStats)
-              .map<ApaPlayerStats, ?APA9MatchPlayerStatsUi>(func(stats) { ?convertToUiPlayerStats(stats, apaMatch.seasonType, apaMatch.matchType) })
+              .map<ApaPlayerStats, ?APA9MatchPlayerStatsUi>(
+                func(stats) {
+                  ?convertToUiPlayerStats(stats, apaMatch.seasonType, apaMatch.matchType);
+                }
+              )
               .toArray();
           };
           startingObjectBallCount = null;
@@ -616,10 +645,12 @@ actor {
             opponentName = log.opponentName;
             myScore = log.myScore;
             theirScore = log.theirScore;
-            points = log.points;
             innings = log.innings;
             defensiveShots = log.defensiveShots;
             notes = log.notes;
+            playerOneSkillLevel = log.playerOneSkillLevel;
+            playerTwoSkillLevel = log.playerTwoSkillLevel;
+            didWin = log.didWin;
           };
         };
       };
@@ -776,7 +807,18 @@ actor {
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: Only approved users can save matches");
     };
-    let secureMatch = setMatchOwner(matchRecord, caller);
+
+    let processedMatchRecord = switch (matchRecord) {
+      case (#officialApaMatchLog(log)) {
+        #officialApaMatchLog({
+          log with
+          didWin = computeDidWin(log.playerOneSkillLevel, log.playerTwoSkillLevel, log.myScore, log.theirScore);
+        });
+      };
+      case (_) { matchRecord };
+    };
+
+    let secureMatch = setMatchOwner(processedMatchRecord, caller);
     matchHistory.add(matchId, secureMatch);
   };
 
@@ -826,10 +868,21 @@ actor {
       case (null) { Runtime.trap("Match with id " # matchId # " does not exist") };
       case (?existingMatch) {
         let existingOwner = getMatchOwner(existingMatch);
-        if (caller != existingOwner) {
+        if (caller != existingOwner and not AccessControl.isAdmin(accessControlState, caller)) {
           Runtime.trap("Unauthorized: Can only update your own matches");
         };
-        let secureMatch = setMatchOwner(updatedMatch, existingOwner);
+
+        let processedMatchRecord = switch (updatedMatch) {
+          case (#officialApaMatchLog(log)) {
+            #officialApaMatchLog({
+              log with
+              didWin = computeDidWin(log.playerOneSkillLevel, log.playerTwoSkillLevel, log.myScore, log.theirScore);
+            });
+          };
+          case (_) { updatedMatch };
+        };
+
+        let secureMatch = setMatchOwner(processedMatchRecord, existingOwner);
         matchHistory.add(matchId, secureMatch);
       };
     };

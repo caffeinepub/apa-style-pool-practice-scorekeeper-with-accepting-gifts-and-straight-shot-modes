@@ -3,10 +3,12 @@ import { useGetMatch } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Users, Target, Shield, Activity, TrendingUp } from 'lucide-react';
-import DeleteMatchButton from '../../components/matches/DeleteMatchButton';
+import { ArrowLeft, Calendar, User, Trophy, Target, Activity, Edit } from 'lucide-react';
 import { MatchMode } from '../../backend';
-import { getPlayerStatsRoute } from '../../utils/playerRoutes';
+import DeleteMatchButton from '../../components/matches/DeleteMatchButton';
+import { getPointsToWin } from '../../lib/apa/apaEqualizer';
+import { getOfficialApaOutcome } from '../../lib/apa/officialApaOutcome';
+import { computeOfficialApaPpi, formatOfficialPpi } from '../../lib/apa/officialApaPpi';
 
 export default function MatchDetailsPage() {
   const navigate = useNavigate();
@@ -23,297 +25,353 @@ export default function MatchDetailsPage() {
 
   if (!match) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
-        <Button variant="ghost" onClick={() => navigate({ to: '/history' })} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to History
-        </Button>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Match not found</p>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Match not found</p>
+        <Button onClick={() => navigate({ to: '/history' })}>Back to History</Button>
       </div>
     );
   }
 
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) / 1_000_000);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long',
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
-  const getModeLabel = (mode: MatchMode) => {
-    if (match.officialApaMatchLogData) {
-      return 'Official APA Match Log';
+  const renderModeSpecificDetails = () => {
+    if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
+      const player1 = match.apaMatchInfo.players[0];
+      const player2 = match.apaMatchInfo.players[1];
+
+      if (!player1 || !player2) return null;
+
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{match.players[0]?.name || 'Player 1'}</CardTitle>
+                <CardDescription>Skill Level {player1.skillLevel.toString()}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Points Earned:</span>
+                  <span className="font-semibold">{player1.pointsEarnedRunningTotal.toString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Innings:</span>
+                  <span className="font-semibold">{player1.innings.toString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Defensive Shots:</span>
+                  <span className="font-semibold">{player1.defensiveShots.toString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">PPI:</span>
+                  <span className="font-semibold">{player1.ppi.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Match Points:</span>
+                  <span className="font-semibold">{player1.pointsWonConverted.toString()}</span>
+                </div>
+                {player1.isPlayerOfMatch && (
+                  <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{match.players[1]?.name || 'Player 2'}</CardTitle>
+                <CardDescription>Skill Level {player2.skillLevel.toString()}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Points Earned:</span>
+                  <span className="font-semibold">{player2.pointsEarnedRunningTotal.toString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Innings:</span>
+                  <span className="font-semibold">{player2.innings.toString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Defensive Shots:</span>
+                  <span className="font-semibold">{player2.defensiveShots.toString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">PPI:</span>
+                  <span className="font-semibold">{player2.ppi.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Match Points:</span>
+                  <span className="font-semibold">{player2.pointsWonConverted.toString()}</span>
+                </div>
+                {player2.isPlayerOfMatch && (
+                  <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
     }
+
+    if (match.mode === MatchMode.acceptingGifts) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Session Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Starting Ball Count:</span>
+              <span className="font-semibold">{match.startingObjectBallCount?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Ending Ball Count:</span>
+              <span className="font-semibold">{match.endingObjectBallCount?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Attempts:</span>
+              <span className="font-semibold">{match.totalAttempts?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Sets Completed:</span>
+              <span className="font-semibold">{match.setsCompleted?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Final Set Score:</span>
+              <span className="font-semibold">
+                {match.finalSetScorePlayer?.toString() || '0'} - {match.finalSetScoreGhost?.toString() || '0'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Status:</span>
+              <Badge variant={match.completionStatus ? 'default' : 'secondary'}>
+                {match.completionStatus ? 'Completed' : 'In Progress'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (match.mode === MatchMode.straightShot) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Session Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Strokes:</span>
+              <span className="font-semibold">{match.strokes?.[0]?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Scratches:</span>
+              <span className="font-semibold">{match.scratchStrokes?.[0]?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Balls Made:</span>
+              <span className="font-semibold">{match.ballsMade?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Score:</span>
+              <span className="font-semibold">{match.totalScore?.toString() || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Result:</span>
+              <Badge variant={(match.totalScore ?? 0) <= 20 ? 'default' : 'destructive'}>
+                {(match.totalScore ?? 0) <= 20 ? 'Win' : 'Loss'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (match.officialApaMatchLogData) {
+      const data = match.officialApaMatchLogData;
+      const outcome = getOfficialApaOutcome(
+        data.didWin,
+        data.playerOneSkillLevel,
+        data.playerTwoSkillLevel,
+        data.myScore,
+        data.theirScore
+      );
+
+      const yourPointsToWin = data.playerOneSkillLevel ? getPointsToWin(Number(data.playerOneSkillLevel)) : null;
+      const theirPointsToWin = data.playerTwoSkillLevel ? getPointsToWin(Number(data.playerTwoSkillLevel)) : null;
+
+      const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
+
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">You</CardTitle>
+                {data.playerOneSkillLevel !== undefined && (
+                  <CardDescription>
+                    Skill Level {data.playerOneSkillLevel.toString()}
+                    {yourPointsToWin !== null && ` (${yourPointsToWin} to win)`}
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Score:</span>
+                  <span className="font-semibold">
+                    {data.myScore || '—'}
+                    {yourPointsToWin !== null && ` / ${yourPointsToWin}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Innings:</span>
+                  <span className="font-semibold">{data.innings || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Defensive Shots:</span>
+                  <span className="font-semibold">{data.defensiveShots || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">PPI:</span>
+                  <span className="font-semibold">{formatOfficialPpi(ppiResult)}</span>
+                </div>
+                {outcome === 'win' && (
+                  <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{data.opponentName}</CardTitle>
+                {data.playerTwoSkillLevel !== undefined && (
+                  <CardDescription>
+                    Skill Level {data.playerTwoSkillLevel.toString()}
+                    {theirPointsToWin !== null && ` (${theirPointsToWin} to win)`}
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Score:</span>
+                  <span className="font-semibold">
+                    {data.theirScore || '—'}
+                    {theirPointsToWin !== null && ` / ${theirPointsToWin}`}
+                  </span>
+                </div>
+                {outcome === 'loss' && (
+                  <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Match Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Match Date:</span>
+                <span className="font-semibold">{data.date || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Outcome:</span>
+                <Badge variant={outcome === 'win' ? 'default' : outcome === 'loss' ? 'destructive' : 'secondary'}>
+                  {outcome === 'win' ? 'Win' : outcome === 'loss' ? 'Loss' : 'Unknown'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const getModeLabel = (mode: MatchMode) => {
     switch (mode) {
       case MatchMode.apaPractice:
-        return 'APA 9-Ball Practice';
+        return match.officialApaMatchLogData ? 'Official APA Match Log' : 'APA 9-Ball Practice';
       case MatchMode.acceptingGifts:
         return 'Accepting Gifts';
       case MatchMode.straightShot:
-        return 'Straight Shot Strokes Drill';
+        return 'Straight Shot';
       default:
         return 'Unknown';
     }
   };
 
-  const getModeColor = (mode: MatchMode) => {
-    if (match.officialApaMatchLogData) {
-      return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
-    }
-    switch (mode) {
-      case MatchMode.apaPractice:
-        return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
-      case MatchMode.acceptingGifts:
-        return 'bg-teal-500/10 text-teal-700 dark:text-teal-400';
-      case MatchMode.straightShot:
-        return 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400';
-      default:
-        return 'bg-muted text-muted-foreground';
-    }
-  };
-
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Button variant="ghost" onClick={() => navigate({ to: '/history' })} className="gap-2">
-        <ArrowLeft className="h-4 w-4" />
-        Back to History
-      </Button>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          onClick={() => navigate({ to: '/history' })}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to History
+        </Button>
+        <div className="flex gap-2">
+          {match.officialApaMatchLogData && (
+            <Button
+              variant="outline"
+              onClick={() => navigate({ to: `/real-apa-match/${matchId}/edit` })}
+              className="gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
+          )}
+          <DeleteMatchButton matchId={match.matchId} />
+        </div>
+      </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <CardTitle>{getModeLabel(match.mode)}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl">{getModeLabel(match.mode)}</CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
                 {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
               </CardDescription>
             </div>
-            <Badge className={getModeColor(match.mode)} variant="secondary">
+            <Badge variant="outline" className="text-base">
               {getModeLabel(match.mode)}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {match.officialApaMatchLogData && (
-            <div>
-              <h3 className="mb-3 font-semibold">Official APA Match Details</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Match Date</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.date || 'Not specified'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Opponent Name</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.opponentName || 'Not specified'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Your Score</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.myScore || '0'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Their Score</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.theirScore || '0'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Points</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.points || '0'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Innings</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.innings || '0'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Defensive Shots</span>
-                  <span className="font-semibold">{match.officialApaMatchLogData.defensiveShots || '0'}</span>
-                </div>
-                {match.officialApaMatchLogData.notes && (
-                  <div className="pt-2">
-                    <h4 className="mb-1 text-sm font-semibold">Notes</h4>
-                    <p className="text-sm text-muted-foreground">{match.officialApaMatchLogData.notes}</p>
-                  </div>
-                )}
-              </div>
+        <CardContent className="space-y-4">
+          {match.players.length > 0 && !match.officialApaMatchLogData && (
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                {match.players.map(p => p.name).join(' vs ')}
+              </span>
             </div>
           )}
 
-          {!match.officialApaMatchLogData && (
-            <div>
-              <h3 className="mb-2 flex items-center gap-2 font-semibold">
-                <Users className="h-4 w-4" />
-                Players
-              </h3>
-              <div className="space-y-2">
-                {match.players.map((player, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      {player.name}
-                      {player.skillLevel !== undefined && ` (SL ${player.skillLevel})`}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate({ to: getPlayerStatsRoute(player.name) })}
-                      className="gap-1"
-                    >
-                      <TrendingUp className="h-3 w-3" />
-                      View Stats
-                    </Button>
-                  </div>
-                ))}
-              </div>
+          {match.notes && (
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <p className="text-sm font-medium mb-2">Notes:</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
             </div>
           )}
-
-          {match.mode === MatchMode.apaPractice && match.apaMatchInfo && (
-            <div>
-              <h3 className="mb-3 font-semibold">APA 9-Ball Match Results</h3>
-              <div className="space-y-4">
-                {match.apaMatchInfo.players.filter(p => p !== null).map((player, idx) => (
-                  player && (
-                    <Card key={idx} className={player.isPlayerOfMatch ? 'ring-2 ring-emerald-500' : ''}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base">
-                          {match.players[idx]?.name || `Player ${idx + 1}`}
-                          {player.isPlayerOfMatch && ' 🏆'}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Skill Level</span>
-                          <Badge variant="secondary">SL {Number(player.skillLevel)}</Badge>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            <Target className="mr-1 inline h-4 w-4" />
-                            Points Needed
-                          </span>
-                          <span className="font-semibold">{Number(player.pointsNeeded)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Points Earned</span>
-                          <span className="text-lg font-bold text-emerald-600">
-                            {Number(player.pointsEarnedRunningTotal)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            <Shield className="mr-1 inline h-4 w-4" />
-                            Defensive Shots
-                          </span>
-                          <span>{Number(player.defensiveShots)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            <Activity className="mr-1 inline h-4 w-4" />
-                            Innings
-                          </span>
-                          <span>{Number(player.innings)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">PPI</span>
-                          <span className="font-semibold">{player.ppi.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Match Points Converted</span>
-                          <Badge variant="outline">{Number(player.pointsWonConverted)}</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                ))}
-              </div>
-            </div>
-          )}
-
-          {match.mode === MatchMode.acceptingGifts && (
-            <div>
-              <h3 className="mb-3 font-semibold">Accepting Gifts Session</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Starting Object Balls</span>
-                  <span className="font-semibold">{match.startingObjectBallCount !== undefined ? Number(match.startingObjectBallCount) : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Ending Object Balls</span>
-                  <span className="font-semibold">{match.endingObjectBallCount !== undefined ? Number(match.endingObjectBallCount) : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Sets Completed</span>
-                  <span className="font-semibold">{match.setsCompleted !== undefined ? Number(match.setsCompleted) : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Attempts</span>
-                  <span className="font-semibold">{match.totalAttempts !== undefined ? Number(match.totalAttempts) : 'N/A'}</span>
-                </div>
-                {match.finalSetScorePlayer !== undefined && match.finalSetScoreGhost !== undefined && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Final Set Score</span>
-                    <span className="font-semibold">
-                      Player {Number(match.finalSetScorePlayer)} - Ghost {Number(match.finalSetScoreGhost)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Completion Status</span>
-                  <Badge variant={match.completionStatus ? 'default' : 'secondary'}>
-                    {match.completionStatus ? 'Completed' : 'In Progress'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {match.mode === MatchMode.straightShot && (
-            <div>
-              <h3 className="mb-3 font-semibold">Straight Shot Strokes Drill</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Shots</span>
-                  <span className="font-semibold">{match.shots !== undefined ? Number(match.shots) : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Balls Made</span>
-                  <span className="font-semibold">{match.ballsMade !== undefined ? Number(match.ballsMade) : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Score</span>
-                  <span className="font-semibold">{match.totalScore !== undefined ? Number(match.totalScore) : 'N/A'}</span>
-                </div>
-                {match.completionTime !== undefined && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Completion Time</span>
-                    <span className="font-semibold">{Number(match.completionTime)}s</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {match.notes && !match.officialApaMatchLogData && (
-            <div>
-              <h3 className="mb-2 font-semibold">Notes</h3>
-              <p className="text-sm text-muted-foreground">{match.notes}</p>
-            </div>
-          )}
-
-          <div className="flex justify-between border-t pt-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
-            </div>
-            <DeleteMatchButton matchId={match.matchId} />
-          </div>
         </CardContent>
       </Card>
+
+      {renderModeSpecificDetails()}
     </div>
   );
 }

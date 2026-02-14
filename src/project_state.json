@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 35,
+  "projectStateVersion": 57,
   "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -17,9 +17,14 @@
   "known_issues": [
     "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials.",
     "Bug: entering the Primary Player name into Player 2 does not update the skill level on the match page; also possible to start a match with the Primary Player name in both Player 1 and Player 2 (should be blocked).",
-    "App can get stuck on the “Checking access…” loading screen during access-control checks; needs a fail-open/disable option or clear error/timeout so the app remains usable."
+    "App can get stuck on the “Checking access…” loading screen during access-control checks; needs a fail-open/disable option or clear error/timeout so the app remains usable.",
+    "Regression: the score \"out of\" functionality (displaying each player’s score relative to the computed points-to-win target) was removed; it must be restored (e.g., \"Your Score (out of X)\" / \"Their Score (out of Y)\" based on selected skill levels).",
+    "Official/Real APA Match Log: Save is blocked with validation message \"Unable to determine match winner\" (winner/outcome computation/validation logic may be incorrectly rejecting valid entries or requiring fields unexpectedly).",
+    "Official/Real APA Match Log: Save action fails with \"Failed to save match\" when saving from Match History / match log flow (save payload or backend validation mismatch/regression).",
+    "Regression/bug: Match History sort control (toggle Newest/Oldest by match date) is missing/not shown even when history list contains matches (user reports 3 matches visible but no sort option).",
+    "New regression: user reports they can’t save a match anymore (save action no longer works). Needs investigation to determine which mode(s) and whether it’s validation vs backend save failure."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
@@ -484,6 +489,238 @@
         "REQ-66"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-official-apa-match-log-form-on-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-to-collect-both-players-apa-9-ball-skill-levels-your-skill-level-and-opponent-skill-level-using-an-explicit-control-e-g-a-dropdown-select-with-values-1-9-with-all-user-facing-text-in-english",
+      "title": "Update the Official APA Match Log form on `frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx` to collect both players’ APA 9-Ball skill levels (your skill level and opponent skill level) using an explicit control (e.g., a dropdown/select) with values 1–9, with all user-facing text in English.",
+      "reqIds": [
+        "REQ-67"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-official-apa-match-log-form-dynamically-compute-and-display-each-player-s-apa-points-to-win-target-out-of-value-based-on-the-selected-skill-level-using-the-existing-apa-equalizer-mapping-in-frontend-src-lib-apa-apaequalizer-ts-e-g-getpointstowin-update-the-score-ui-so-it-is-clear-that-each-entered-score-is-out-of-the-computed-target-e-g-label-inline-helper-like-your-score-out-of-38-and-their-score-out-of-31",
+      "title": "On the Official APA Match Log form, dynamically compute and display each player’s APA points-to-win target (“out of” value) based on the selected skill level using the existing APA Equalizer mapping in `frontend/src/lib/apa/apaEqualizer.ts` (e.g., `getPointsToWin`). Update the score UI so it is clear that each entered score is “out of” the computed target (e.g., label/inline helper like “Your Score (out of 38)” and “Their Score (out of 31)”).",
+      "reqIds": [
+        "REQ-68"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-persistence-for-the-official-real-apa-match-log-so-the-saved-match-record-includes-both-players-apa-skill-levels-this-must-include-1-updating-the-frontend-match-builder-buildofficialapamatchlog-in-frontend-src-lib-matches-matchbuilders-ts-to-include-the-new-fields-in-the-officialapamatchlog-payload-2-updating-motoko-types-in-backend-main-mo-so-officialapamatchlog-stores-the-two-skill-levels-and-3-updating-the-backend-apimatch-officialapamatchlogdata-projection-to-return-these-fields-to-the-frontend",
+      "title": "Extend persistence for the Official/Real APA Match Log so the saved match record includes both players’ APA skill levels. This must include: (1) updating the frontend match builder `buildOfficialApaMatchLog` in `frontend/src/lib/matches/matchBuilders.ts` to include the new fields in the `officialApaMatchLog` payload; (2) updating Motoko types in `backend/main.mo` so `OfficialApaMatchLog` stores the two skill levels; and (3) updating the backend `ApiMatch.officialApaMatchLogData` projection to return these fields to the frontend.",
+      "reqIds": [
+        "REQ-69"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-official-apa-match-log-rendering-in-history-and-details-views-to-display-the-saved-skill-levels-and-their-computed-out-of-targets-in-english-without-breaking-display-for-older-entries-that-do-not-have-these-fields-this-includes-updating-summary-formatting-in-frontend-src-components-matches-matchsummarycard-tsx-and-detail-rendering-in-frontend-src-pages-history-matchdetailspage-tsx-or-shared-helpers-they-use",
+      "title": "Update Official APA Match Log rendering in history and details views to display the saved skill levels and their computed “out of” targets in English, without breaking display for older entries that do not have these fields. This includes updating summary formatting in `frontend/src/components/matches/MatchSummaryCard.tsx` and detail rendering in `frontend/src/pages/history/MatchDetailsPage.tsx` (or shared helpers they use).",
+      "reqIds": [
+        "REQ-70"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-client-side-validation-on-the-official-apa-match-log-form-to-prevent-obviously-invalid-score-entries-relative-to-the-skill-level-based-out-of-targets-e-g-entered-score-greater-than-the-computed-target-validation-messaging-must-be-in-english-and-must-not-require-backend-calls",
+      "title": "Add client-side validation on the Official APA Match Log form to prevent obviously invalid score entries relative to the skill-level-based “out of” targets (e.g., entered score greater than the computed target). Validation messaging must be in English and must not require backend calls.",
+      "reqIds": [
+        "REQ-71"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-compute-an-official-real-apa-match-win-outcome-using-the-saved-skill-level-based-apa-points-to-win-targets-so-the-app-can-determine-whether-the-user-won-the-logged-match-definition-use-player1skilllevel-your-sl-and-player2skilllevel-opponent-sl-to-compute-each-player-s-points-to-win-target-using-the-same-equalizer-mapping-already-used-in-the-ui-getpointstowin-concept-parse-myscore-and-theirscore-as-non-negative-integers-determine-outcome-didwin-true-if-myscore-mytarget-and-theirscore-theirtarget-didwin-false-if-theirscore-theirtarget-and-myscore-mytarget-didwin-null-unknown-if-skill-levels-are-missing-scores-are-missing-non-numeric-or-both-players-meet-exceed-their-target-ambiguous-or-neither-meets-exceeds-their-target-incomplete-apply-this-outcome-consistently-anywhere-official-apa-match-logs-are-displayed-or-used-for-stats",
+      "title": "Compute an Official/Real APA match win outcome using the saved skill-level-based APA points-to-win targets, so the app can determine whether the user won the logged match.\n\nDefinition:\n- Use `player1SkillLevel` (your SL) and `player2SkillLevel` (opponent SL) to compute each player’s points-to-win target using the same Equalizer mapping already used in the UI (`getPointsToWin` concept).\n- Parse `myScore` and `theirScore` as non-negative integers.\n- Determine outcome:\n  - `didWin = true` if `myScore >= myTarget` and `theirScore < theirTarget`\n  - `didWin = false` if `theirScore >= theirTarget` and `myScore < myTarget`\n  - `didWin = null/unknown` if skill levels are missing, scores are missing/non-numeric, or both players meet/exceed their target (ambiguous) or neither meets/exceeds their target (incomplete).\n\nApply this outcome consistently anywhere Official APA match logs are displayed or used for stats.",
+      "reqIds": [
+        "REQ-72"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-official-apa-match-log-form-save-flow-to-validate-and-supply-a-win-outcome-or-explicitly-unknown-at-save-time-frontend-changes-in-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-when-the-user-clicks-save-match-compute-didwin-using-the-same-rules-as-req-72-add-client-side-validation-messaging-english-to-prevent-saving-when-the-match-is-ambiguous-e-g-both-players-meet-exceed-their-target-or-clearly-incomplete-neither-meets-exceeds-target-when-both-skill-levels-are-selected-and-both-scores-are-present-example-message-unable-to-determine-a-winner-please-verify-scores-and-skill-levels-update-buildofficialapamatchlog-in-frontend-src-lib-matches-matchbuilders-ts-to-include-the-new-optional-didwin-field-in-the-officialapamatchlog-payload-submitted-to-the-backend-do-not-require-skill-levels-if-skill-levels-are-missing-allow-saving-but-didwin-must-remain-unknown",
+      "title": "Update the Official APA Match Log form save flow to validate and supply a win outcome (or explicitly unknown) at save time.\n\nFrontend changes:\n- In `frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`, when the user clicks “Save Match”, compute `didWin` using the same rules as REQ-72.\n- Add client-side validation messaging (English) to prevent saving when the match is ambiguous (e.g., both players meet/exceed their target) or clearly incomplete (neither meets/exceeds target) **when** both skill levels are selected and both scores are present.\n  - Example message: \"Unable to determine a winner. Please verify scores and skill levels.\"\n- Update `buildOfficialApaMatchLog` in `frontend/src/lib/matches/matchBuilders.ts` to include the new optional `didWin` field in the `officialApaMatchLog` payload submitted to the backend.\n- Do not require skill levels; if skill levels are missing, allow saving, but `didWin` must remain unknown.",
+      "reqIds": [
+        "REQ-74"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-per-player-aggregate-stats-win-percentage-to-include-official-real-apa-match-logs-when-a-win-outcome-is-known-frontend-changes-extend-frontend-src-lib-apa-apaaggregatestats-ts-with-a-new-extractor-for-official-apa-match-logs-for-the-selected-player-name-the-caller-you-using-apimatch-officialapamatchlogdata-didwin-when-present-update-frontend-src-pages-players-playeraggregatestatspage-tsx-so-total-matches-and-wins-used-for-win-rate-include-apa-practice-matches-existing-behavior-plus-official-apa-match-logs-where-didwin-is-known-official-logs-with-unknown-outcome-do-not-affect-the-win-rate-denominator-ensure-all-user-facing-text-remains-in-english",
+      "title": "Update the per-player Aggregate Stats win percentage to include Official/Real APA match logs when a win outcome is known.\n\nFrontend changes:\n- Extend `frontend/src/lib/apa/apaAggregateStats.ts` with a new extractor for Official APA match logs for the selected player name (the caller / \"you\"), using `ApiMatch.officialApaMatchLogData.didWin` when present.\n- Update `frontend/src/pages/players/PlayerAggregateStatsPage.tsx` so:\n  - Total matches and wins used for win-rate include:\n    - APA Practice matches (existing behavior), plus\n    - Official APA match logs where `didWin` is known.\n  - Official logs with unknown outcome do not affect the win-rate denominator.\n- Ensure all user-facing text remains in English.",
+      "reqIds": [
+        "REQ-75"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-display-of-the-derived-official-apa-match-log-outcome-in-history-summary-and-match-details-when-available-frontend-changes-update-frontend-src-components-matches-matchsummarycard-tsx-to-append-a-compact-outcome-indicator-for-official-apa-match-logs-when-officialapamatchlogdata-didwin-is-present-english-text-such-as-win-loss-update-official-apa-match-log-detail-rendering-in-frontend-src-pages-history-matchdetailspage-tsx-or-its-shared-helpers-to-show-the-computed-outcome-when-available-and-omit-it-when-unknown",
+      "title": "Add display of the derived Official APA match log outcome in history summary and match details when available.\n\nFrontend changes:\n- Update `frontend/src/components/matches/MatchSummaryCard.tsx` to append a compact outcome indicator for Official APA match logs when `officialApaMatchLogData.didWin` is present (English text such as \"• Win\" / \"• Loss\").\n- Update Official APA match log detail rendering in `frontend/src/pages/history/MatchDetailsPage.tsx` (or its shared helpers) to show the computed outcome when available, and omit it when unknown.",
+      "reqIds": [
+        "REQ-76"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-points-numeric-input-from-the-official-real-apa-match-log-form-on-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-and-stop-collecting-sending-it-when-saving-an-official-match-log",
+      "title": "Remove the “Points” numeric input from the Official/Real APA Match Log form on `frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx` and stop collecting/sending it when saving an official match log.",
+      "reqIds": [
+        "REQ-78"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-official-real-apa-match-log-persistence-to-remove-the-points-field-end-to-end-update-the-frontend-match-builder-buildofficialapamatchlog-in-frontend-src-lib-matches-matchbuilders-ts-and-the-backend-motoko-types-projections-in-backend-main-mo-so-official-apa-match-logs-no-longer-store-or-return-a-points-value",
+      "title": "Update Official/Real APA Match Log persistence to remove the `points` field end-to-end: update the frontend match builder `buildOfficialApaMatchLog` in `frontend/src/lib/matches/matchBuilders.ts` and the backend Motoko types/projections in `backend/main.mo` so Official APA match logs no longer store or return a `points` value.",
+      "reqIds": [
+        "REQ-79"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-official-real-apa-match-log-ppi-calculation-everywhere-it-is-displayed-used-for-stats-to-myscore-innings-defensiveshots-scores-innings-defensive-shots-parsed-as-non-negative-integers-if-the-denominator-is-0-or-parsing-fails-treat-ppi-as-unavailable-and-display-a-clear-english-fallback-e-g-ppi",
+      "title": "Change Official/Real APA Match Log PPI calculation everywhere it is displayed/used for stats to: `myScore ÷ (innings − defensiveShots)` (scores/innings/defensive shots parsed as non-negative integers). If the denominator is <= 0 or parsing fails, treat PPI as unavailable and display a clear English fallback (e.g., “PPI: —”).",
+      "reqIds": [
+        "REQ-81"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-official-real-apa-match-log-rendering-in-match-history-summary-cards-to-include-the-out-of-points-to-win-context-based-on-saved-skill-levels-alongside-the-displayed-scores-whenever-both-skill-levels-are-present",
+      "title": "Update Official/Real APA match log rendering in Match History summary cards to include the “out of” points-to-win context (based on saved skill levels) alongside the displayed scores whenever both skill levels are present.",
+      "reqIds": [
+        "REQ-83"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-official-real-apa-match-log-rendering-in-match-details-to-display-each-player-s-score-with-the-out-of-points-to-win-target-when-skill-levels-are-present-rather-than-only-showing-the-raw-score",
+      "title": "Update Official/Real APA match log rendering in Match Details to display each player’s score with the “out of” points-to-win target when skill levels are present, rather than only showing the raw score.",
+      "reqIds": [
+        "REQ-84"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-edit-flow-for-previously-saved-official-real-apa-match-log-entries-so-a-user-can-update-fields-at-minimum-the-match-date-after-saving",
+      "title": "Add an edit flow for previously saved Official/Real APA match log entries so a user can update fields (at minimum the match date) after saving.",
+      "reqIds": [
+        "REQ-85"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-register-a-dedicated-route-for-editing-an-existing-official-real-apa-match-log-entry-and-wire-navigation-to-it",
+      "title": "Register a dedicated route for editing an existing Official/Real APA match log entry and wire navigation to it.",
+      "reqIds": [
+        "REQ-86"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-official-apa-match-log-form-page-to-support-both-create-and-edit-modes-create-uses-the-existing-save-behavior-edit-uses-the-existing-update-mutation-useupdatematch-and-preserves-the-matchid",
+      "title": "Update the Official APA Match Log form page to support both create and edit modes: create uses the existing save behavior, edit uses the existing update mutation (`useUpdateMatch`) and preserves the matchId.",
+      "reqIds": [
+        "REQ-87"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-required-field-validation-for-saving-updating-official-real-apa-match-logs-so-the-user-cannot-save-unless-the-required-fields-are-filled-with-clear-english-messaging",
+      "title": "Add required-field validation for saving/updating Official/Real APA match logs so the user cannot save unless the required fields are filled, with clear English messaging.",
+      "reqIds": [
+        "REQ-88"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-official-real-apa-match-log-create-edit-form-to-allow-innings-to-be-unknown-so-a-user-can-save-older-matches-even-when-innings-are-not-available",
+      "title": "Update the Official/Real APA Match Log create/edit form to allow innings to be unknown, so a user can save older matches even when innings are not available.",
+      "reqIds": [
+        "REQ-90"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-when-innings-is-unknown-unparseable-for-an-official-real-apa-match-log-display-ppi-as-unavailable-for-that-match-and-avoid-attempting-to-compute-a-numeric-ppi-value",
+      "title": "When innings is unknown/unparseable for an Official/Real APA match log, display PPI as unavailable (\"—\") for that match and avoid attempting to compute a numeric PPI value.",
+      "reqIds": [
+        "REQ-91"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-match-history-cards-to-display-the-match-s-actual-match-date-not-just-the-record-creation-timestamp-for-official-real-apa-match-logs-use-the-saved-officialapamatchlogdata-date-value-when-present-and-parseable-as-the-displayed-date-otherwise-fall-back-to-the-existing-match-datetime-timestamp-display-ensure-the-date-shown-on-each-match-summary-card-is-consistent-with-the-date-used-for-sorting-see-req-93",
+      "title": "Update Match History cards to display the match’s actual match date (not just the record creation timestamp). For Official/Real APA match logs, use the saved `officialApaMatchLogData.date` value (when present and parseable) as the displayed date; otherwise fall back to the existing `match.dateTime` timestamp display. Ensure the date shown on each Match Summary Card is consistent with the date used for sorting (see REQ-93).",
+      "reqIds": [
+        "REQ-92"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-match-history-sorting-by-match-date-and-allow-the-user-to-change-the-sort-order-implement-a-sort-control-on-the-match-history-page-that-toggles-between-newest-first-and-oldest-first-and-apply-the-sort-to-the-currently-filtered-list-using-the-same-effective-match-date-logic-as-the-cards-official-real-apa-match-logs-sort-by-officialapamatchlogdata-date-when-present-parseable-otherwise-by-match-datetime-all-other-match-types-sort-by-match-datetime",
+      "title": "Add match-history sorting by match date and allow the user to change the sort order. Implement a sort control on the Match History page that toggles between “Newest first” and “Oldest first”, and apply the sort to the currently filtered list using the same effective match-date logic as the cards: Official/Real APA match logs sort by `officialApaMatchLogData.date` when present/parseable, otherwise by `match.dateTime`; all other match types sort by `match.dateTime`.",
+      "reqIds": [
+        "REQ-93"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-stop-blocking-official-real-apa-match-log-saves-updates-solely-because-the-derived-outcome-is-unknown-update-frontend-src-components-apa-realapamatchform-tsx-so-clicking-save-match-update-match-does-not-show-an-error-and-abort-when-deriveofficialapaoutcome-returns-unknown-instead-allow-the-match-to-be-saved-with-an-unknown-outcome",
+      "title": "Stop blocking Official/Real APA Match Log saves/updates solely because the derived outcome is unknown. Update `frontend/src/components/apa/RealApaMatchForm.tsx` so clicking “Save Match” / “Update Match” does not show an error and abort when `deriveOfficialApaOutcome(...)` returns `unknown`; instead allow the match to be saved with an unknown outcome.",
+      "reqIds": [
+        "REQ-94"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-persist-the-computed-win-loss-outcome-for-official-real-apa-match-logs-when-it-can-be-determined-update-frontend-src-components-apa-realapamatchform-tsx-and-frontend-src-lib-matches-matchbuilders-ts-so-that-when-deriveofficialapaoutcome-returns-win-or-loss-the-saved-matchlogrecord-officialapamatchlog-didwin-field-is-set-to-true-for-win-and-false-for-loss-when-the-outcome-is-unknown-keep-didwin-unset-undefined",
+      "title": "Persist the computed win/loss outcome for Official/Real APA Match Logs when it can be determined. Update `frontend/src/components/apa/RealApaMatchForm.tsx` and `frontend/src/lib/matches/matchBuilders.ts` so that when `deriveOfficialApaOutcome(...)` returns `win` or `loss`, the saved `MatchLogRecord.officialApaMatchLog.didWin` field is set to `true` for win and `false` for loss; when the outcome is `unknown`, keep `didWin` unset/undefined.",
+      "reqIds": [
+        "REQ-95"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-official-real-apa-match-log-save-flow-so-clicking-save-match-on-the-official-apa-match-log-form-successfully-persists-the-match-via-the-existing-usesavematch-mutation-without-throwing-an-error-and-navigates-to-the-saved-match-s-details-page",
+      "title": "Fix the Official/Real APA Match Log save flow so clicking “Save Match” on the Official APA Match Log form successfully persists the match via the existing `useSaveMatch` mutation without throwing an error, and navigates to the saved match’s details page.",
+      "reqIds": [
+        "REQ-96"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-match-history-page-so-the-sort-control-toggle-between-newest-first-and-oldest-first-is-visible-and-usable-whenever-there-are-matches-visible-in-the-list-and-does-not-disappear-incorrectly-when-the-user-is-viewing-a-non-empty-history-list",
+      "title": "Fix the Match History page so the sort control (toggle between “Newest first” and “Oldest first”) is visible and usable whenever there are matches visible in the list, and does not disappear incorrectly when the user is viewing a non-empty history list.",
+      "reqIds": [
+        "REQ-98"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-regression-where-the-user-can-no-longer-save-a-match-reproduce-the-failure-for-each-mode-that-supports-saving-apa-practice-straight-shot-accepting-gifts-and-official-real-apa-match-log-and-identify-whether-the-failure-is-caused-by-frontend-validation-disabled-actions-backend-traps-or-frontend-backend-type-mismatches",
+      "title": "Investigate and fix the regression where the user can no longer save a match. Reproduce the failure for each mode that supports saving (APA Practice, Straight Shot, Accepting Gifts, and Official/Real APA Match Log) and identify whether the failure is caused by frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.",
+      "reqIds": [
+        "REQ-99"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-any-frontend-backend-schema-type-mismatches-that-can-prevent-saving-or-listing-matches-especially-for-official-real-apa-match-logs-ensure-the-motoko-apimatch-officialapamatchlogdata-shape-matches-the-data-actually-stored-in-apadetailedofficial-and-what-the-frontend-sends-via-buildofficialapamatchlog-including-removal-of-any-stale-fields-such-as-points-if-they-are-no-longer-collected-sent",
+      "title": "Fix any frontend-backend schema/type mismatches that can prevent saving or listing matches, especially for Official/Real APA Match Logs. Ensure the Motoko `ApiMatch.officialApaMatchLogData` shape matches the data actually stored in `APADetailedOfficial` and what the frontend sends via `buildOfficialApaMatchLog` (including removal of any stale fields such as `points` if they are no longer collected/sent).",
+      "reqIds": [
+        "REQ-100"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-harden-the-save-flows-so-that-the-user-is-not-blocked-from-saving-due-to-avoidable-client-side-state-issues-specifically-ensure-save-buttons-are-not-permanently-disabled-due-to-stale-actorfetching-isfetching-state-and-ensure-save-actions-fail-fast-with-a-clear-english-message-when-the-backend-actor-identity-is-not-ready",
+      "title": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
+      "reqIds": [
+        "REQ-101"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -656,6 +893,110 @@
       "summary": "Add backend persistence support for an Official/Real APA match log record type so the app can save exactly the user-entered fields from the Official APA Match Log form (match date, opponent name, your score, their score, points, innings, defensive shots, notes) using the existing match storage APIs (save, list, fetch, delete) and the existing match-history storage pattern.",
       "reqIds": [
         "REQ-64"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-30",
+      "summary": "Official/Real APA match logging: add fields for both players’ APA skill levels and use them to drive the points-to-win (“out of”) targets for each player so the form can determine/validate the winner based on SL-based goals.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-31",
+      "summary": "Add win-calculation logic for Official/Real APA match logs (determine winner based on entered scores vs SL-based points-to-win targets) and use it to update derived stats such as win percentage and enable automatic score-limit/goal adjustment.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-33",
+      "summary": "Extend Official/Real APA match log persistence so the derived win outcome can be returned to the frontend for summary rendering and aggregate win-percentage calculations.\n\nBackend changes:\n- Update `backend/main.mo` types for `OfficialApaMatchLog` and `ApiMatch.officialApaMatchLogData` to include an optional derived outcome field (e.g., `didWin : ?Bool`).\n- Update the backend projection in `convertToApiMatch` for `#officialApaMatchLog` so `officialApaMatchLogData` includes this new field.\n- Ensure older saved Official APA logs remain readable (field is optional / absent -> treated as unknown).",
+      "reqIds": [
+        "REQ-73"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-37",
+      "summary": "Add conditional migration support for extending stored Official APA match logs with the new optional outcome field.\n\nBackend changes:\n- Update `backend/migration.mo` (conditional migration policy) so existing stable data can be upgraded safely if required by the type change.\n- Ensure the migration does not attempt to retroactively infer outcomes for old records; it should only add the new field as absent/unknown for existing entries.",
+      "reqIds": [
+        "REQ-77"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-38",
+      "summary": "Official/Real APA match log: remove the \"Points\" input (user considers it irrelevant); optionally replace it with a \"Match Score\" field/label that aligns with the chart, and update the form/UI and persistence accordingly.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-39",
+      "summary": "Official/Real APA match log: compute PPI as myScore ÷ (innings − defensiveShots) and use this formula consistently for any displayed/derived PPI stats for logged matches.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-42",
+      "summary": "Add conditional migration support so existing stored Official/Real APA Match Log entries that include a `points` field remain readable after the type change (the migration must drop/ignore the old `points` value without attempting to infer or backfill anything).",
+      "reqIds": [
+        "REQ-80"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-43",
+      "summary": "Restore and preserve the Official/Real APA Match Log “out of” functionality so the UI clearly shows each entered score relative to the computed points-to-win target derived from the selected skill level (e.g., “Your Score (out of 38)” and “Their Score (out of 31)”). This must be true on the Official APA Match Log form page.",
+      "reqIds": [
+        "REQ-82"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-44",
+      "summary": "Allow editing/updating a previously saved Official/Real APA match log entry (e.g., to fix the match date after saving).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-45",
+      "summary": "Add required-field validation for saving Official/Real APA match logs (e.g., prevent save unless required fields like match date are filled; show clear English messages).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-50",
+      "summary": "Ensure the backend supports updating an existing Official/Real APA match log record via `updateMatch` and that derived fields (e.g., didWin) remain consistent after edits.",
+      "reqIds": [
+        "REQ-89"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-51",
+      "summary": "Official/Real APA match logs: allow innings to be left unknown (e.g., blank/\"—\") for older matches, and when innings (or other required inputs for the formula) are unknown/unparseable, display PPI as unavailable (\"PPI: —\") and avoid attempting PPI calculations for that match.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-52",
+      "summary": "Match History: display the match date for each entry and allow sorting the history list by match date.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-54",
+      "summary": "Ensure the backend accepts and stores `#officialApaMatchLog` records produced by `buildOfficialApaMatchLog` and that backend type/projection mismatches do not cause traps during save or subsequent read/list operations for Official APA Match Logs.",
+      "reqIds": [
+        "REQ-97"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-58",
+      "summary": "Ensure backend access control does not unexpectedly block saving matches in public mode. When `inviteOnlyMode` is disabled, an authenticated (non-anonymous) caller must be able to save and list matches without being rejected as \"must be approved\".",
+      "reqIds": [
+        "REQ-102"
       ],
       "status": "pending"
     }

@@ -132,24 +132,38 @@ export interface TeamStats {
         penaltyAwarded: string;
     };
 }
+export interface OfficialAPAMatchLogData {
+    defensiveShots: string;
+    theirScore: string;
+    myScore: string;
+    playerTwoSkillLevel?: bigint;
+    date: string;
+    opponentName: string;
+    playerOneSkillLevel?: bigint;
+    notes: string;
+    innings: string;
+    didWin?: boolean;
+}
 export interface APAMatchStatsUiContainer {
     matchType: string;
     summary: APAMatchStatsUiSummary;
     players: Array<APA9MatchPlayerStatsUi | null>;
     seasonType: string;
 }
-export interface OfficialApaMatchLog {
+export interface OfficialAPAMatchLog {
     defensiveShots: string;
     theirScore: string;
     myScore: string;
     owner: Principal;
+    playerTwoSkillLevel?: bigint;
     date: string;
     opponentName: string;
     matchId: string;
+    playerOneSkillLevel?: bigint;
     notes: string;
     innings: string;
+    didWin?: boolean;
     dateTime: Time;
-    points: string;
 }
 export interface AcceptingGiftsMatch {
     startingObjectBallCount: bigint;
@@ -190,7 +204,7 @@ export type MatchLogRecord = {
     acceptingGifts: AcceptingGiftsMatch;
 } | {
     __kind__: "officialApaMatchLog";
-    officialApaMatchLog: OfficialApaMatchLog;
+    officialApaMatchLog: OfficialAPAMatchLog;
 } | {
     __kind__: "practice";
     practice: PracticeMatch;
@@ -290,16 +304,7 @@ export interface ApiMatch {
     apaMatchInfo?: APAMatchStatsUiContainer;
     secondShotScore?: bigint;
     dateTime: Time;
-    officialApaMatchLogData?: {
-        defensiveShots: string;
-        theirScore: string;
-        myScore: string;
-        date: string;
-        opponentName: string;
-        notes: string;
-        innings: string;
-        points: string;
-    };
+    officialApaMatchLogData?: OfficialAPAMatchLogData;
     finalSetScoreGhost?: bigint;
     streaks?: bigint;
     strokes?: Array<bigint>;

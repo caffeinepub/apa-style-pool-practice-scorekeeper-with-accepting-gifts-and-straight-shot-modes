@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Enable saving Official/Real APA Match Log entries by persisting exactly the user-entered form fields (no extra calculations) and displaying them in Match History and Match Details.
+**Goal:** Restore the ability to save matches across all supported modes by fixing the underlying regression, aligning frontend/backend schemas (especially Official/Real APA Match Logs), and preventing save UI from getting stuck due to client-side state or backend readiness issues.
 
 **Planned changes:**
-- Add backend support to store and retrieve an Official/Real APA match log record type in the existing matchHistory storage and APIs (save, list, fetch, delete), persisting fields exactly as entered.
-- Update the Official APA Match Log page Save button to submit the current form state via the existing `useSaveMatch` React Query mutation, replacing the placeholder message with real saving UX (disabled/spinner, English error message).
-- Update Match History and Match Details UI to recognize this match type, show a compact English summary in history, and render all saved fields in details without impacting other existing match modes.
-- If needed for compatibility, add a conditional backend migration so existing saved matches remain readable after deploy.
+- Reproduce and fix the save-match failure in each saving mode (APA Practice, Straight Shot, Accepting Gifts, Official/Real APA Match Log), determining whether the cause is frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.
+- Align the backend `ApiMatch.officialApaMatchLogData` shape with what is stored and what the frontend sends (removing any stale/unsupported fields such as `points` if they are no longer collected), and ensure `convertToApiMatch` projects consistent supported fields.
+- Ensure Match History and Match Details render correctly for newly saved and previously saved Official/Real APA Match Logs after schema alignment, and that frontend generated types/IDL bindings compile cleanly.
+- Harden frontend save flows so save buttons are not left disabled due to stale loading/fetching state, and fail fast with a clear English message when the backend actor/identity is not ready (while allowing saving once ready).
+- Fix backend access control so that when `inviteOnlyMode = false`, authenticated users can save and list matches without being blocked by approval/allowlist rules; preserve existing behavior when `inviteOnlyMode = true`.
 
-**User-visible outcome:** Users can click “Save Match” on the Official APA Match Log form to save the exact inputs, see a confirmation, and then find the saved entry in Match History and open Match Details to view all saved fields in English.
+**User-visible outcome:** Users can successfully save matches in all supported modes and see them appear in Match History; Official/Real APA Match Logs save and display correctly; if saving fails, the app shows a clear English error message (including underlying error text when available), and save buttons recover properly after transient issues.

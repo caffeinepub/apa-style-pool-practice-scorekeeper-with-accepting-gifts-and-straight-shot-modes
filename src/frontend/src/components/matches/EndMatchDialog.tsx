@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
+import { extractErrorText } from '../../utils/errorText';
+import { toast } from 'sonner';
 
 interface EndMatchDialogProps {
   onConfirm: () => Promise<void>;
@@ -25,6 +27,10 @@ export default function EndMatchDialog({ onConfirm, disabled }: EndMatchDialogPr
     try {
       await onConfirm();
       setOpen(false);
+    } catch (error) {
+      const errorText = extractErrorText(error);
+      toast.error(errorText);
+      console.error('Error ending session:', error);
     } finally {
       setIsEnding(false);
     }

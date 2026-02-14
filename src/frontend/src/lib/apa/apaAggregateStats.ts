@@ -1,6 +1,8 @@
 import type { ApiMatch } from '../../backend';
 import { MatchMode } from '../../backend';
 import { isSamePlayer } from '../../utils/playerName';
+import { getOfficialApaOutcome } from './officialApaOutcome';
+import { computeOfficialApaPpi } from './officialApaPpi';
 
 export interface ApaMatchDataPoint {
   matchId: string;
@@ -16,6 +18,7 @@ export interface ApaMatchDataPoint {
 
 /**
  * Extract APA match data points for a specific player from match history
+ * Now includes both APA Practice matches and Official APA Match Logs with valid PPI
  */
 export function extractPlayerApaMatches(
   matches: ApiMatch[],
@@ -24,32 +27,99 @@ export function extractPlayerApaMatches(
   const dataPoints: ApaMatchDataPoint[] = [];
 
   for (const match of matches) {
-    if (match.mode !== MatchMode.apaPractice || !match.apaMatchInfo) {
-      continue;
+    // Handle APA Practice matches
+    if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
+      const playerIndex = match.players.findIndex(p => isSamePlayer(p.name, playerName));
+      if (playerIndex === -1) continue;
+
+      const playerStats = match.apaMatchInfo.players[playerIndex];
+      if (!playerStats) continue;
+
+      dataPoints.push({
+        matchId: match.matchId,
+        dateTime: match.dateTime,
+        playerName: match.players[playerIndex].name,
+        skillLevel: Number(playerStats.skillLevel),
+        pointsEarned: Number(playerStats.pointsEarnedRunningTotal),
+        defensiveShots: Number(playerStats.defensiveShots),
+        innings: Number(playerStats.innings),
+        ppi: playerStats.ppi,
+        isWinner: playerStats.isPlayerOfMatch,
+      });
     }
 
-    // Find the player in this match
-    const playerIndex = match.players.findIndex(p => isSamePlayer(p.name, playerName));
-    if (playerIndex === -1) continue;
+    // Handle Official APA Match Logs (player1 = "you")
+    if (match.officialApaMatchLogData) {
+      const data = match.officialApaMatchLogData;
+      
+      // Compute PPI using the new formula
+      const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
+      
+      // Only include if PPI is valid
+      if (ppiResult.isValid && ppiResult.ppi !== null) {
+        const outcome = getOfficialApaOutcome(
+          data.didWin,
+          data.playerOneSkillLevel,
+          data.playerTwoSkillLevel,
+          data.myScore,
+          data.theirScore
+        );
 
-    const playerStats = match.apaMatchInfo.players[playerIndex];
-    if (!playerStats) continue;
+        // Parse myScore for pointsEarned
+        const myScoreNum = parseInt(data.myScore) || 0;
+        const inningsNum = parseInt(data.innings) || 0;
+        const defensiveShotsNum = parseInt(data.defensiveShots) || 0;
 
-    dataPoints.push({
-      matchId: match.matchId,
-      dateTime: match.dateTime,
-      playerName: match.players[playerIndex].name,
-      skillLevel: Number(playerStats.skillLevel),
-      pointsEarned: Number(playerStats.pointsEarnedRunningTotal),
-      defensiveShots: Number(playerStats.defensiveShots),
-      innings: Number(playerStats.innings),
-      ppi: playerStats.ppi,
-      isWinner: playerStats.isPlayerOfMatch,
-    });
+        dataPoints.push({
+          matchId: match.matchId,
+          dateTime: match.dateTime,
+          playerName: 'You', // Official logs are always for the current user
+          skillLevel: data.playerOneSkillLevel ? Number(data.playerOneSkillLevel) : 0,
+          pointsEarned: myScoreNum,
+          defensiveShots: defensiveShotsNum,
+          innings: inningsNum,
+          ppi: ppiResult.ppi,
+          isWinner: outcome === 'win',
+        });
+      }
+    }
   }
 
   // Sort by date ascending
   return dataPoints.sort((a, b) => Number(a.dateTime - b.dateTime));
+}
+
+/**
+ * Extract Official APA match outcomes for the caller (player1 = "you")
+ * Returns counts of known official matches and wins
+ */
+export function extractOfficialApaWinRate(matches: ApiMatch[]): { totalKnown: number; wins: number } {
+  let totalKnown = 0;
+  let wins = 0;
+
+  for (const match of matches) {
+    if (!match.officialApaMatchLogData) continue;
+
+    const data = match.officialApaMatchLogData;
+    const outcome = getOfficialApaOutcome(
+      data.didWin,
+      data.playerOneSkillLevel,
+      data.playerTwoSkillLevel,
+      data.myScore,
+      data.theirScore
+    );
+
+    // Only count matches with known outcome
+    if (outcome === 'win') {
+      totalKnown++;
+      wins++;
+    } else if (outcome === 'loss') {
+      totalKnown++;
+    }
+    // 'unknown' outcomes are excluded from both counts
+  }
+
+  return { totalKnown, wins };
 }
 
 /**

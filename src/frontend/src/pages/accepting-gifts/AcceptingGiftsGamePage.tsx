@@ -9,7 +9,9 @@ import EndMatchDialog from '../../components/matches/EndMatchDialog';
 import AcceptingGiftsRulesPanel from './AcceptingGiftsRulesPanel';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { useActor } from '../../hooks/useActor';
 import { toast } from 'sonner';
+import { extractErrorText } from '../../utils/errorText';
 import { clampObjectBallCount, applyAttemptResult, prepareNextSet } from '../../lib/accepting-gifts/acceptingGiftsSession';
 
 interface GameState {
@@ -27,6 +29,7 @@ interface GameState {
 export default function AcceptingGiftsGamePage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
+  const { actor } = useActor();
   const saveMatch = useSaveMatch();
   const completeSession = useCompleteSession();
   const setBaselineMutation = useSetCurrentObjectBallCount();
@@ -61,7 +64,7 @@ export default function AcceptingGiftsGamePage() {
     if (gameState) {
       sessionStorage.setItem('acceptingGiftsGame', JSON.stringify(gameState));
       // Persist current count to backend for cross-session resume
-      setBaselineMutation.mutate(gameState.currentObjectBallCount);
+      setBaselineMutation.mutate(BigInt(gameState.currentObjectBallCount));
     }
   }, [gameState]);
 
@@ -88,40 +91,49 @@ export default function AcceptingGiftsGamePage() {
   const handleSetBaseline = async () => {
     if (!gameState) return;
     try {
-      await setBaselineMutation.mutateAsync(gameState.currentObjectBallCount);
+      await setBaselineMutation.mutateAsync(BigInt(gameState.currentObjectBallCount));
       toast.success(`Baseline set to ${gameState.currentObjectBallCount} object balls`);
     } catch (error) {
-      toast.error('Failed to set baseline');
+      const errorText = extractErrorText(error);
+      toast.error(errorText);
       console.error('Failed to set baseline:', error);
     }
   };
 
   const handleEndMatch = async () => {
-    if (!gameState || !identity) return;
+    if (!gameState || !identity) {
+      toast.error('You must be logged in to save a session');
+      return;
+    }
 
-    const { matchId, matchRecord } = buildAcceptingGiftsMatch({
-      playerName: gameState.playerName,
-      notes: gameState.notes,
-      completionStatus: gameState.completed,
-      identity,
-      startingObjectBallCount: gameState.startingObjectBallCount,
-      endingObjectBallCount: gameState.currentObjectBallCount,
-      totalAttempts: gameState.totalAttempts,
-      setsCompleted: gameState.setsCompleted,
-      finalSetScorePlayer: gameState.playerSetScore,
-      finalSetScoreGhost: gameState.ghostSetScore,
-    });
+    if (!actor) {
+      toast.error('Backend connection not ready. Please wait and try again.');
+      return;
+    }
 
     try {
+      const { matchId, matchRecord } = buildAcceptingGiftsMatch({
+        playerName: gameState.playerName,
+        notes: gameState.notes,
+        identity,
+        startingObjectBallCount: gameState.startingObjectBallCount,
+        endingObjectBallCount: gameState.currentObjectBallCount,
+        totalAttempts: gameState.totalAttempts,
+        setsCompleted: gameState.setsCompleted,
+        finalSetScorePlayer: gameState.playerSetScore,
+        finalSetScoreGhost: gameState.ghostSetScore,
+      });
+
       await saveMatch.mutateAsync({ matchId, matchRecord });
       // Persist the ending count as the new baseline for future sessions
-      await completeSession.mutateAsync(gameState.currentObjectBallCount);
+      await completeSession.mutateAsync(BigInt(gameState.currentObjectBallCount));
       sessionStorage.removeItem('acceptingGiftsGame');
       toast.success('Session saved successfully!');
       navigate({ to: '/history' });
     } catch (error) {
-      toast.error('Failed to save session');
-      console.error('Failed to save session:', error);
+      const errorText = extractErrorText(error);
+      toast.error(errorText);
+      console.error('Error saving session:', error);
     }
   };
 
@@ -264,7 +276,7 @@ export default function AcceptingGiftsGamePage() {
         </Card>
       </div>
 
-      <EndMatchDialog onConfirm={handleEndMatch} />
+      <EndMatchDialog onConfirm={handleEndMatch} disabled={!actor} />
     </div>
   );
 }

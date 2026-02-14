@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, TrendingUp, Target, Activity, Trophy } from 'lucide-react';
 import ApaAggregateCharts from '../../components/players/ApaAggregateCharts';
-import { extractPlayerApaMatches } from '../../lib/apa/apaAggregateStats';
+import { extractPlayerApaMatches, extractOfficialApaWinRate } from '../../lib/apa/apaAggregateStats';
 
 export default function PlayerAggregateStatsPage() {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export default function PlayerAggregateStatsPage() {
 
   const decodedPlayerName = decodeURIComponent(playerName);
   const apaMatches = extractPlayerApaMatches(matches, decodedPlayerName);
+  const officialApaWinRate = extractOfficialApaWinRate(matches);
 
   if (isLoading) {
     return (
@@ -23,11 +24,21 @@ export default function PlayerAggregateStatsPage() {
     );
   }
 
-  // Compute summary stats
-  const totalMatches = apaMatches.length;
-  const wins = apaMatches.filter(m => m.isWinner).length;
-  const avgPpi = totalMatches > 0
-    ? apaMatches.reduce((sum, m) => sum + m.ppi, 0) / totalMatches
+  // Separate APA Practice and Official APA matches for counting
+  const apaPracticeMatches = apaMatches.filter(m => m.playerName !== 'You');
+  const officialApaMatches = apaMatches.filter(m => m.playerName === 'You');
+  
+  const totalApaPracticeMatches = apaPracticeMatches.length;
+  const apaPracticeWins = apaPracticeMatches.filter(m => m.isWinner).length;
+  
+  // Combined win rate: APA Practice wins + Official APA wins / total matches with known outcomes
+  const totalWins = apaPracticeWins + officialApaWinRate.wins;
+  const totalMatchesWithOutcome = totalApaPracticeMatches + officialApaWinRate.totalKnown;
+  const winRate = totalMatchesWithOutcome > 0 ? (totalWins / totalMatchesWithOutcome) * 100 : 0;
+
+  // Compute average PPI across all APA matches (Practice + Official)
+  const avgPpi = apaMatches.length > 0
+    ? apaMatches.reduce((sum, m) => sum + m.ppi, 0) / apaMatches.length
     : 0;
   const totalInnings = apaMatches.reduce((sum, m) => sum + m.innings, 0);
   const totalDefensiveShots = apaMatches.reduce((sum, m) => sum + m.defensiveShots, 0);
@@ -51,11 +62,11 @@ export default function PlayerAggregateStatsPage() {
                 Performance statistics across all APA 9-Ball matches
               </CardDescription>
             </div>
-            <Badge variant="secondary">{totalMatches} Matches</Badge>
+            <Badge variant="secondary">{apaMatches.length} Total Matches</Badge>
           </div>
         </CardHeader>
         <CardContent>
-          {totalMatches === 0 ? (
+          {apaMatches.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-muted-foreground">
                 No APA match history found for {decodedPlayerName}
@@ -68,12 +79,15 @@ export default function PlayerAggregateStatsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Matches Won</p>
-                      <p className="text-2xl font-bold">{wins}</p>
+                      <p className="text-2xl font-bold">{totalWins}</p>
                     </div>
                     <Trophy className="h-8 w-8 text-emerald-500" />
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {totalMatches > 0 ? ((wins / totalMatches) * 100).toFixed(1) : 0}% win rate
+                    {winRate.toFixed(1)}% win rate
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {totalMatchesWithOutcome} total matches
                   </p>
                 </CardContent>
               </Card>
@@ -127,7 +141,7 @@ export default function PlayerAggregateStatsPage() {
         </CardContent>
       </Card>
 
-      {totalMatches > 0 && (
+      {apaMatches.length > 0 && (
         <ApaAggregateCharts dataPoints={apaMatches} playerName={decodedPlayerName} />
       )}
     </div>

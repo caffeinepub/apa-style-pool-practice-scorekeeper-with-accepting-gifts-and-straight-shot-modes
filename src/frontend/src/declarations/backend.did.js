@@ -149,6 +149,18 @@ export const APAMatchStatsUiContainer = IDL.Record({
   'players' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
   'seasonType' : IDL.Text,
 });
+export const OfficialAPAMatchLogData = IDL.Record({
+  'defensiveShots' : IDL.Text,
+  'theirScore' : IDL.Text,
+  'myScore' : IDL.Text,
+  'playerTwoSkillLevel' : IDL.Opt(IDL.Nat),
+  'date' : IDL.Text,
+  'opponentName' : IDL.Text,
+  'playerOneSkillLevel' : IDL.Opt(IDL.Nat),
+  'notes' : IDL.Text,
+  'innings' : IDL.Text,
+  'didWin' : IDL.Opt(IDL.Bool),
+});
 export const ApiMatch = IDL.Record({
   'makes' : IDL.Opt(IDL.Nat),
   'thirdShotScore' : IDL.Opt(IDL.Nat),
@@ -175,18 +187,7 @@ export const ApiMatch = IDL.Record({
   'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
   'secondShotScore' : IDL.Opt(IDL.Nat),
   'dateTime' : Time,
-  'officialApaMatchLogData' : IDL.Opt(
-    IDL.Record({
-      'defensiveShots' : IDL.Text,
-      'theirScore' : IDL.Text,
-      'myScore' : IDL.Text,
-      'date' : IDL.Text,
-      'opponentName' : IDL.Text,
-      'notes' : IDL.Text,
-      'innings' : IDL.Text,
-      'points' : IDL.Text,
-    })
-  ),
+  'officialApaMatchLogData' : IDL.Opt(OfficialAPAMatchLogData),
   'finalSetScoreGhost' : IDL.Opt(IDL.Nat),
   'streaks' : IDL.Opt(IDL.Nat),
   'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
@@ -240,18 +241,20 @@ export const AcceptingGiftsMatch = IDL.Record({
   'finalSetScoreGhost' : IDL.Nat,
   'setsCompleted' : IDL.Nat,
 });
-export const OfficialApaMatchLog = IDL.Record({
+export const OfficialAPAMatchLog = IDL.Record({
   'defensiveShots' : IDL.Text,
   'theirScore' : IDL.Text,
   'myScore' : IDL.Text,
   'owner' : IDL.Principal,
+  'playerTwoSkillLevel' : IDL.Opt(IDL.Nat),
   'date' : IDL.Text,
   'opponentName' : IDL.Text,
   'matchId' : IDL.Text,
+  'playerOneSkillLevel' : IDL.Opt(IDL.Nat),
   'notes' : IDL.Text,
   'innings' : IDL.Text,
+  'didWin' : IDL.Opt(IDL.Bool),
   'dateTime' : Time,
-  'points' : IDL.Text,
 });
 export const PracticeMatch = IDL.Record({
   'makes' : IDL.Opt(IDL.Nat),
@@ -317,7 +320,7 @@ export const ApaNineBallMatch = IDL.Record({
 export const MatchLogRecord = IDL.Variant({
   'straightShot' : StraightShotMatch,
   'acceptingGifts' : AcceptingGiftsMatch,
-  'officialApaMatchLog' : OfficialApaMatchLog,
+  'officialApaMatchLog' : OfficialAPAMatchLog,
   'practice' : PracticeMatch,
   'apaNineBall' : ApaNineBallMatch,
 });
@@ -500,6 +503,18 @@ export const idlFactory = ({ IDL }) => {
     'players' : IDL.Vec(IDL.Opt(APA9MatchPlayerStatsUi)),
     'seasonType' : IDL.Text,
   });
+  const OfficialAPAMatchLogData = IDL.Record({
+    'defensiveShots' : IDL.Text,
+    'theirScore' : IDL.Text,
+    'myScore' : IDL.Text,
+    'playerTwoSkillLevel' : IDL.Opt(IDL.Nat),
+    'date' : IDL.Text,
+    'opponentName' : IDL.Text,
+    'playerOneSkillLevel' : IDL.Opt(IDL.Nat),
+    'notes' : IDL.Text,
+    'innings' : IDL.Text,
+    'didWin' : IDL.Opt(IDL.Bool),
+  });
   const ApiMatch = IDL.Record({
     'makes' : IDL.Opt(IDL.Nat),
     'thirdShotScore' : IDL.Opt(IDL.Nat),
@@ -526,18 +541,7 @@ export const idlFactory = ({ IDL }) => {
     'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
     'secondShotScore' : IDL.Opt(IDL.Nat),
     'dateTime' : Time,
-    'officialApaMatchLogData' : IDL.Opt(
-      IDL.Record({
-        'defensiveShots' : IDL.Text,
-        'theirScore' : IDL.Text,
-        'myScore' : IDL.Text,
-        'date' : IDL.Text,
-        'opponentName' : IDL.Text,
-        'notes' : IDL.Text,
-        'innings' : IDL.Text,
-        'points' : IDL.Text,
-      })
-    ),
+    'officialApaMatchLogData' : IDL.Opt(OfficialAPAMatchLogData),
     'finalSetScoreGhost' : IDL.Opt(IDL.Nat),
     'streaks' : IDL.Opt(IDL.Nat),
     'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
@@ -591,18 +595,20 @@ export const idlFactory = ({ IDL }) => {
     'finalSetScoreGhost' : IDL.Nat,
     'setsCompleted' : IDL.Nat,
   });
-  const OfficialApaMatchLog = IDL.Record({
+  const OfficialAPAMatchLog = IDL.Record({
     'defensiveShots' : IDL.Text,
     'theirScore' : IDL.Text,
     'myScore' : IDL.Text,
     'owner' : IDL.Principal,
+    'playerTwoSkillLevel' : IDL.Opt(IDL.Nat),
     'date' : IDL.Text,
     'opponentName' : IDL.Text,
     'matchId' : IDL.Text,
+    'playerOneSkillLevel' : IDL.Opt(IDL.Nat),
     'notes' : IDL.Text,
     'innings' : IDL.Text,
+    'didWin' : IDL.Opt(IDL.Bool),
     'dateTime' : Time,
-    'points' : IDL.Text,
   });
   const PracticeMatch = IDL.Record({
     'makes' : IDL.Opt(IDL.Nat),
@@ -668,7 +674,7 @@ export const idlFactory = ({ IDL }) => {
   const MatchLogRecord = IDL.Variant({
     'straightShot' : StraightShotMatch,
     'acceptingGifts' : AcceptingGiftsMatch,
-    'officialApaMatchLog' : OfficialApaMatchLog,
+    'officialApaMatchLog' : OfficialAPAMatchLog,
     'practice' : PracticeMatch,
     'apaNineBall' : ApaNineBallMatch,
   });

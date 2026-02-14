@@ -64,7 +64,8 @@ export default function OwnerApprovalsPage() {
 
   const handleRejectAll = async () => {
     try {
-      await rejectAllPending.mutateAsync(pendingApprovals);
+      const pendingPrincipals = pendingApprovals.map(a => a.principal);
+      await rejectAllPending.mutateAsync(pendingPrincipals);
       toast.success(`Rejected ${pendingApprovals.length} pending request(s)`);
     } catch (error: any) {
       toast.error('Failed to reject all pending requests');

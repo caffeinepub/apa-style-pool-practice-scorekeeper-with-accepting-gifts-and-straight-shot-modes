@@ -157,18 +157,7 @@ export interface ApiMatch {
   'apaMatchInfo' : [] | [APAMatchStatsUiContainer],
   'secondShotScore' : [] | [bigint],
   'dateTime' : Time,
-  'officialApaMatchLogData' : [] | [
-    {
-      'defensiveShots' : string,
-      'theirScore' : string,
-      'myScore' : string,
-      'date' : string,
-      'opponentName' : string,
-      'notes' : string,
-      'innings' : string,
-      'points' : string,
-    }
-  ],
+  'officialApaMatchLogData' : [] | [OfficialAPAMatchLogData],
   'finalSetScoreGhost' : [] | [bigint],
   'streaks' : [] | [bigint],
   'strokes' : [] | [Array<bigint>],
@@ -211,24 +200,38 @@ export interface BaseMatchEntry {
 }
 export type MatchLogRecord = { 'straightShot' : StraightShotMatch } |
   { 'acceptingGifts' : AcceptingGiftsMatch } |
-  { 'officialApaMatchLog' : OfficialApaMatchLog } |
+  { 'officialApaMatchLog' : OfficialAPAMatchLog } |
   { 'practice' : PracticeMatch } |
   { 'apaNineBall' : ApaNineBallMatch };
 export type MatchMode = { 'straightShot' : null } |
   { 'apaPractice' : null } |
   { 'acceptingGifts' : null };
-export interface OfficialApaMatchLog {
+export interface OfficialAPAMatchLog {
   'defensiveShots' : string,
   'theirScore' : string,
   'myScore' : string,
   'owner' : Principal,
+  'playerTwoSkillLevel' : [] | [bigint],
   'date' : string,
   'opponentName' : string,
   'matchId' : string,
+  'playerOneSkillLevel' : [] | [bigint],
   'notes' : string,
   'innings' : string,
+  'didWin' : [] | [boolean],
   'dateTime' : Time,
-  'points' : string,
+}
+export interface OfficialAPAMatchLogData {
+  'defensiveShots' : string,
+  'theirScore' : string,
+  'myScore' : string,
+  'playerTwoSkillLevel' : [] | [bigint],
+  'date' : string,
+  'opponentName' : string,
+  'playerOneSkillLevel' : [] | [bigint],
+  'notes' : string,
+  'innings' : string,
+  'didWin' : [] | [boolean],
 }
 export interface Player {
   'id' : Principal,

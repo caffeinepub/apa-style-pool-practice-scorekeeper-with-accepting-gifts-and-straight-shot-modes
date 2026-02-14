@@ -23,18 +23,33 @@ export default function AcceptingGiftsStartPage() {
 
   useEffect(() => {
     if (persistedBaseline !== undefined && !baselineLoading) {
-      setStartingObjectBallCount(persistedBaseline);
+      setStartingObjectBallCount(Number(persistedBaseline));
     }
   }, [persistedBaseline, baselineLoading]);
 
+  const handleSetBaseline = async () => {
+    try {
+      await setBaselineMutation.mutateAsync(BigInt(startingObjectBallCount));
+      toast.success(`Baseline set to ${startingObjectBallCount} object balls`);
+    } catch (error) {
+      toast.error('Failed to set baseline');
+      console.error('Failed to set baseline:', error);
+    }
+  };
+
   const handleStart = async () => {
-    if (playerName.trim()) {
-      // Persist the chosen starting count as the new baseline
-      try {
-        await setBaselineMutation.mutateAsync(startingObjectBallCount);
-      } catch (error) {
-        console.error('Failed to persist baseline:', error);
-      }
+    if (!playerName.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+
+    if (startingObjectBallCount < 2 || startingObjectBallCount > 7) {
+      toast.error('Object ball count must be between 2 and 7');
+      return;
+    }
+
+    try {
+      await setBaselineMutation.mutateAsync(BigInt(startingObjectBallCount));
 
       const gameState = {
         playerName: playerName.trim(),
@@ -47,18 +62,12 @@ export default function AcceptingGiftsStartPage() {
         setsCompleted: 0,
         completed: false,
       };
+
       sessionStorage.setItem('acceptingGiftsGame', JSON.stringify(gameState));
       navigate({ to: '/accepting-gifts/game' });
-    }
-  };
-
-  const handleResetBaseline = async () => {
-    try {
-      await setBaselineMutation.mutateAsync(startingObjectBallCount);
-      toast.success(`Baseline set to ${startingObjectBallCount} object balls`);
     } catch (error) {
-      toast.error('Failed to set baseline');
-      console.error('Failed to set baseline:', error);
+      toast.error('Failed to start session');
+      console.error('Failed to start session:', error);
     }
   };
 
@@ -77,91 +86,88 @@ export default function AcceptingGiftsStartPage() {
         <CardHeader>
           <CardTitle>Start Accepting Gifts Session</CardTitle>
           <CardDescription>
-            Practice the Accepting Gifts drill and track your progress
+            Progressive drill: run out object balls + 8-ball, adjust difficulty based on performance
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full gap-2">
-                <Info className="h-4 w-4" />
-                {rulesOpen ? 'Hide Rules' : 'Show Rules'}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4">
-              <AcceptingGiftsRulesPanel />
-            </CollapsibleContent>
-          </Collapsible>
-
-          <div className="space-y-2">
-            <Label htmlFor="playerName">Player Name</Label>
-            <Input
-              id="playerName"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Enter your name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="startingBalls">Starting Object Balls (2-7)</Label>
-            <div className="flex items-center gap-2">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="playerName">Your Name</Label>
               <Input
-                id="startingBalls"
+                id="playerName"
+                placeholder="Enter your name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="startingCount">
+                Starting Object Ball Count (2-7)
+              </Label>
+              <Input
+                id="startingCount"
                 type="number"
-                min={2}
-                max={7}
+                min="2"
+                max="7"
                 value={startingObjectBallCount}
                 onChange={(e) => {
                   const val = parseInt(e.target.value);
-                  if (!isNaN(val) && val >= 2 && val <= 7) {
-                    setStartingObjectBallCount(val);
+                  if (!isNaN(val)) {
+                    setStartingObjectBallCount(Math.max(2, Math.min(7, val)));
                   }
                 }}
-                className="w-24"
-                disabled={baselineLoading}
               />
-              <span className="text-sm text-muted-foreground flex-1">
-                balls + 8-ball
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetBaseline}
-                disabled={setBaselineMutation.isPending || baselineLoading}
-                className="gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Set Baseline
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Current baseline: {baselineLoading ? 'Loading...' : Number(persistedBaseline || 3)} balls
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Your last session ended at {persistedBaseline ?? 3} balls. Adjust and click "Set Baseline" to save a new starting point.
-            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any notes about this session..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any notes about this session..."
-              rows={3}
-            />
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSetBaseline}
+              variant="outline"
+              disabled={setBaselineMutation.isPending}
+              className="flex-1 gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Set Baseline
+            </Button>
+            <Button
+              onClick={handleStart}
+              disabled={setBaselineMutation.isPending}
+              className="flex-1 gap-2"
+            >
+              <Play className="h-4 w-4" />
+              Start Session
+            </Button>
           </div>
-
-          <Button
-            onClick={handleStart}
-            disabled={!playerName.trim() || baselineLoading}
-            className="w-full"
-            size="lg"
-          >
-            <Play className="mr-2 h-5 w-5" />
-            Start Session
-          </Button>
         </CardContent>
       </Card>
+
+      <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full gap-2">
+            <Info className="h-4 w-4" />
+            {rulesOpen ? 'Hide Rules' : 'Show Rules'}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-4">
+          <AcceptingGiftsRulesPanel />
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

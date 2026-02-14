@@ -1,7 +1,95 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { type ApiMatch, type MatchLogRecord, type UserProfile, type UserApprovalInfo, ApprovalStatus } from '../backend';
+import type { ApiMatch, UserProfile, MatchLogRecord, UserApprovalInfo, UserRole } from '../backend';
+import { ApprovalStatus } from '../backend';
 import { Principal } from '@dfinity/principal';
+import { extractErrorText } from '../utils/errorText';
+
+export function useGetAllMatches() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<ApiMatch[]>({
+    queryKey: ['matches'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllMatches();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetMatch(matchId: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<ApiMatch | null>({
+    queryKey: ['match', matchId],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getMatch(matchId);
+    },
+    enabled: !!actor && !isFetching && !!matchId,
+  });
+}
+
+export function useSaveMatch() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.saveMatch(matchId, matchRecord);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to save match: ${errorText}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+    },
+  });
+}
+
+export function useUpdateMatch() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.updateMatch(matchId, matchRecord);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to update match: ${errorText}`);
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      queryClient.invalidateQueries({ queryKey: ['match', variables.matchId] });
+    },
+  });
+}
+
+export function useDeleteMatch() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (matchId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteMatch(matchId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+    },
+  });
+}
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -38,88 +126,14 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-export function useGetAllMatches() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ApiMatch[]>({
-    queryKey: ['matches'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllMatches();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetMatch(matchId: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ApiMatch | null>({
-    queryKey: ['match', matchId],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getMatch(matchId);
-    },
-    enabled: !!actor && !isFetching && !!matchId,
-  });
-}
-
-export function useSaveMatch() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.saveMatch(matchId, matchRecord);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
-    },
-  });
-}
-
-export function useUpdateMatch() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateMatch(matchId, matchRecord);
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
-      queryClient.invalidateQueries({ queryKey: ['match', variables.matchId] });
-    },
-  });
-}
-
-export function useDeleteMatch() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (matchId: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteMatch(matchId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
-    },
-  });
-}
-
-// Accepting Gifts persistence hooks
 export function useGetCurrentObjectBallCount() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<number>({
-    queryKey: ['acceptingGiftsBaseline'],
+  return useQuery<bigint>({
+    queryKey: ['currentObjectBallCount'],
     queryFn: async () => {
-      if (!actor) return 3;
-      const count = await actor.getCurrentObjectBallCount();
-      return Number(count);
+      if (!actor) return BigInt(2);
+      return actor.getCurrentObjectBallCount();
     },
     enabled: !!actor && !isFetching,
   });
@@ -130,13 +144,12 @@ export function useSetCurrentObjectBallCount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (newCount: number) => {
+    mutationFn: async (newCount: bigint) => {
       if (!actor) throw new Error('Actor not available');
-      const result = await actor.setCurrentObjectBallCount(BigInt(newCount));
-      return Number(result);
+      return actor.setCurrentObjectBallCount(newCount);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['acceptingGiftsBaseline'] });
+      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
     },
   });
 }
@@ -146,36 +159,27 @@ export function useCompleteSession() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (finalCount: number) => {
+    mutationFn: async (finalCount: bigint) => {
       if (!actor) throw new Error('Actor not available');
-      const result = await actor.completeSession(BigInt(finalCount));
-      return Number(result);
+      return actor.completeSession(finalCount);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['acceptingGiftsBaseline'] });
+      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
     },
   });
 }
 
-// Access control hooks with graceful error handling
 export function useIsCallerApproved() {
   const { actor, isFetching } = useActor();
 
   return useQuery<boolean>({
-    queryKey: ['isApproved'],
+    queryKey: ['isCallerApproved'],
     queryFn: async () => {
       if (!actor) return false;
-      try {
-        return await actor.isCallerApproved();
-      } catch (error) {
-        // If authorization fails, treat as not approved but don't block
-        console.warn('Failed to check approval status:', error);
-        return false;
-      }
+      return actor.isCallerApproved();
     },
     enabled: !!actor && !isFetching,
-    retry: 1,
-    staleTime: 30000,
+    retry: false,
   });
 }
 
@@ -183,20 +187,27 @@ export function useIsCallerAdmin() {
   const { actor, isFetching } = useActor();
 
   return useQuery<boolean>({
-    queryKey: ['isAdmin'],
+    queryKey: ['isCallerAdmin'],
     queryFn: async () => {
       if (!actor) return false;
-      try {
-        return await actor.isCallerAdmin();
-      } catch (error) {
-        // If authorization fails, treat as not admin
-        console.warn('Failed to check admin status:', error);
-        return false;
-      }
+      return actor.isCallerAdmin();
     },
     enabled: !!actor && !isFetching,
-    retry: 1,
-    staleTime: 30000,
+    retry: false,
+  });
+}
+
+export function useGetInviteOnlyMode() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['inviteOnlyMode'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.getInviteOnlyMode();
+    },
+    enabled: !!actor && !isFetching,
+    retry: false,
   });
 }
 
@@ -210,45 +221,7 @@ export function useRequestApproval() {
       return actor.requestApproval();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['isApproved'] });
-      queryClient.invalidateQueries({ queryKey: ['approvals'] });
-    },
-  });
-}
-
-export function useGetInviteOnlyMode() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['inviteOnlyMode'],
-    queryFn: async () => {
-      if (!actor) return false;
-      try {
-        return await actor.getInviteOnlyMode();
-      } catch (error) {
-        // If we can't read invite-only mode, default to public mode (false)
-        console.warn('Failed to check invite-only mode, defaulting to public:', error);
-        return false;
-      }
-    },
-    enabled: !!actor && !isFetching,
-    retry: 1,
-    staleTime: 30000,
-  });
-}
-
-export function useSetInviteOnlyMode() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (enabled: boolean) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.setInviteOnlyMode(enabled);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inviteOnlyMode'] });
-      queryClient.invalidateQueries({ queryKey: ['isApproved'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
     },
   });
 }
@@ -277,7 +250,6 @@ export function useSetApproval() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
-      queryClient.invalidateQueries({ queryKey: ['isApproved'] });
     },
   });
 }
@@ -287,18 +259,29 @@ export function useRejectAllPending() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pendingUsers: UserApprovalInfo[]) => {
+    mutationFn: async (pendingUsers: Principal[]) => {
       if (!actor) throw new Error('Actor not available');
-      
-      // Reject all pending users in sequence
-      for (const userInfo of pendingUsers) {
-        if (userInfo.status === ApprovalStatus.pending) {
-          await actor.setApproval(userInfo.principal, ApprovalStatus.rejected);
-        }
-      }
+      await Promise.all(
+        pendingUsers.map((user) => actor.setApproval(user, ApprovalStatus.rejected))
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
+    },
+  });
+}
+
+export function useSetInviteOnlyMode() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.setInviteOnlyMode(enabled);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inviteOnlyMode'] });
     },
   });
 }
