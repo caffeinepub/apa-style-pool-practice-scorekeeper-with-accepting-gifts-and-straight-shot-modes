@@ -1,42 +1,43 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remember primary player APA skill level in profile UI and auto-fill APA practice match setup",
+  "title": "Add 4th Home mode tile and placeholder route for future real APA match logging",
   "requirements": [
     {
-      "id": "REQ-39",
-      "summary": "Add an APA 9-ball skill level selector to the Profile Setup / Edit Profile dialog, prefill from profile, and save alongside name.",
+      "id": "REQ-53",
+      "summary": "Add a fourth ModeCard tile on Home that navigates to the new real APA match logging placeholder page.",
       "acceptanceCriteria": [
-        "In Edit Profile mode, the dialog pre-fills both the current saved name and the current saved APA skill level (if present).",
-        "Saving the dialog updates the backend profile so subsequent loads show the updated skill level.",
-        "All new/updated UI copy in this dialog is English-only."
+        "Home screen (frontend/src/pages/HomePage.tsx) shows four ModeCard tiles instead of three.",
+        "The new tile has an English title and description indicating it is for official/real APA match logging and/or that it is a placeholder.",
+        "Clicking the new tile navigates to the new placeholder route without errors."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/pages/HomePage.tsx",
           "operation": "modify",
-          "description": "Extend the dialog to view/edit the primary player’s APA 9-ball skill level alongside name, and persist both via useSaveCallerUserProfile. Use the existing shadcn-ui Select component to render the selector UI and use APA_SKILL_LEVELS/formatSkillLevel utilities from frontend/src/lib/apa/apaEqualizer.ts for options/labels (verify the component's usage instructions before implementing). Ensure the field is optional (supports unset), pre-fills from userProfile.apaSkillLevel when present, and saves as a bigint-compatible value when provided. Update dialog copy in English to clearly indicate it is the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”)."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Confirm the profile query/mutation typing and cache invalidation correctly supports the additional optional apaSkillLevel field on UserProfile (no behavior change beyond ensuring the new field is carried through saveCallerUserProfile and reflected in the cached currentUserProfile)."
+          "description": "Add a 4th tile to the existing mode grid using the existing ModeCard component (card UI + built-in navigation via TanStack Router). Verify the component's usage instructions before implementing. Update the grid layout (currently lg:grid-cols-3) to a 4-tile-friendly layout (e.g., lg:grid-cols-4) and wire the new tile's path to the new dedicated placeholder route path. Ensure all new user-facing text is in English and clearly labeled as official/real APA match logging placeholder."
         }
       ]
     },
     {
-      "id": "REQ-40",
-      "summary": "Auto-fill the primary player's APA skill level on APA practice match start from the saved profile, without overriding manual changes.",
+      "id": "REQ-54",
+      "summary": "Create a new placeholder page component for the 4th mode and register a new TanStack Router route to render it.",
       "acceptanceCriteria": [
-        "If the user has a saved APA skill level in their profile, opening the APA Practice Start page shows that skill level selected by default for the primary player.",
-        "If the user changes the skill level on the start page, starting the match uses the changed value (not forcibly overwritten by profile defaults).",
-        "If the user has no saved APA skill level, the start page continues to behave sensibly (e.g., keeps the current default)."
+        "A new page component exists (new file under frontend/src/pages/...) that renders a simple, blank/placeholder experience with English text (e.g., heading + short message).",
+        "The placeholder page includes a clear way to navigate back to Home (e.g., a “Back to Home” button).",
+        "frontend/src/App.tsx registers a new route path (new, dedicated path) that renders the placeholder page.",
+        "Navigating directly to the new route path renders the placeholder page successfully."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "path": "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
+          "operation": "create",
+          "description": "Create a new placeholder page that displays a simple heading and short English message indicating this is a placeholder for official/real APA match logging. Include a clear 'Back to Home' control using the existing shadcn/ui Button component and TanStack Router navigation. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "When userProfile.apaSkillLevel is present, initialize Player 1 skill level default from it (convert bigint to number and validate against APA_SKILL_LEVELS). Implement one-time/guarded autofill so it does not overwrite the user’s manual selection (e.g., track whether Player 1 SL has been touched and only apply profile default before user interaction). Keep current default behavior (SL 5) when profile has no saved skill level."
+          "description": "Register a new dedicated TanStack Router route path that renders the new placeholder page component, and add it to the route tree so direct navigation to the path works."
         }
       ]
     }

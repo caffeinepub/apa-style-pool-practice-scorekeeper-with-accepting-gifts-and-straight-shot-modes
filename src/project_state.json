@@ -1,10 +1,9 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 19,
-  "summary": "APA pool practice scorekeeper app focused on APA 9-ball (not 8-ball), using The Equalizer® point-based scoring with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, and end-of-match team match-point conversion; plus additional practice modes: Accepting Gifts and Straight Shot.",
+  "projectStateVersion": 27,
+  "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
-    "Need explicit rule decision for scratch-on-break when break shot itself doesn’t count (user spec: possibly counts as 1).",
     "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
     "APA 9-ball session tracking should support rack-by-rack 10-point accounting: player A points + player B points + dead balls = 10 each rack; include 9-ball worth 2, dead balls worth 0, and support defensive shots + innings for correct PPI.",
     "APA 9-ball rules constraints to encode: no push-outs (standard handicapped APA 9-ball), 9-on-the-snap ends rack with 2 points, three consecutive fouls within a rack loses the rack and remaining balls become dead.",
@@ -12,12 +11,15 @@
     "APA 9-ball practice rule: when the 9-ball is pocketed early (ends the rack), all remaining balls in that rack should be marked dead (0 points) to preserve 10-point rack accounting.",
     "Accepting Gifts progression: user wants minimum object balls = 2 (not 1) and the starting ball count for a new session should default to the last saved/current count from the prior session; also provide a manual reset/override to any allowed count (e.g., jump to 7).",
     "Introduce a per-device/account \"Primary Player\" concept so the app recognizes the main user across matches while still allowing ad-hoc opponent names.",
-    "Results UX: keep individual match view; add navigation/button to a per-player Aggregate Stats view with graphs computed from that player name across saved matches."
+    "Results UX: keep individual match view; add navigation/button to a per-player Aggregate Stats view with graphs computed from that player name across saved matches.",
+    "Privacy/team rollout: implement optional invite-only access control for Internet Identity by maintaining an allowlist of approved principals plus a pending-requests list for owner approval (Approve/Reject + 'Reject All Pending'); non-approved users are blocked; plan for a future toggle to disable this for public release."
   ],
   "known_issues": [
-    "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials."
+    "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials.",
+    "Bug: entering the Primary Player name into Player 2 does not update the skill level on the match page; also possible to start a match with the Primary Player name in both Player 1 and Player 2 (should be blocked).",
+    "App can get stuck on the “Checking access…” loading screen during access-control checks; needs a fail-open/disable option or clear error/timeout so the app remains usable."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
@@ -322,6 +324,94 @@
         "REQ-40"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-apa-practice-start-page-so-the-signed-in-user-s-saved-apa-skill-level-auto-loads-into-whichever-player-slot-player-1-or-player-2-currently-matches-the-caller-s-saved-primary-player-name-case-insensitive-including-when-the-user-overwrites-edits-the-name-field-after-initial-entry",
+      "title": "Update the APA Practice Start page so the signed-in user's saved APA skill level auto-loads into whichever player slot (Player 1 or Player 2) currently matches the caller's saved primary player name (case-insensitive), including when the user overwrites/edits the name field after initial entry.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-validation-to-prevent-starting-an-apa-practice-match-when-player-1-and-player-2-names-are-the-same-person-case-insensitive-show-an-english-validation-message-and-keep-the-start-match-button-disabled-or-block-start-until-the-issue-is-corrected",
+      "title": "Add validation to prevent starting an APA Practice match when Player 1 and Player 2 names are the same person (case-insensitive). Show an English validation message and keep the Start Match button disabled (or block start) until the issue is corrected.",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-apa-practice-start-page-skill-level-auto-load-logic-applies-symmetrically-to-both-slots-by-tracking-manual-override-state-per-slot-player-1-sl-touched-and-player-2-sl-touched-and-resetting-that-override-state-when-that-slot-s-name-changes",
+      "title": "Ensure APA Practice Start page skill level auto-load logic applies symmetrically to both slots by tracking \"manual override\" state per slot (Player 1 SL touched and Player 2 SL touched), and resetting that override state when that slot's name changes.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-an-invite-only-access-control-mode-for-the-app-using-an-allowlist-of-approved-internet-identity-principals-so-the-app-owner-can-approve-teammates-while-blocking-everyone-else-even-if-the-app-link-is-shared",
+      "title": "Implement an invite-only access control mode for the app using an allowlist of approved Internet Identity principals, so the app owner can approve teammates while blocking everyone else even if the app link is shared.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-owner-approval-ui-screen-where-the-app-owner-can-review-pending-access-requests-and-approve-or-reject-them-individually-plus-a-one-click-reject-all-pending-action",
+      "title": "Add an Owner Approval UI screen where the app owner can review pending access requests and approve or reject them individually, plus a one-click \"Reject All Pending\" action.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-authentication-gate-so-that-after-internet-identity-login-users-who-are-not-approved-while-invite-only-mode-is-enabled-see-a-clear-english-access-denied-experience-instead-of-generic-failures-and-the-owner-can-still-access-the-admin-approval-tools",
+      "title": "Update the authentication gate so that after Internet Identity login, users who are not approved (while invite-only mode is enabled) see a clear English access-denied experience instead of generic failures, and the owner can still access the admin approval tools.",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-an-owner-only-control-to-disable-invite-only-mode-later-switch-back-to-public-access-reflecting-the-user-s-intent-to-potentially-remove-the-approval-requirement-in-the-future",
+      "title": "Provide an owner-only control to disable invite-only mode later (switch back to public access), reflecting the user’s intent to potentially remove the approval requirement in the future.",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-access-check-loading-deadlock-by-ensuring-the-frontend-can-always-determine-access-state-or-safely-bypass-it-in-public-mode-without-getting-stuck-on-checking-access",
+      "title": "Fix the access-check loading deadlock by ensuring the frontend can always determine access state (or safely bypass it in public mode) without getting stuck on \"Checking access...\".",
+      "reqIds": [
+        "REQ-50"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-when-public-no-approval-mode-is-active-do-not-show-the-invite-only-access-not-allowed-experience-or-approval-request-cta-as-part-of-the-normal-login-flow",
+      "title": "When public/no-approval mode is active, do not show the invite-only \"Access Not Allowed\" experience or approval-request CTA as part of the normal login flow.",
+      "reqIds": [
+        "REQ-52"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-4th-mode-tile-card-to-the-home-screen-mode-grid-that-navigates-to-a-new-placeholder-route-for-a-future-real-apa-match-logging-mode",
+      "title": "Add a 4th mode tile/card to the Home screen mode grid that navigates to a new placeholder route for a future “real APA match logging” mode.",
+      "reqIds": [
+        "REQ-53"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-new-blank-placeholder-page-component-for-the-4th-mode-and-register-a-new-tanstack-router-route-for-it-in-the-app-router",
+      "title": "Create a new blank placeholder page component for the 4th mode and register a new TanStack Router route for it in the app router.",
+      "reqIds": [
+        "REQ-54"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -399,6 +489,66 @@
       "reqIds": [
         "REQ-38"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "APA match setup: prevent using the Primary Player (main profile name) in both Player 1 and Player 2 (no playing yourself); block match start or show validation error if duplicated, and ensure the Primary Player’s saved APA skill level auto-loads into whichever slot (P1 or P2) contains that name; if the user manually edits SL for the match, respect the override but re-auto-load when the name field changes to/from the Primary Player.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Add optional invite-only access control using an allowlist of approved Internet Identity principals; non-approved users see an 'Access not allowed' screen; support switching back to public access later.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Add an Owner Approval admin screen linked to the app owner's identity: capture login attempts into a pending list, allow Approve/Reject per principal, and include a one-click 'Reject All Pending' action for spam bursts.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Add backend support to record and manage access requests: when a non-approved signed-in principal attempts to use the app, capture them into a pending requests list that the owner can review.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Add a discrete 4th mode for logging real APA 9-ball matches (not drills): manual match entry including date/opponent/notes and key stats (points, innings, defensive shots, etc.), and display charts for both actual PPI and adjusted PPI, each with a rolling “best 10 of last 20” line.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Provide a way to run the app in a working public/no-approval mode by disabling or bypassing the invite-only approval/login gate (at least temporarily), since the access-check loading flow can get stuck; keep the option to re-enable invite-only later.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Make the app usable without any invite-only approval flow (public mode) by default, while keeping the ability for an admin to re-enable invite-only later.",
+      "reqIds": [
+        "REQ-49"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Update backend access-control query behavior so non-admin users do not trigger authorization traps during normal app startup checks (especially for invite-only mode state).",
+      "reqIds": [
+        "REQ-51"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Implement the first incremental step of the discrete 4th mode (real APA match logging): add a 4th mode tile on the home screen that navigates to a blank placeholder page/screen (no form fields yet).",
+      "reqIds": [],
       "status": "pending"
     }
   ],

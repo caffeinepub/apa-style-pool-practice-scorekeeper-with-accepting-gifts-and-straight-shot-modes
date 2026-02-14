@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-profile-setup-edit-profile-dialog-to-allow-viewing-and-editing-the-primary-player-s-apa-9-ball-skill-level-alongside-the-name-and-save-both-fields-to-the-user-profile-implement-this-in-frontend-src-components-auth-profilesetupdialog-tsx-by-adding-an-apa-skill-level-selector-using-the-existing-apa-skill-level-constants-utilities-from-frontend-src-lib-apa-apaequalizer-ts-user-facing-text-must-be-in-english-and-should-clearly-indicate-this-skill-level-is-used-as-the-default-for-apa-matches-e-g-label-like-apa-9-ball-skill-level-default",
-      "featureTitle": "Update the Profile Setup / Edit Profile dialog to allow viewing and editing the primary player’s APA 9-ball skill level alongside the name, and save both fields to the user profile.\n\nImplement this in `frontend/src/components/auth/ProfileSetupDialog.tsx` by adding an APA skill level selector using the existing APA skill-level constants/utilities (from `frontend/src/lib/apa/apaEqualizer.ts`).\n\nUser-facing text must be in English and should clearly indicate this skill level is used as the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”).",
+      "featureId": "feature-add-a-4th-mode-tile-card-to-the-home-screen-mode-grid-that-navigates-to-a-new-placeholder-route-for-a-future-real-apa-match-logging-mode",
+      "featureTitle": "Add a 4th mode tile/card to the Home screen mode grid that navigates to a new placeholder route for a future “real APA match logging” mode.",
       "files": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx"
+        "frontend/src/pages/HomePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -13,18 +13,20 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-39"
+        "REQ-53"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-auto-fill-the-saved-primary-player-apa-skill-level-when-starting-a-new-apa-practice-match-update-frontend-src-pages-apa-practicestartpage-tsx-so-that-when-the-signed-in-user-has-a-saved-profile-skill-level-the-apa-start-page-uses-it-as-the-default-selection-for-the-primary-player-instead-of-always-defaulting-to-sl-5-the-auto-fill-behavior-should-not-block-manual-overrides-if-the-user-changes-the-skill-level-in-the-start-form-it-must-respect-the-user-s-selection",
-      "featureTitle": "Auto-fill the saved primary player APA skill level when starting a new APA practice match.\n\nUpdate `frontend/src/pages/apa/PracticeStartPage.tsx` so that when the signed-in user has a saved profile skill level, the APA start page uses it as the default selection for the primary player instead of always defaulting to SL 5.\n\nThe auto-fill behavior should not block manual overrides: if the user changes the skill level in the start form, it must respect the user’s selection.",
+      "featureId": "feature-create-a-new-blank-placeholder-page-component-for-the-4th-mode-and-register-a-new-tanstack-router-route-for-it-in-the-app-router",
+      "featureTitle": "Create a new blank placeholder page component for the 4th mode and register a new TanStack Router route for it in the app router.",
       "files": [
-        "frontend/src/pages/apa/PracticeStartPage.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -32,10 +34,11 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-40"
+        "REQ-54"
       ],
       "confidence": "high"
     }

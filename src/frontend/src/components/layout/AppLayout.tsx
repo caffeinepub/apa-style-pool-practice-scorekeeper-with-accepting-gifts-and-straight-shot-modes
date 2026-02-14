@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Outlet } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import { Settings, Shield } from 'lucide-react';
 import LoginButton from '../auth/LoginButton';
 import ProfileSetupDialog from '../auth/ProfileSetupDialog';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { useIsCallerAdmin } from '../../hooks/useQueries';
 
 export default function AppLayout() {
+  const navigate = useNavigate();
   const { identity } = useInternetIdentity();
+  const { data: isAdmin } = useIsCallerAdmin();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const isAuthenticated = !!identity;
 
@@ -22,6 +25,16 @@ export default function AppLayout() {
             <h1 className="text-xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
           </div>
           <div className="flex items-center gap-2">
+            {isAuthenticated && isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate({ to: '/owner/approvals' })}
+                title="Access Management"
+              >
+                <Shield className="h-5 w-5" />
+              </Button>
+            )}
             {isAuthenticated && (
               <Button
                 variant="ghost"

@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Play, User } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Play, User, AlertCircle } from 'lucide-react';
 import { APA_SKILL_LEVELS, getPointsToWin, formatSkillLevel, isValidSkillLevel } from '../../lib/apa/apaEqualizer';
 import { useGetCallerUserProfile } from '../../hooks/useQueries';
+import { isSamePlayer } from '../../utils/playerName';
 import type { RackData } from '../../lib/apa/apaScoring';
 
 export default function PracticeStartPage() {
@@ -20,18 +22,28 @@ export default function PracticeStartPage() {
   const [player2SL, setPlayer2SL] = useState<number>(5);
   const [notes, setNotes] = useState('');
   const [player1SLTouched, setPlayer1SLTouched] = useState(false);
+  const [player2SLTouched, setPlayer2SLTouched] = useState(false);
 
   const myName = userProfile?.name || '';
+  const mySkillLevel = userProfile?.apaSkillLevel ? Number(userProfile.apaSkillLevel) : null;
 
-  // Auto-fill Player 1 skill level from profile on mount (one-time)
+  // Auto-load skill level when Player 1 name matches profile name
   useEffect(() => {
-    if (userProfile?.apaSkillLevel && !player1SLTouched) {
-      const profileSL = Number(userProfile.apaSkillLevel);
-      if (isValidSkillLevel(profileSL)) {
-        setPlayer1SL(profileSL);
+    if (myName && mySkillLevel && isValidSkillLevel(mySkillLevel) && !player1SLTouched) {
+      if (isSamePlayer(player1, myName)) {
+        setPlayer1SL(mySkillLevel);
       }
     }
-  }, [userProfile, player1SLTouched]);
+  }, [player1, myName, mySkillLevel, player1SLTouched]);
+
+  // Auto-load skill level when Player 2 name matches profile name
+  useEffect(() => {
+    if (myName && mySkillLevel && isValidSkillLevel(mySkillLevel) && !player2SLTouched) {
+      if (isSamePlayer(player2, myName)) {
+        setPlayer2SL(mySkillLevel);
+      }
+    }
+  }, [player2, myName, mySkillLevel, player2SLTouched]);
 
   const handleUseMyNamePlayer1 = () => {
     if (myName) {
@@ -45,12 +57,37 @@ export default function PracticeStartPage() {
     }
   };
 
+  const handlePlayer1Change = (value: string) => {
+    setPlayer1(value);
+    // Reset manual override when name changes
+    setPlayer1SLTouched(false);
+  };
+
+  const handlePlayer2Change = (value: string) => {
+    setPlayer2(value);
+    // Reset manual override when name changes
+    setPlayer2SLTouched(false);
+  };
+
   const handlePlayer1SLChange = (value: string) => {
     setPlayer1SL(parseInt(value));
     setPlayer1SLTouched(true);
   };
 
+  const handlePlayer2SLChange = (value: string) => {
+    setPlayer2SL(parseInt(value));
+    setPlayer2SLTouched(true);
+  };
+
+  // Check for duplicate names (ensure boolean type)
+  const hasDuplicateNames = Boolean(player1.trim() && player2.trim() && isSamePlayer(player1, player2));
+
   const handleStart = () => {
+    // Defensive guard: prevent starting with duplicate names
+    if (hasDuplicateNames) {
+      return;
+    }
+
     if (player1.trim() && player2.trim()) {
       const gameState = {
         player1: player1.trim(),
@@ -100,7 +137,7 @@ export default function PracticeStartPage() {
                   <Input
                     id="player1"
                     value={player1}
-                    onChange={(e) => setPlayer1(e.target.value)}
+                    onChange={(e) => handlePlayer1Change(e.target.value)}
                     placeholder="Enter player 1 name"
                     className="flex-1"
                   />
@@ -145,7 +182,7 @@ export default function PracticeStartPage() {
                   <Input
                     id="player2"
                     value={player2}
-                    onChange={(e) => setPlayer2(e.target.value)}
+                    onChange={(e) => handlePlayer2Change(e.target.value)}
                     placeholder="Enter player 2 name"
                     className="flex-1"
                   />
@@ -164,7 +201,7 @@ export default function PracticeStartPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="player2-sl">Player 2 Skill Level</Label>
-                <Select value={player2SL.toString()} onValueChange={(v) => setPlayer2SL(parseInt(v))}>
+                <Select value={player2SL.toString()} onValueChange={handlePlayer2SLChange}>
                   <SelectTrigger id="player2-sl">
                     <SelectValue />
                   </SelectTrigger>
@@ -184,6 +221,15 @@ export default function PracticeStartPage() {
             </div>
           </div>
 
+          {hasDuplicateNames && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Player 1 and Player 2 cannot be the same name.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
             <Textarea
@@ -197,7 +243,7 @@ export default function PracticeStartPage() {
 
           <Button
             onClick={handleStart}
-            disabled={!player1.trim() || !player2.trim()}
+            disabled={!player1.trim() || !player2.trim() || hasDuplicateNames}
             className="w-full"
             size="lg"
           >

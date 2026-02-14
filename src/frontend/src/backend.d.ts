@@ -151,6 +151,10 @@ export interface APADetailedInnningSummary {
     deadBalls: bigint;
     points: bigint;
 }
+export interface UserApprovalInfo {
+    status: ApprovalStatus;
+    principal: Principal;
+}
 export interface RackStat {
     extraStats: string;
     description: string;
@@ -285,6 +289,11 @@ export interface UserProfile {
     name: string;
     apaSkillLevel?: bigint;
 }
+export enum ApprovalStatus {
+    pending = "pending",
+    approved = "approved",
+    rejected = "rejected"
+}
 export enum MatchMode {
     straightShot = "straightShot",
     apaPractice = "apaPractice",
@@ -311,11 +320,17 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCurrentObjectBallCount(): Promise<bigint>;
+    getInviteOnlyMode(): Promise<boolean>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    isCallerApproved(): Promise<boolean>;
+    listApprovals(): Promise<Array<UserApprovalInfo>>;
+    requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveMatch(matchId: string, matchRecord: MatchRecord): Promise<void>;
+    setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setCurrentObjectBallCount(newCount: bigint): Promise<bigint>;
+    setInviteOnlyMode(enabled: boolean): Promise<void>;
     updateMatch(matchId: string, updatedMatch: MatchRecord): Promise<void>;
 }

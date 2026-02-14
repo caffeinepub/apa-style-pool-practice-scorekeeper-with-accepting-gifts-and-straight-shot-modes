@@ -1,5 +1,5 @@
 import ModeCard from '../components/navigation/ModeCard';
-import { Target, Gift, Zap, History } from 'lucide-react';
+import { Target, Gift, Zap, History, Trophy } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 
@@ -7,7 +7,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-7xl space-y-8">
       <div className="text-center">
         <h1 className="mb-2 text-4xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
         <p className="text-lg text-muted-foreground">
@@ -15,7 +15,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ModeCard
           title="APA 9-Ball Practice"
           description="Track APA 9-ball matches with Equalizer scoring, PPI, and match-point conversion"
@@ -34,6 +34,12 @@ export default function HomePage() {
           description="Count your strokes to clear the table - win at 20 or under"
           icon={<Zap className="h-6 w-6" />}
           path="/straight-shot/start"
+        />
+        <ModeCard
+          title="Official APA Match Log"
+          description="Log your real APA league matches (Coming Soon)"
+          icon={<Trophy className="h-6 w-6" />}
+          path="/real-apa-match"
         />
       </div>
 

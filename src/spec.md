@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Remember the signed-in user’s primary player APA 9-ball skill level in their profile and use it to auto-fill APA practice match setup.
+**Goal:** Add a fourth mode tile on the Home screen that links to a new blank placeholder page for future official/real APA match logging.
 
 **Planned changes:**
-- Extend the backend `UserProfile` to include an optional APA 9-ball skill level field and persist/return it through the existing profile save/get APIs without breaking existing saved profiles.
-- Update the Profile Setup / Edit Profile dialog to display and edit “APA 9-Ball Skill Level (Default)” alongside the name, using existing APA skill level utilities, and save both fields to the user profile.
-- Update the APA Practice Start page to default the primary player skill level to the saved profile value when present, while still allowing the user to manually override it.
+- Update the Home screen mode grid to display four ModeCard tiles, adding a new tile labeled in English as a placeholder for official/real APA match logging.
+- Create a new placeholder page component with simple English placeholder text and a clear “Back to Home” navigation option.
+- Register a new dedicated TanStack Router route in the app router that renders the placeholder page, and wire the new Home tile to navigate to it.
 
-**User-visible outcome:** Users can set a default APA 9-ball skill level in their profile, and the APA Practice Start page will preselect it automatically (unless the user changes it for that match).
+**User-visible outcome:** The Home screen shows a new 4th mode tile; selecting it opens a blank placeholder page for future real APA match logging with an option to return to Home.

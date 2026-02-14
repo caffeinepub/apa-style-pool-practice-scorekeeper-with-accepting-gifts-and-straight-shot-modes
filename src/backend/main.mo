@@ -1,20 +1,76 @@
-import Runtime "mo:core/Runtime";
-import Iter "mo:core/Iter";
 import Map "mo:core/Map";
+import List "mo:core/List";
+import Iter "mo:core/Iter";
+import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Time "mo:core/Time";
-import Migration "migration";
-import List "mo:core/List";
 import Nat "mo:core/Nat";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
+
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import UserApproval "user-approval/approval";
 
-(with migration = Migration.run)
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  let approvalState = UserApproval.initState(accessControlState);
+
+  // Invite-only mode toggle (admin can disable to allow public access)
+  stable var inviteOnlyMode : Bool = false;
+
+  func hasAccess(caller : Principal) : Bool {
+    if (not inviteOnlyMode) {
+      return not caller.isAnonymous();
+    };
+    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+  };
+
+  // Return if system is in invite-only mode (no longer restricted to admins)
+  public query ({ caller }) func getInviteOnlyMode() : async Bool {
+    inviteOnlyMode;
+  };
+
+  // Admin-only: Toggle invite-only mode
+  public shared ({ caller }) func setInviteOnlyMode(enabled : Bool) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can change invite-only mode");
+    };
+    inviteOnlyMode := enabled;
+  };
+
+  // Approval-related types and methods remain unchanged
+  public query ({ caller }) func isCallerApproved() : async Bool {
+    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+  };
+
+  public shared ({ caller }) func requestApproval() : async () {
+    if (AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      Runtime.trap("Admins don't need approval");
+    };
+    if (UserApproval.isApproved(approvalState, caller)) {
+      Runtime.trap("User is already approved");
+    };
+    UserApproval.requestApproval(approvalState, caller);
+  };
+
+  public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.setApproval(approvalState, user, status);
+  };
+
+  public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.listApprovals(approvalState);
+  };
 
   public type UserProfile = {
     name : Text;
@@ -23,14 +79,24 @@ actor {
 
   let userProfiles = Map.empty<Principal, UserProfile>();
 
+  // No change to user profile access logic
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: User must be approved to access profiles");
     };
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: User must be approved to access profiles");
+    };
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
@@ -40,6 +106,9 @@ actor {
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: User must be approved to save profiles");
     };
     userProfiles.add(caller, profile);
   };
@@ -334,10 +403,16 @@ actor {
     currentObjectBallCount : Nat;
   };
 
+  type MatchOwnerPattern = {
+    #practice : PracticeMatch;
+    #acceptingGifts : AcceptingGiftsMatch;
+    #straightShot : StraightShotMatch;
+    #apaNineBall : ApaNineBallMatch;
+  };
+
   let matchHistory = Map.empty<Text, MatchRecord>();
   let apaBallState = Map.empty<Int, BallState>();
   var apaStartingPlayer : ?Text = null;
-  // Carry the Accepting Gifts state forward per user.
   let agSessions = Map.empty<Principal, AGSession>();
 
   func convertToApiMatch(matchRecord : MatchRecord) : ApiMatch {
@@ -624,16 +699,16 @@ actor {
   };
 
   public shared ({ caller }) func saveMatch(matchId : Text, matchRecord : MatchRecord) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save matches");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can save matches");
     };
     let secureMatch = setMatchOwner(matchRecord, caller);
     matchHistory.add(matchId, secureMatch);
   };
 
   public query ({ caller }) func getMatch(matchId : Text) : async ?ApiMatch {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view matches");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can view matches");
     };
 
     switch (matchHistory.get(matchId)) {
@@ -649,6 +724,10 @@ actor {
   };
 
   public query ({ caller }) func getAllMatches() : async [ApiMatch] {
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can view matches");
+    };
+
     let isAdmin = AccessControl.isAdmin(accessControlState, caller);
 
     matchHistory.values()
@@ -665,8 +744,8 @@ actor {
   };
 
   public shared ({ caller }) func updateMatch(matchId : Text, updatedMatch : MatchRecord) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update matches");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can update matches");
     };
 
     switch (matchHistory.get(matchId)) {
@@ -683,8 +762,8 @@ actor {
   };
 
   public shared ({ caller }) func deleteMatch(matchId : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can delete matches");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can delete matches");
     };
 
     switch (matchHistory.get(matchId)) {
@@ -707,8 +786,8 @@ actor {
   };
 
   public shared ({ caller }) func computeAPASummary(startingPlayer : Text, ballStates : [BallState]) : async APADetailedInnningSummary {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can compute APA summaries");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can compute APA summaries");
     };
 
     var playerAPoints = 0;
@@ -773,11 +852,9 @@ actor {
     };
   };
 
-  // Minimum 2, max 7. Any other value returns current state.
-  // Will initialize with 2 if no existing state is found
   public shared ({ caller }) func setCurrentObjectBallCount(newCount : Nat) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can modify state");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can modify state");
     };
     if (newCount < 2 or newCount > 7) {
       Runtime.trap("Invalid value. Only the range 2–7 is allowed");
@@ -789,18 +866,16 @@ actor {
     newCount;
   };
 
-  // Carry forward current state when session is completed.
   public shared ({ caller }) func completeSession(finalCount : Nat) : async Nat {
     await setCurrentObjectBallCount(finalCount);
   };
 
-  // Get persisted current count (/carry forward for new sessions).
   public query ({ caller }) func getCurrentObjectBallCount() : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can fetch state");
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can fetch state");
     };
     switch (agSessions.get(caller)) {
-      case (null) { 2 }; // Default to 2 if not found
+      case (null) { 2 };
       case (?session) { session.currentObjectBallCount };
     };
   };

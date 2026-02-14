@@ -12,6 +12,8 @@ import StraightShotGamePage from './pages/straight-shot/StraightShotGamePage';
 import MatchHistoryPage from './pages/history/MatchHistoryPage';
 import MatchDetailsPage from './pages/history/MatchDetailsPage';
 import PlayerAggregateStatsPage from './pages/players/PlayerAggregateStatsPage';
+import OwnerApprovalsPage from './pages/owner/OwnerApprovalsPage';
+import RealApaMatchPlaceholderPage from './pages/apa/RealApaMatchPlaceholderPage';
 import AuthGate from './components/auth/AuthGate';
 
 const rootRoute = createRootRoute({
@@ -85,6 +87,18 @@ const playerStatsRoute = createRoute({
   component: PlayerAggregateStatsPage,
 });
 
+const ownerApprovalsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/owner/approvals',
+  component: OwnerApprovalsPage,
+});
+
+const realApaMatchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/real-apa-match',
+  component: RealApaMatchPlaceholderPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   practiceStartRoute,
@@ -96,6 +110,8 @@ const routeTree = rootRoute.addChildren([
   historyRoute,
   matchDetailsRoute,
   playerStatsRoute,
+  ownerApprovalsRoute,
+  realApaMatchRoute,
 ]);
 
 const router = createRouter({ routeTree });

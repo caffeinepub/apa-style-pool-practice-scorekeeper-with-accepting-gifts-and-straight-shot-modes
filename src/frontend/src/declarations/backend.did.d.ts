@@ -162,6 +162,9 @@ export interface ApiMatch {
   'strokes' : [] | [Array<bigint>],
   'setsCompleted' : [] | [bigint],
 }
+export type ApprovalStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export interface BallState {
   'by' : string,
   'id' : bigint,
@@ -264,6 +267,10 @@ export interface TeamStats {
     { 'penaltyAwarded' : string },
 }
 export type Time = bigint;
+export interface UserApprovalInfo {
+  'status' : ApprovalStatus,
+  'principal' : Principal,
+}
 export interface UserProfile {
   'name' : string,
   'apaSkillLevel' : [] | [bigint],
@@ -285,12 +292,18 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCurrentObjectBallCount' : ActorMethod<[], bigint>,
+  'getInviteOnlyMode' : ActorMethod<[], boolean>,
   'getMatch' : ActorMethod<[string], [] | [ApiMatch]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isCallerApproved' : ActorMethod<[], boolean>,
+  'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
+  'requestApproval' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveMatch' : ActorMethod<[string, MatchRecord], undefined>,
+  'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setCurrentObjectBallCount' : ActorMethod<[bigint], bigint>,
+  'setInviteOnlyMode' : ActorMethod<[boolean], undefined>,
   'updateMatch' : ActorMethod<[string, MatchRecord], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

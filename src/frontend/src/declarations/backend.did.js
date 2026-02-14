@@ -184,6 +184,15 @@ export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'apaSkillLevel' : IDL.Opt(IDL.Nat),
 });
+export const ApprovalStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'approved' : IDL.Null,
+  'rejected' : IDL.Null,
+});
+export const UserApprovalInfo = IDL.Record({
+  'status' : ApprovalStatus,
+  'principal' : IDL.Principal,
+});
 export const BaseMatchEntry = IDL.Record({
   'owner' : IDL.Principal,
   'mode' : MatchMode,
@@ -302,6 +311,7 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCurrentObjectBallCount' : IDL.Func([], [IDL.Nat], ['query']),
+  'getInviteOnlyMode' : IDL.Func([], [IDL.Bool], ['query']),
   'getMatch' : IDL.Func([IDL.Text], [IDL.Opt(ApiMatch)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -309,9 +319,14 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+  'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
+  'requestApproval' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+  'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setCurrentObjectBallCount' : IDL.Func([IDL.Nat], [IDL.Nat], []),
+  'setInviteOnlyMode' : IDL.Func([IDL.Bool], [], []),
   'updateMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
 });
 
@@ -494,6 +509,15 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'apaSkillLevel' : IDL.Opt(IDL.Nat),
   });
+  const ApprovalStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
+  const UserApprovalInfo = IDL.Record({
+    'status' : ApprovalStatus,
+    'principal' : IDL.Principal,
+  });
   const BaseMatchEntry = IDL.Record({
     'owner' : IDL.Principal,
     'mode' : MatchMode,
@@ -612,6 +636,7 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCurrentObjectBallCount' : IDL.Func([], [IDL.Nat], ['query']),
+    'getInviteOnlyMode' : IDL.Func([], [IDL.Bool], ['query']),
     'getMatch' : IDL.Func([IDL.Text], [IDL.Opt(ApiMatch)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
@@ -619,9 +644,14 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+    'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
+    'requestApproval' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+    'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setCurrentObjectBallCount' : IDL.Func([IDL.Nat], [IDL.Nat], []),
+    'setInviteOnlyMode' : IDL.Func([IDL.Bool], [], []),
     'updateMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
   });
 };

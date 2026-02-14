@@ -1,71 +1,55 @@
 {
   "kind": "build_request",
-  "title": "Remember primary player APA skill level in user profile and auto-fill in APA match setup",
+  "title": "Add 4th mode tile on Home screen linking to a blank placeholder page",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-38",
-      "text": "Extend the backend user profile to store the primary player’s APA 9-ball skill level, and return/save it via the existing profile APIs.\n\nContext: backend/main.mo currently defines `public type UserProfile = { name : Text; };` and profile is saved via `saveCallerUserProfile` / fetched via `getCallerUserProfile`.\n\nAdd a new optional field (e.g., `apaSkillLevel : ?Nat`) so existing users who only have a name saved remain valid.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "ummm, LS  skill level should be remembered.  in the edit your profile where it says uipdate your name, technically thats where you should set skill level for the main player...if LS loads in an APA match it should know skill level..."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Calling `getCallerUserProfile()` returns the saved skill level when previously set, and returns `null`/missing value for users who have never set one.",
-        "Calling `saveCallerUserProfile(profile)` persists both `name` and the new APA skill level field for the authenticated caller.",
-        "Existing saved profiles that only contain a name do not cause traps/errors and still load successfully."
-      ]
-    },
-    {
-      "id": "REQ-39",
-      "text": "Update the Profile Setup / Edit Profile dialog to allow viewing and editing the primary player’s APA 9-ball skill level alongside the name, and save both fields to the user profile.\n\nImplement this in `frontend/src/components/auth/ProfileSetupDialog.tsx` by adding an APA skill level selector using the existing APA skill-level constants/utilities (from `frontend/src/lib/apa/apaEqualizer.ts`).\n\nUser-facing text must be in English and should clearly indicate this skill level is used as the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”).",
+      "id": "REQ-53",
+      "text": "Add a 4th mode tile/card to the Home screen mode grid that navigates to a new placeholder route for a future “real APA match logging” mode.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "in the edit your profile where it says uipdate your name, technically thats where you should set skill level for the main player..."
+          "“Add a 4th mode tile on the home screen that links to a blank page.”"
         ]
       },
       "acceptanceCriteria": [
-        "In Edit Profile mode, the dialog pre-fills both the current saved name and the current saved APA skill level (if present).",
-        "Saving the dialog updates the backend profile so subsequent loads show the updated skill level.",
-        "All new/updated UI copy in this dialog is English-only."
+        "Home screen (frontend/src/pages/HomePage.tsx) shows four ModeCard tiles instead of three.",
+        "The new tile has an English title and description indicating it is for official/real APA match logging and/or that it is a placeholder.",
+        "Clicking the new tile navigates to the new placeholder route without errors."
       ]
     },
     {
-      "id": "REQ-40",
-      "text": "Auto-fill the saved primary player APA skill level when starting a new APA practice match.\n\nUpdate `frontend/src/pages/apa/PracticeStartPage.tsx` so that when the signed-in user has a saved profile skill level, the APA start page uses it as the default selection for the primary player instead of always defaulting to SL 5.\n\nThe auto-fill behavior should not block manual overrides: if the user changes the skill level in the start form, it must respect the user’s selection.",
+      "id": "REQ-54",
+      "text": "Create a new blank placeholder page component for the 4th mode and register a new TanStack Router route for it in the app router.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "...it saves my name and then i have to set skill level before each match...."
+          "“Add a 4th mode tile on the home screen that links to a blank page.”"
         ]
       },
       "acceptanceCriteria": [
-        "If the user has a saved APA skill level in their profile, opening the APA Practice Start page shows that skill level selected by default for the primary player.",
-        "If the user changes the skill level on the start page, starting the match uses the changed value (not forcibly overwritten by profile defaults).",
-        "If the user has no saved APA skill level, the start page continues to behave sensibly (e.g., keeps the current default)."
+        "A new page component exists (new file under frontend/src/pages/...) that renders a simple, blank/placeholder experience with English text (e.g., heading + short message).",
+        "The placeholder page includes a clear way to navigate back to Home (e.g., a “Back to Home” button).",
+        "frontend/src/App.tsx registers a new route path (new, dedicated path) that renders the placeholder page.",
+        "Navigating directly to the new route path renders the placeholder page successfully."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Use English for all user-facing text added/changed in this scope."
+    "Frontend files under frontend/immutablePaths must not be edited (compose existing UI components instead).",
+    "Keep this change limited to adding the 4th mode tile + a blank placeholder page; do not modify existing match modes, match history behavior, or backend APIs.",
+    "All user-facing text must be in English."
   ],
   "nonGoals": [
-    "Persisting or auto-filling the opponent’s skill level or name beyond the current match start form (unless already implemented elsewhere).",
-    "Changing APA scoring rules, match history schemas, or aggregate stats logic beyond what is necessary to support profile skill level persistence and auto-fill."
+    "Do not implement the real APA match logging form fields yet.",
+    "Do not add persistence/saving for the 4th mode yet.",
+    "Do not add new backend types, endpoints, or migrations for this placeholder step."
   ],
   "imageRequirements": {
     "required": [],
