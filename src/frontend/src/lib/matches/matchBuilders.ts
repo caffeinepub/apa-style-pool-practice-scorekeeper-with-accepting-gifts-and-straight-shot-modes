@@ -1,4 +1,4 @@
-import { type MatchRecord, MatchMode } from '../../backend';
+import { type MatchLogRecord, MatchMode } from '../../backend';
 import { type Identity } from '@icp-sdk/core/agent';
 import type { RackData } from '../apa/apaScoring';
 import type { MatchPointOutcome } from '../apa/apaMatchPoints';
@@ -29,7 +29,7 @@ interface ApaNineBallParams {
   matchPointOutcome: MatchPointOutcome;
 }
 
-export function buildApaNineBallMatch(params: ApaNineBallParams): { matchId: string; matchRecord: MatchRecord } {
+export function buildApaNineBallMatch(params: ApaNineBallParams): { matchId: string; matchRecord: MatchLogRecord } {
   const matchId = generateMatchId();
   const principal = params.identity.getPrincipal();
   const player1Won = params.player1Points >= params.player1SL;
@@ -38,7 +38,7 @@ export function buildApaNineBallMatch(params: ApaNineBallParams): { matchId: str
   const player1PPI = calculatePPI(params.player1Points, params.player1Innings);
   const player2PPI = calculatePPI(params.player2Points, params.player2Innings);
 
-  const matchRecord: MatchRecord = {
+  const matchRecord: MatchLogRecord = {
     __kind__: 'apaNineBall',
     apaNineBall: {
       base: {
@@ -126,11 +126,11 @@ interface AcceptingGiftsParams {
   finalSetScoreGhost: number;
 }
 
-export function buildAcceptingGiftsMatch(params: AcceptingGiftsParams): { matchId: string; matchRecord: MatchRecord } {
+export function buildAcceptingGiftsMatch(params: AcceptingGiftsParams): { matchId: string; matchRecord: MatchLogRecord } {
   const matchId = generateMatchId();
   const principal = params.identity.getPrincipal();
 
-  const matchRecord: MatchRecord = {
+  const matchRecord: MatchLogRecord = {
     __kind__: 'acceptingGifts',
     acceptingGifts: {
       base: {
@@ -166,11 +166,11 @@ interface StraightShotParams {
   identity: Identity;
 }
 
-export function buildStraightShotMatch(params: StraightShotParams): { matchId: string; matchRecord: MatchRecord } {
+export function buildStraightShotMatch(params: StraightShotParams): { matchId: string; matchRecord: MatchLogRecord } {
   const matchId = generateMatchId();
   const principal = params.identity.getPrincipal();
 
-  const matchRecord: MatchRecord = {
+  const matchRecord: MatchLogRecord = {
     __kind__: 'straightShot',
     straightShot: {
       base: {
@@ -193,6 +193,42 @@ export function buildStraightShotMatch(params: StraightShotParams): { matchId: s
         fourthShot: BigInt(0),
         total: BigInt(params.totalStrokes),
       },
+    },
+  };
+
+  return { matchId, matchRecord };
+}
+
+interface OfficialApaMatchLogParams {
+  date: string;
+  opponentName: string;
+  myScore: string;
+  theirScore: string;
+  points: string;
+  innings: string;
+  defensiveShots: string;
+  notes: string;
+  identity: Identity;
+}
+
+export function buildOfficialApaMatchLog(params: OfficialApaMatchLogParams): { matchId: string; matchRecord: MatchLogRecord } {
+  const matchId = generateMatchId();
+  const principal = params.identity.getPrincipal();
+
+  const matchRecord: MatchLogRecord = {
+    __kind__: 'officialApaMatchLog',
+    officialApaMatchLog: {
+      matchId,
+      dateTime: getCurrentTimestamp(),
+      owner: principal,
+      date: params.date,
+      opponentName: params.opponentName,
+      myScore: params.myScore,
+      theirScore: params.theirScore,
+      points: params.points,
+      innings: params.innings,
+      defensiveShots: params.defensiveShots,
+      notes: params.notes,
     },
   };
 

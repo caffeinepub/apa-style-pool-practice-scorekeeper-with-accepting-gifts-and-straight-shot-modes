@@ -8,20 +8,19 @@ import Nat "mo:core/Nat";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
 
-
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
+import Migration "migration";
 
-
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   let approvalState = UserApproval.initState(accessControlState);
 
-  // Invite-only mode toggle (admin can disable to allow public access)
-  stable var inviteOnlyMode : Bool = false;
+  var inviteOnlyMode : Bool = false;
 
   func hasAccess(caller : Principal) : Bool {
     if (not inviteOnlyMode) {
@@ -30,12 +29,10 @@ actor {
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
   };
 
-  // Return if system is in invite-only mode (no longer restricted to admins)
   public query ({ caller }) func getInviteOnlyMode() : async Bool {
     inviteOnlyMode;
   };
 
-  // Admin-only: Toggle invite-only mode
   public shared ({ caller }) func setInviteOnlyMode(enabled : Bool) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can change invite-only mode");
@@ -43,7 +40,6 @@ actor {
     inviteOnlyMode := enabled;
   };
 
-  // Approval-related types and methods remain unchanged
   public query ({ caller }) func isCallerApproved() : async Bool {
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
   };
@@ -79,7 +75,6 @@ actor {
 
   let userProfiles = Map.empty<Principal, UserProfile>();
 
-  // No change to user profile access logic
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -180,6 +175,20 @@ actor {
     teamStats : [TeamStats];
   };
 
+  type OfficialApaMatchLog = {
+    matchId : Text;
+    dateTime : Time.Time;
+    owner : Principal;
+    date : Text;
+    opponentName : Text;
+    myScore : Text;
+    theirScore : Text;
+    points : Text;
+    innings : Text;
+    defensiveShots : Text;
+    notes : Text;
+  };
+
   type ApaPlayerStats = {
     playerId : Principal;
     skillLevel : Nat;
@@ -231,11 +240,12 @@ actor {
     };
   };
 
-  type MatchRecord = {
+  type MatchLogRecord = {
     #practice : PracticeMatch;
     #acceptingGifts : AcceptingGiftsMatch;
     #straightShot : StraightShotMatch;
     #apaNineBall : ApaNineBallMatch;
+    #officialApaMatchLog : OfficialApaMatchLog;
   };
 
   type BallState = {
@@ -293,6 +303,16 @@ actor {
     setsCompleted : ?Nat;
     finalSetScorePlayer : ?Nat;
     finalSetScoreGhost : ?Nat;
+    officialApaMatchLogData : ?{
+      date : Text;
+      opponentName : Text;
+      myScore : Text;
+      theirScore : Text;
+      points : Text;
+      innings : Text;
+      defensiveShots : Text;
+      notes : Text;
+    };
   };
 
   type APAMatchStatsUiContainer = {
@@ -410,12 +430,12 @@ actor {
     #apaNineBall : ApaNineBallMatch;
   };
 
-  let matchHistory = Map.empty<Text, MatchRecord>();
+  let matchHistory = Map.empty<Text, MatchLogRecord>();
   let apaBallState = Map.empty<Int, BallState>();
   var apaStartingPlayer : ?Text = null;
   let agSessions = Map.empty<Principal, AGSession>();
 
-  func convertToApiMatch(matchRecord : MatchRecord) : ApiMatch {
+  func convertToApiMatch(matchRecord : MatchLogRecord) : ApiMatch {
     switch (matchRecord) {
       case (#practice(practiceMatch)) {
         {
@@ -448,6 +468,7 @@ actor {
           setsCompleted = null;
           finalSetScorePlayer = null;
           finalSetScoreGhost = null;
+          officialApaMatchLogData = null;
         };
       };
       case (#acceptingGifts(agMatch)) {
@@ -481,6 +502,7 @@ actor {
           setsCompleted = ?agMatch.setsCompleted;
           finalSetScorePlayer = ?agMatch.finalSetScorePlayer;
           finalSetScoreGhost = ?agMatch.finalSetScoreGhost;
+          officialApaMatchLogData = null;
         };
       };
       case (#straightShot(ssMatch)) {
@@ -514,6 +536,7 @@ actor {
           setsCompleted = null;
           finalSetScorePlayer = null;
           finalSetScoreGhost = null;
+          officialApaMatchLogData = null;
         };
       };
       case (#apaNineBall(apaMatch)) {
@@ -554,6 +577,50 @@ actor {
           setsCompleted = null;
           finalSetScorePlayer = null;
           finalSetScoreGhost = null;
+          officialApaMatchLogData = null;
+        };
+      };
+      case (#officialApaMatchLog(log)) {
+        {
+          matchId = log.matchId;
+          mode = #apaPractice;
+          dateTime = log.dateTime;
+          players = [];
+          notes = ?log.notes;
+          owner = log.owner;
+          attempts = null;
+          makes = null;
+          streaks = null;
+          rulesReference = null;
+          completionStatus = null;
+          score = null;
+          completionTime = null;
+          strokes = null;
+          scratchStrokes = null;
+          firstShotScore = null;
+          secondShotScore = null;
+          thirdShotScore = null;
+          fourthShotScore = null;
+          totalScore = null;
+          shots = null;
+          ballsMade = null;
+          apaMatchInfo = null;
+          startingObjectBallCount = null;
+          endingObjectBallCount = null;
+          totalAttempts = null;
+          setsCompleted = null;
+          finalSetScorePlayer = null;
+          finalSetScoreGhost = null;
+          officialApaMatchLogData = ?{
+            date = log.date;
+            opponentName = log.opponentName;
+            myScore = log.myScore;
+            theirScore = log.theirScore;
+            points = log.points;
+            innings = log.innings;
+            defensiveShots = log.defensiveShots;
+            notes = log.notes;
+          };
         };
       };
     };
@@ -648,16 +715,17 @@ actor {
     };
   };
 
-  func getMatchOwner(matchRecord : MatchRecord) : Principal {
+  func getMatchOwner(matchRecord : MatchLogRecord) : Principal {
     switch (matchRecord) {
       case (#practice(m)) { m.base.owner };
       case (#acceptingGifts(m)) { m.base.owner };
       case (#straightShot(m)) { m.base.owner };
       case (#apaNineBall(m)) { m.base.owner };
+      case (#officialApaMatchLog(m)) { m.owner };
     };
   };
 
-  func setMatchOwner(matchRecord : MatchRecord, newOwner : Principal) : MatchRecord {
+  func setMatchOwner(matchRecord : MatchLogRecord, newOwner : Principal) : MatchLogRecord {
     switch (matchRecord) {
       case (#practice(m)) {
         #practice({
@@ -695,10 +763,16 @@ actor {
           };
         });
       };
+      case (#officialApaMatchLog(m)) {
+        #officialApaMatchLog({
+          m with
+          owner = newOwner;
+        });
+      };
     };
   };
 
-  public shared ({ caller }) func saveMatch(matchId : Text, matchRecord : MatchRecord) : async () {
+  public shared ({ caller }) func saveMatch(matchId : Text, matchRecord : MatchLogRecord) : async () {
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: Only approved users can save matches");
     };
@@ -731,7 +805,7 @@ actor {
     let isAdmin = AccessControl.isAdmin(accessControlState, caller);
 
     matchHistory.values()
-      .filter(func(m : MatchRecord) : Bool {
+      .filter(func(m : MatchLogRecord) : Bool {
         if (isAdmin) {
           true;
         } else {
@@ -743,7 +817,7 @@ actor {
       .toArray();
   };
 
-  public shared ({ caller }) func updateMatch(matchId : Text, updatedMatch : MatchRecord) : async () {
+  public shared ({ caller }) func updateMatch(matchId : Text, updatedMatch : MatchLogRecord) : async () {
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: Only approved users can update matches");
     };

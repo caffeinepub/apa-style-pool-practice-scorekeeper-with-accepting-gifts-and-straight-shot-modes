@@ -50,6 +50,9 @@ export default function MatchDetailsPage() {
   };
 
   const getModeLabel = (mode: MatchMode) => {
+    if (match.officialApaMatchLogData) {
+      return 'Official APA Match Log';
+    }
     switch (mode) {
       case MatchMode.apaPractice:
         return 'APA 9-Ball Practice';
@@ -63,6 +66,9 @@ export default function MatchDetailsPage() {
   };
 
   const getModeColor = (mode: MatchMode) => {
+    if (match.officialApaMatchLogData) {
+      return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+    }
     switch (mode) {
       case MatchMode.apaPractice:
         return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
@@ -87,7 +93,9 @@ export default function MatchDetailsPage() {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <CardTitle>{getModeLabel(match.mode)}</CardTitle>
-              <CardDescription>{formatDate(match.dateTime)}</CardDescription>
+              <CardDescription>
+                {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
+              </CardDescription>
             </div>
             <Badge className={getModeColor(match.mode)} variant="secondary">
               {getModeLabel(match.mode)}
@@ -95,31 +103,75 @@ export default function MatchDetailsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div>
-            <h3 className="mb-2 flex items-center gap-2 font-semibold">
-              <Users className="h-4 w-4" />
-              Players
-            </h3>
-            <div className="space-y-2">
-              {match.players.map((player, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {player.name}
-                    {player.skillLevel !== undefined && ` (SL ${player.skillLevel})`}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate({ to: getPlayerStatsRoute(player.name) })}
-                    className="gap-1"
-                  >
-                    <TrendingUp className="h-3 w-3" />
-                    View Stats
-                  </Button>
+          {match.officialApaMatchLogData && (
+            <div>
+              <h3 className="mb-3 font-semibold">Official APA Match Details</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Match Date</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.date || 'Not specified'}</span>
                 </div>
-              ))}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Opponent Name</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.opponentName || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Your Score</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.myScore || '0'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Their Score</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.theirScore || '0'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Points</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.points || '0'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Innings</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.innings || '0'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Defensive Shots</span>
+                  <span className="font-semibold">{match.officialApaMatchLogData.defensiveShots || '0'}</span>
+                </div>
+                {match.officialApaMatchLogData.notes && (
+                  <div className="pt-2">
+                    <h4 className="mb-1 text-sm font-semibold">Notes</h4>
+                    <p className="text-sm text-muted-foreground">{match.officialApaMatchLogData.notes}</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {!match.officialApaMatchLogData && (
+            <div>
+              <h3 className="mb-2 flex items-center gap-2 font-semibold">
+                <Users className="h-4 w-4" />
+                Players
+              </h3>
+              <div className="space-y-2">
+                {match.players.map((player, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      {player.name}
+                      {player.skillLevel !== undefined && ` (SL ${player.skillLevel})`}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate({ to: getPlayerStatsRoute(player.name) })}
+                      className="gap-1"
+                    >
+                      <TrendingUp className="h-3 w-3" />
+                      View Stats
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {match.mode === MatchMode.apaPractice && match.apaMatchInfo && (
             <div>
@@ -246,7 +298,7 @@ export default function MatchDetailsPage() {
             </div>
           )}
 
-          {match.notes && (
+          {match.notes && !match.officialApaMatchLogData && (
             <div>
               <h3 className="mb-2 font-semibold">Notes</h3>
               <p className="text-sm text-muted-foreground">{match.notes}</p>
@@ -256,7 +308,7 @@ export default function MatchDetailsPage() {
           <div className="flex justify-between border-t pt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              {formatDate(match.dateTime)}
+              {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
             </div>
             <DeleteMatchButton matchId={match.matchId} />
           </div>

@@ -1,43 +1,49 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add 4th Home mode tile and placeholder route for future real APA match logging",
+  "title": "Persist Official APA Match Log form inputs and render saved entries in History/Details",
   "requirements": [
     {
-      "id": "REQ-53",
-      "summary": "Add a fourth ModeCard tile on Home that navigates to the new real APA match logging placeholder page.",
+      "id": "REQ-65",
+      "summary": "Persist Official APA Match Log form inputs by wiring the Save button to useSaveMatch and navigate to the saved match.",
       "acceptanceCriteria": [
-        "Home screen (frontend/src/pages/HomePage.tsx) shows four ModeCard tiles instead of three.",
-        "The new tile has an English title and description indicating it is for official/real APA match logging and/or that it is a placeholder.",
-        "Clicking the new tile navigates to the new placeholder route without errors."
+        "Clicking “Save Match” sends the current in-component form state to the backend using the existing React Query mutation pattern (`useSaveMatch`).",
+        "The current placeholder behavior/message (\"Saving functionality is not implemented yet...\") is removed and replaced with real save UX (disabled button/spinner while saving, and an English error message on failure).",
+        "Client-side validation already present continues to block saving when numeric fields are invalid (e.g., negative or non-numeric).",
+        "On successful save, the user sees an English confirmation (e.g., “Match saved”) and the UI navigates to a stable route where the user can find the saved entry (either the Match History list or the new Match Details page for that match ID)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/src/lib/matches/matchBuilders.ts",
           "operation": "modify",
-          "description": "Add a 4th tile to the existing mode grid using the existing ModeCard component (card UI + built-in navigation via TanStack Router). Verify the component's usage instructions before implementing. Update the grid layout (currently lg:grid-cols-3) to a 4-tile-friendly layout (e.g., lg:grid-cols-4) and wire the new tile's path to the new dedicated placeholder route path. Ensure all new user-facing text is in English and clearly labeled as official/real APA match logging placeholder."
+          "description": "Add a builder for the Official/Real APA match log that generates a matchId and constructs a MatchLogRecord with __kind__ = \"officialApaMatchLog\", mapping the provided form fields into the OfficialApaMatchLog payload (store values as entered, no extra calculations)."
+        },
+        {
+          "path": "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
+          "operation": "modify",
+          "description": "Replace the current save placeholder with a real save flow: use `useSaveMatch` to submit a MatchLogRecord built from current form state; disable the button and show a saving indicator while the mutation is in progress; show an English error message on failure; on success show an English confirmation (e.g., via the existing Toaster/sonner) and navigate to `/history/$matchId` for the newly saved match. Keep existing numeric validation behavior and block save when any numeric field is invalid."
         }
       ]
     },
     {
-      "id": "REQ-54",
-      "summary": "Create a new placeholder page component for the 4th mode and register a new TanStack Router route to render it.",
+      "id": "REQ-66",
+      "summary": "Update Match History and Match Details UI to recognize and display Official/Real APA match log entries (summary + full details) without impacting other match modes.",
       "acceptanceCriteria": [
-        "A new page component exists (new file under frontend/src/pages/...) that renders a simple, blank/placeholder experience with English text (e.g., heading + short message).",
-        "The placeholder page includes a clear way to navigate back to Home (e.g., a “Back to Home” button).",
-        "frontend/src/App.tsx registers a new route path (new, dedicated path) that renders the placeholder page.",
-        "Navigating directly to the new route path renders the placeholder page successfully."
+        "Official/Real APA match log entries appear in Match History without UI errors and with an English label indicating the mode (e.g., “Official APA Match Log”).",
+        "The summary card for an Official/Real APA match log shows match date (or saved timestamp if date is missing), opponent name, and the key numeric fields (your score/their score and/or points/innings/defensive shots) in a compact format.",
+        "Opening Match Details for an Official/Real APA match log renders all saved fields (match date, opponent name, your score, their score, points, innings, defensive shots, notes) in English.",
+        "Older matches of other modes (APA Practice, Accepting Gifts, Straight Shot) continue to render exactly as before."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
-          "operation": "create",
-          "description": "Create a new placeholder page that displays a simple heading and short English message indicating this is a placeholder for official/real APA match logging. Include a clear 'Back to Home' control using the existing shadcn/ui Button component and TanStack Router navigation. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "operation": "modify",
+          "description": "Detect Official/Real APA match log entries by the presence of `match.officialApaMatchLogData` and render an English mode label (e.g., “Official APA Match Log”), a compact summary using the saved fields (date or fallback to match.dateTime, opponent name, and key numeric fields), while preserving the existing summaries for APA Practice, Accepting Gifts, and Straight Shot."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
           "operation": "modify",
-          "description": "Register a new dedicated TanStack Router route path that renders the new placeholder page component, and add it to the route tree so direct navigation to the path works."
+          "description": "Add a details section for Official/Real APA match log entries when `match.officialApaMatchLogData` exists, rendering all saved fields (match date, opponent name, your score, their score, points, innings, defensive shots, notes) in English. Ensure other match modes' detail rendering remains unchanged."
         }
       ]
     }

@@ -175,6 +175,18 @@ export const ApiMatch = IDL.Record({
   'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
   'secondShotScore' : IDL.Opt(IDL.Nat),
   'dateTime' : Time,
+  'officialApaMatchLogData' : IDL.Opt(
+    IDL.Record({
+      'defensiveShots' : IDL.Text,
+      'theirScore' : IDL.Text,
+      'myScore' : IDL.Text,
+      'date' : IDL.Text,
+      'opponentName' : IDL.Text,
+      'notes' : IDL.Text,
+      'innings' : IDL.Text,
+      'points' : IDL.Text,
+    })
+  ),
   'finalSetScoreGhost' : IDL.Opt(IDL.Nat),
   'streaks' : IDL.Opt(IDL.Nat),
   'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
@@ -227,6 +239,19 @@ export const AcceptingGiftsMatch = IDL.Record({
   'totalAttempts' : IDL.Nat,
   'finalSetScoreGhost' : IDL.Nat,
   'setsCompleted' : IDL.Nat,
+});
+export const OfficialApaMatchLog = IDL.Record({
+  'defensiveShots' : IDL.Text,
+  'theirScore' : IDL.Text,
+  'myScore' : IDL.Text,
+  'owner' : IDL.Principal,
+  'date' : IDL.Text,
+  'opponentName' : IDL.Text,
+  'matchId' : IDL.Text,
+  'notes' : IDL.Text,
+  'innings' : IDL.Text,
+  'dateTime' : Time,
+  'points' : IDL.Text,
 });
 export const PracticeMatch = IDL.Record({
   'makes' : IDL.Opt(IDL.Nat),
@@ -289,9 +314,10 @@ export const ApaNineBallMatch = IDL.Record({
   'umpire' : IDL.Opt(IDL.Principal),
   'seasonType' : IDL.Text,
 });
-export const MatchRecord = IDL.Variant({
+export const MatchLogRecord = IDL.Variant({
   'straightShot' : StraightShotMatch,
   'acceptingGifts' : AcceptingGiftsMatch,
+  'officialApaMatchLog' : OfficialApaMatchLog,
   'practice' : PracticeMatch,
   'apaNineBall' : ApaNineBallMatch,
 });
@@ -323,11 +349,11 @@ export const idlService = IDL.Service({
   'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
   'requestApproval' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'saveMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+  'saveMatch' : IDL.Func([IDL.Text, MatchLogRecord], [], []),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setCurrentObjectBallCount' : IDL.Func([IDL.Nat], [IDL.Nat], []),
   'setInviteOnlyMode' : IDL.Func([IDL.Bool], [], []),
-  'updateMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+  'updateMatch' : IDL.Func([IDL.Text, MatchLogRecord], [], []),
 });
 
 export const idlInitArgs = [];
@@ -500,6 +526,18 @@ export const idlFactory = ({ IDL }) => {
     'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
     'secondShotScore' : IDL.Opt(IDL.Nat),
     'dateTime' : Time,
+    'officialApaMatchLogData' : IDL.Opt(
+      IDL.Record({
+        'defensiveShots' : IDL.Text,
+        'theirScore' : IDL.Text,
+        'myScore' : IDL.Text,
+        'date' : IDL.Text,
+        'opponentName' : IDL.Text,
+        'notes' : IDL.Text,
+        'innings' : IDL.Text,
+        'points' : IDL.Text,
+      })
+    ),
     'finalSetScoreGhost' : IDL.Opt(IDL.Nat),
     'streaks' : IDL.Opt(IDL.Nat),
     'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
@@ -552,6 +590,19 @@ export const idlFactory = ({ IDL }) => {
     'totalAttempts' : IDL.Nat,
     'finalSetScoreGhost' : IDL.Nat,
     'setsCompleted' : IDL.Nat,
+  });
+  const OfficialApaMatchLog = IDL.Record({
+    'defensiveShots' : IDL.Text,
+    'theirScore' : IDL.Text,
+    'myScore' : IDL.Text,
+    'owner' : IDL.Principal,
+    'date' : IDL.Text,
+    'opponentName' : IDL.Text,
+    'matchId' : IDL.Text,
+    'notes' : IDL.Text,
+    'innings' : IDL.Text,
+    'dateTime' : Time,
+    'points' : IDL.Text,
   });
   const PracticeMatch = IDL.Record({
     'makes' : IDL.Opt(IDL.Nat),
@@ -614,9 +665,10 @@ export const idlFactory = ({ IDL }) => {
     'umpire' : IDL.Opt(IDL.Principal),
     'seasonType' : IDL.Text,
   });
-  const MatchRecord = IDL.Variant({
+  const MatchLogRecord = IDL.Variant({
     'straightShot' : StraightShotMatch,
     'acceptingGifts' : AcceptingGiftsMatch,
+    'officialApaMatchLog' : OfficialApaMatchLog,
     'practice' : PracticeMatch,
     'apaNineBall' : ApaNineBallMatch,
   });
@@ -648,11 +700,11 @@ export const idlFactory = ({ IDL }) => {
     'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
     'requestApproval' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'saveMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+    'saveMatch' : IDL.Func([IDL.Text, MatchLogRecord], [], []),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setCurrentObjectBallCount' : IDL.Func([IDL.Nat], [IDL.Nat], []),
     'setInviteOnlyMode' : IDL.Func([IDL.Bool], [], []),
-    'updateMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+    'updateMatch' : IDL.Func([IDL.Text, MatchLogRecord], [], []),
   });
 };
 

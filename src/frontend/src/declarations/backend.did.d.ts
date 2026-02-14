@@ -157,6 +157,18 @@ export interface ApiMatch {
   'apaMatchInfo' : [] | [APAMatchStatsUiContainer],
   'secondShotScore' : [] | [bigint],
   'dateTime' : Time,
+  'officialApaMatchLogData' : [] | [
+    {
+      'defensiveShots' : string,
+      'theirScore' : string,
+      'myScore' : string,
+      'date' : string,
+      'opponentName' : string,
+      'notes' : string,
+      'innings' : string,
+      'points' : string,
+    }
+  ],
   'finalSetScoreGhost' : [] | [bigint],
   'streaks' : [] | [bigint],
   'strokes' : [] | [Array<bigint>],
@@ -197,13 +209,27 @@ export interface BaseMatchEntry {
   'notes' : [] | [string],
   'dateTime' : Time,
 }
+export type MatchLogRecord = { 'straightShot' : StraightShotMatch } |
+  { 'acceptingGifts' : AcceptingGiftsMatch } |
+  { 'officialApaMatchLog' : OfficialApaMatchLog } |
+  { 'practice' : PracticeMatch } |
+  { 'apaNineBall' : ApaNineBallMatch };
 export type MatchMode = { 'straightShot' : null } |
   { 'apaPractice' : null } |
   { 'acceptingGifts' : null };
-export type MatchRecord = { 'straightShot' : StraightShotMatch } |
-  { 'acceptingGifts' : AcceptingGiftsMatch } |
-  { 'practice' : PracticeMatch } |
-  { 'apaNineBall' : ApaNineBallMatch };
+export interface OfficialApaMatchLog {
+  'defensiveShots' : string,
+  'theirScore' : string,
+  'myScore' : string,
+  'owner' : Principal,
+  'date' : string,
+  'opponentName' : string,
+  'matchId' : string,
+  'notes' : string,
+  'innings' : string,
+  'dateTime' : Time,
+  'points' : string,
+}
 export interface Player {
   'id' : Principal,
   'name' : string,
@@ -300,11 +326,11 @@ export interface _SERVICE {
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'requestApproval' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'saveMatch' : ActorMethod<[string, MatchRecord], undefined>,
+  'saveMatch' : ActorMethod<[string, MatchLogRecord], undefined>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setCurrentObjectBallCount' : ActorMethod<[bigint], bigint>,
   'setInviteOnlyMode' : ActorMethod<[boolean], undefined>,
-  'updateMatch' : ActorMethod<[string, MatchRecord], undefined>,
+  'updateMatch' : ActorMethod<[string, MatchLogRecord], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

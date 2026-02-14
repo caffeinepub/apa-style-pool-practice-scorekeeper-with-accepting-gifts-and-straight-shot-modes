@@ -1,49 +1,65 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T03:37:12.121Z",
+  "generatedAt": "2026-02-14T04:36:28.714Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
+    "total": 3,
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-53",
-        "summary": "Add a 4th mode tile/card to the Home screen mode grid that navigates to a new placeholder route for a future “real APA match logging” mode.",
+        "id": "REQ-64",
+        "summary": "Add backend persistence support for an Official/Real APA match log record type so the app can save exactly the user-entered fields from the Official APA Match Log form (match date, opponent name, your score, their score, points, innings, defensive shots, notes) using the existing match storage APIs (save, list, fetch, delete) and the existing match-history storage pattern.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-65",
+        "summary": "Wire the Official APA Match Log page (`frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`) Save button to persist the current form inputs via the existing React Query save mutation (`useSaveMatch`) by constructing a MatchLogRecord for the Official/Real APA match log type and submitting it to the backend.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/src/lib/matches/matchBuilders.ts",
+          "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/src/lib/matches/matchBuilders.ts",
+          "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx"
         ]
       },
       {
-        "id": "REQ-54",
-        "summary": "Create a new blank placeholder page component for the 4th mode and register a new TanStack Router route for it in the app router.",
+        "id": "REQ-66",
+        "summary": "Update Match History and Match Details UI to recognize and render Official/Real APA match log entries saved from the Official APA Match Log form, showing a compact English summary in history and the full set of saved fields in details.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "frontend/src/pages/history/MatchDetailsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/matches/MatchSummaryCard.tsx",
+          "frontend/src/pages/history/MatchDetailsPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/matches/MatchSummaryCard.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/lib/matches/matchBuilders.ts",
     "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
+    "frontend/src/pages/history/MatchDetailsPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

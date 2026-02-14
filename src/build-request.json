@@ -1,58 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Add 4th mode tile on Home screen linking to a blank placeholder page",
+  "title": "Make Official APA Match Log Save button persist the entered inputs (no extra calculations)",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-53",
-      "text": "Add a 4th mode tile/card to the Home screen mode grid that navigates to a new placeholder route for a future “real APA match logging” mode.",
-      "target": "frontend",
+      "id": "REQ-64",
+      "text": "Add backend persistence support for an Official/Real APA match log record type so the app can save exactly the user-entered fields from the Official APA Match Log form (match date, opponent name, your score, their score, points, innings, defensive shots, notes) using the existing match storage APIs (save, list, fetch, delete) and the existing match-history storage pattern.",
+      "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "“Add a 4th mode tile on the home screen that links to a blank page.”"
+          "i mean the save bitton should just save the inputs...yes it should be that simple..."
         ]
       },
       "acceptanceCriteria": [
-        "Home screen (frontend/src/pages/HomePage.tsx) shows four ModeCard tiles instead of three.",
-        "The new tile has an English title and description indicating it is for official/real APA match logging and/or that it is a placeholder.",
-        "Clicking the new tile navigates to the new placeholder route without errors."
+        "Backend accepts saving a new match record representing an Official/Real APA match log and stores it in the same matchHistory collection as other modes.",
+        "Backend `getAllMatches()` includes saved Official/Real APA match log entries in its response (with mode set appropriately and all fields mapped into the returned ApiMatch shape).",
+        "Backend `getMatch(matchId)` returns the saved Official/Real APA match log entry with the same values that were provided on save.",
+        "Backend `deleteMatch(matchId)` can delete an Official/Real APA match log entry without affecting other match types.",
+        "No additional computations are performed for this match type (no PPI, no adjusted PPI, no chart/table lookups); values are stored as entered.",
+        "If changing variant/record types requires a state upgrade, add a conditional `backend/migration.mo` update so existing saved matches remain readable after deploy."
       ]
     },
     {
-      "id": "REQ-54",
-      "text": "Create a new blank placeholder page component for the 4th mode and register a new TanStack Router route for it in the app router.",
+      "id": "REQ-65",
+      "text": "Wire the Official APA Match Log page (`frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`) Save button to persist the current form inputs via the existing React Query save mutation (`useSaveMatch`) by constructing a MatchLogRecord for the Official/Real APA match log type and submitting it to the backend.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "“Add a 4th mode tile on the home screen that links to a blank page.”"
+          "the save bitton should just save the inputs"
         ]
       },
       "acceptanceCriteria": [
-        "A new page component exists (new file under frontend/src/pages/...) that renders a simple, blank/placeholder experience with English text (e.g., heading + short message).",
-        "The placeholder page includes a clear way to navigate back to Home (e.g., a “Back to Home” button).",
-        "frontend/src/App.tsx registers a new route path (new, dedicated path) that renders the placeholder page.",
-        "Navigating directly to the new route path renders the placeholder page successfully."
+        "Clicking “Save Match” sends the current in-component form state to the backend using the existing React Query mutation pattern (`useSaveMatch`).",
+        "The current placeholder behavior/message (\"Saving functionality is not implemented yet...\") is removed and replaced with real save UX (disabled button/spinner while saving, and an English error message on failure).",
+        "Client-side validation already present continues to block saving when numeric fields are invalid (e.g., negative or non-numeric).",
+        "On successful save, the user sees an English confirmation (e.g., “Match saved”) and the UI navigates to a stable route where the user can find the saved entry (either the Match History list or the new Match Details page for that match ID)."
+      ]
+    },
+    {
+      "id": "REQ-66",
+      "text": "Update Match History and Match Details UI to recognize and render Official/Real APA match log entries saved from the Official APA Match Log form, showing a compact English summary in history and the full set of saved fields in details.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "should just save the inputs"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Official/Real APA match log entries appear in Match History without UI errors and with an English label indicating the mode (e.g., “Official APA Match Log”).",
+        "The summary card for an Official/Real APA match log shows match date (or saved timestamp if date is missing), opponent name, and the key numeric fields (your score/their score and/or points/innings/defensive shots) in a compact format.",
+        "Opening Match Details for an Official/Real APA match log renders all saved fields (match date, opponent name, your score, their score, points, innings, defensive shots, notes) in English.",
+        "Older matches of other modes (APA Practice, Accepting Gifts, Straight Shot) continue to render exactly as before."
       ]
     }
   ],
   "constraints": [
-    "Frontend files under frontend/immutablePaths must not be edited (compose existing UI components instead).",
-    "Keep this change limited to adding the 4th mode tile + a blank placeholder page; do not modify existing match modes, match history behavior, or backend APIs.",
-    "All user-facing text must be in English."
+    "Backend must remain a single Motoko actor with all logic in `backend/main.mo` (add/update `backend/migration.mo` only if required by a state upgrade).",
+    "Do not edit files under `frontend/src/components/ui` or any other immutable frontend paths listed in SYSTEM_CONTEXT.",
+    "All user-facing text must be in English.",
+    "Do not introduce any external databases or third-party backend services."
   ],
   "nonGoals": [
-    "Do not implement the real APA match logging form fields yet.",
-    "Do not add persistence/saving for the 4th mode yet.",
-    "Do not add new backend types, endpoints, or migrations for this placeholder step."
+    "Do not implement any Official/Real APA PPI calculations, adjusted PPI calculations, or charting/graphing for Official/Real APA match logs in this step.",
+    "Do not add any new invite-only/approval functionality as part of this save change.",
+    "Do not change existing APA Practice, Accepting Gifts, or Straight Shot scoring rules/logic beyond what is necessary to display the new match type safely."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

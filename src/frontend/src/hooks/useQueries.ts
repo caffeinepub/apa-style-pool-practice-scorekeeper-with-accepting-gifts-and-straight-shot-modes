@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { type ApiMatch, type MatchRecord, type UserProfile, type UserApprovalInfo, ApprovalStatus } from '../backend';
+import { type ApiMatch, type MatchLogRecord, type UserProfile, type UserApprovalInfo, ApprovalStatus } from '../backend';
 import { Principal } from '@dfinity/principal';
 
 export function useGetCallerUserProfile() {
@@ -69,7 +69,7 @@ export function useSaveMatch() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchRecord }) => {
+    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.saveMatch(matchId, matchRecord);
     },
@@ -84,7 +84,7 @@ export function useUpdateMatch() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchRecord }) => {
+    mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateMatch(matchId, matchRecord);
     },

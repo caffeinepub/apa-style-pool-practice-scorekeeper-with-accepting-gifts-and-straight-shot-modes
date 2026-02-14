@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 27,
+  "projectStateVersion": 35,
   "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -19,7 +19,7 @@
     "Bug: entering the Primary Player name into Player 2 does not update the skill level on the match page; also possible to start a match with the Primary Player name in both Player 1 and Player 2 (should be blocked).",
     "App can get stuck on the “Checking access…” loading screen during access-control checks; needs a fail-open/disable option or clear error/timeout so the app remains usable."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
       "id": "feature-create-the-core-app-navigation-and-information-architecture-for-a-pool-scorekeeper-app-with-three-modes-1-apa-style-practice-scorekeeping-similar-to-the-official-apa-scorekeeper-app-2-accepting-gifts-and-3-straight-shot",
@@ -412,6 +412,78 @@
         "REQ-54"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-replace-the-current-coming-soon-placeholder-content-on-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-with-an-on-page-after-the-fact-match-logging-form-that-includes-the-following-fields-match-date-opponent-name-your-score-their-score-points-innings-defensive-shots-and-notes-all-user-facing-text-must-be-in-english",
+      "title": "Replace the current \"Coming Soon\" placeholder content on `frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx` with an on-page, after-the-fact match logging form that includes the following fields: match date, opponent name, your score, their score, points, innings, defensive shots, and notes. All user-facing text must be in English.",
+      "reqIds": [
+        "REQ-55"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-local-in-component-state-handling-for-the-official-apa-match-log-form-fields-on-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-so-the-user-can-type-values-and-see-them-preserved-while-staying-on-the-page-without-adding-any-backend-persistence-or-saving-yet",
+      "title": "Implement local (in-component) state handling for the Official APA Match Log form fields on `frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx` so the user can type values and see them preserved while staying on the page, without adding any backend persistence or saving yet.",
+      "reqIds": [
+        "REQ-56"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-basic-client-side-validation-ux-for-the-official-apa-match-log-form-ensure-numeric-fields-accept-only-numeric-input-and-show-an-english-inline-validation-message-for-obviously-invalid-values-e-g-negative-numbers-validation-must-not-require-backend-calls",
+      "title": "Add basic client-side validation UX for the Official APA Match Log form: ensure numeric fields accept only numeric input and show an English inline validation message for obviously invalid values (e.g., negative numbers). Validation must not require backend calls.",
+      "reqIds": [
+        "REQ-57"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-add-a-prominent-placeholder-save-button-for-the-official-apa-match-log-form-without-implementing-any-backend-persistence-yet",
+      "title": "On `frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`, add a prominent placeholder \"Save\" button for the Official APA Match Log form, without implementing any backend persistence yet.",
+      "reqIds": [
+        "REQ-58"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-placeholder-save-behavior-on-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-so-that-clicking-save-match-persists-the-form-data-as-an-official-real-apa-match-log-using-the-existing-react-query-mutation-patterns",
+      "title": "Replace the placeholder Save behavior on frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx so that clicking “Save Match” persists the form data as an Official/Real APA match log, using the existing React Query mutation patterns.",
+      "reqIds": [
+        "REQ-61"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-match-history-and-match-details-ui-to-recognize-and-correctly-render-the-new-official-real-apa-match-log-mode-including-labels-and-a-compact-summary",
+      "title": "Update Match History and Match Details UI to recognize and correctly render the new Official/Real APA match log mode, including labels and a compact summary.",
+      "reqIds": [
+        "REQ-62"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-routing-navigation-remains-consistent-after-saving-an-official-real-apa-match-log-entry-so-users-can-find-it-in-history-and-open-its-details-reliably",
+      "title": "Ensure routing/navigation remains consistent after saving an Official/Real APA match log entry so users can find it in history and open its details reliably.",
+      "reqIds": [
+        "REQ-63"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-wire-the-official-apa-match-log-page-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-save-button-to-persist-the-current-form-inputs-via-the-existing-react-query-save-mutation-usesavematch-by-constructing-a-matchlogrecord-for-the-official-real-apa-match-log-type-and-submitting-it-to-the-backend",
+      "title": "Wire the Official APA Match Log page (`frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`) Save button to persist the current form inputs via the existing React Query save mutation (`useSaveMatch`) by constructing a MatchLogRecord for the Official/Real APA match log type and submitting it to the backend.",
+      "reqIds": [
+        "REQ-65"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-match-history-and-match-details-ui-to-recognize-and-render-official-real-apa-match-log-entries-saved-from-the-official-apa-match-log-form-showing-a-compact-english-summary-in-history-and-the-full-set-of-saved-fields-in-details",
+      "title": "Update Match History and Match Details UI to recognize and render Official/Real APA match log entries saved from the Official APA Match Log form, showing a compact English summary in history and the full set of saved fields in details.",
+      "reqIds": [
+        "REQ-66"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -549,6 +621,42 @@
       "id": "AR-24",
       "summary": "Implement the first incremental step of the discrete 4th mode (real APA match logging): add a 4th mode tile on the home screen that navigates to a blank placeholder page/screen (no form fields yet).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "4th mode (real APA match logging): add basic after-the-fact match entry form fields on the placeholder page (e.g., date, opponent, your/their points or score, innings, defensive shots, notes).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Add a Save button and persistence for the Official/Real APA match log form so entered matches can be stored (beyond in-component state).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-27",
+      "summary": "Add backend persistence for the Official/Real APA Match Log entries as a first-class match type that can be saved, listed, fetched, and deleted using the existing match history storage patterns.",
+      "reqIds": [
+        "REQ-59"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-28",
+      "summary": "Update the backend API match projection so Official/Real APA match logs are represented in the returned ApiMatch shape with all fields needed for Match History summary cards and Match Details rendering.",
+      "reqIds": [
+        "REQ-60"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-29",
+      "summary": "Add backend persistence support for an Official/Real APA match log record type so the app can save exactly the user-entered fields from the Official APA Match Log form (match date, opponent name, your score, their score, points, innings, defensive shots, notes) using the existing match storage APIs (save, list, fetch, delete) and the existing match-history storage pattern.",
+      "reqIds": [
+        "REQ-64"
+      ],
       "status": "pending"
     }
   ],

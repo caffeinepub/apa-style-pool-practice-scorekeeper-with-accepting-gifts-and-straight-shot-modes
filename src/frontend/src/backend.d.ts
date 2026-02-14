@@ -12,11 +12,29 @@ export interface Player {
     name: string;
     skillLevel?: bigint;
 }
-export interface PracticeMatch {
-    makes?: bigint;
-    base: BaseMatchEntry;
-    attempts?: bigint;
-    streaks?: bigint;
+export interface BallState {
+    by: string;
+    id: bigint;
+    all: string;
+    eoi: boolean;
+    inn: bigint;
+    pna: bigint;
+    ballNumber: bigint;
+    calledShot: boolean;
+    runOut: string;
+    difficulty: string;
+    rack: bigint;
+    gameId: string;
+    isBreak: boolean;
+    defensiveShot: boolean;
+    positionPlay: string;
+    intendedPocket: string;
+    score: bigint;
+    pocketed: string;
+    finalBall: bigint;
+    activePlayer: string;
+    defense: boolean;
+    points: bigint;
 }
 export interface ApaNineBallMatch {
     matchType: string;
@@ -114,24 +132,24 @@ export interface TeamStats {
         penaltyAwarded: string;
     };
 }
-export type MatchRecord = {
-    __kind__: "straightShot";
-    straightShot: StraightShotMatch;
-} | {
-    __kind__: "acceptingGifts";
-    acceptingGifts: AcceptingGiftsMatch;
-} | {
-    __kind__: "practice";
-    practice: PracticeMatch;
-} | {
-    __kind__: "apaNineBall";
-    apaNineBall: ApaNineBallMatch;
-};
 export interface APAMatchStatsUiContainer {
     matchType: string;
     summary: APAMatchStatsUiSummary;
     players: Array<APA9MatchPlayerStatsUi | null>;
     seasonType: string;
+}
+export interface OfficialApaMatchLog {
+    defensiveShots: string;
+    theirScore: string;
+    myScore: string;
+    owner: Principal;
+    date: string;
+    opponentName: string;
+    matchId: string;
+    notes: string;
+    innings: string;
+    dateTime: Time;
+    points: string;
 }
 export interface AcceptingGiftsMatch {
     startingObjectBallCount: bigint;
@@ -164,6 +182,22 @@ export interface RackStat {
     rackNumberCopy: bigint;
     rackNumber: bigint;
 }
+export type MatchLogRecord = {
+    __kind__: "straightShot";
+    straightShot: StraightShotMatch;
+} | {
+    __kind__: "acceptingGifts";
+    acceptingGifts: AcceptingGiftsMatch;
+} | {
+    __kind__: "officialApaMatchLog";
+    officialApaMatchLog: OfficialApaMatchLog;
+} | {
+    __kind__: "practice";
+    practice: PracticeMatch;
+} | {
+    __kind__: "apaNineBall";
+    apaNineBall: ApaNineBallMatch;
+};
 export interface ApaPlayerStats {
     ppi: number;
     defensiveShots: bigint;
@@ -256,38 +290,30 @@ export interface ApiMatch {
     apaMatchInfo?: APAMatchStatsUiContainer;
     secondShotScore?: bigint;
     dateTime: Time;
+    officialApaMatchLogData?: {
+        defensiveShots: string;
+        theirScore: string;
+        myScore: string;
+        date: string;
+        opponentName: string;
+        notes: string;
+        innings: string;
+        points: string;
+    };
     finalSetScoreGhost?: bigint;
     streaks?: bigint;
     strokes?: Array<bigint>;
     setsCompleted?: bigint;
 }
-export interface BallState {
-    by: string;
-    id: bigint;
-    all: string;
-    eoi: boolean;
-    inn: bigint;
-    pna: bigint;
-    ballNumber: bigint;
-    calledShot: boolean;
-    runOut: string;
-    difficulty: string;
-    rack: bigint;
-    gameId: string;
-    isBreak: boolean;
-    defensiveShot: boolean;
-    positionPlay: string;
-    intendedPocket: string;
-    score: bigint;
-    pocketed: string;
-    finalBall: bigint;
-    activePlayer: string;
-    defense: boolean;
-    points: bigint;
-}
 export interface UserProfile {
     name: string;
     apaSkillLevel?: bigint;
+}
+export interface PracticeMatch {
+    makes?: bigint;
+    base: BaseMatchEntry;
+    attempts?: bigint;
+    streaks?: bigint;
 }
 export enum ApprovalStatus {
     pending = "pending",
@@ -328,9 +354,9 @@ export interface backendInterface {
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    saveMatch(matchId: string, matchRecord: MatchRecord): Promise<void>;
+    saveMatch(matchId: string, matchRecord: MatchLogRecord): Promise<void>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setCurrentObjectBallCount(newCount: bigint): Promise<bigint>;
     setInviteOnlyMode(enabled: boolean): Promise<void>;
-    updateMatch(matchId: string, updatedMatch: MatchRecord): Promise<void>;
+    updateMatch(matchId: string, updatedMatch: MatchLogRecord): Promise<void>;
 }

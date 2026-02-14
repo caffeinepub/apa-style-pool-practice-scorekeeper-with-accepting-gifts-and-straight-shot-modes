@@ -1,52 +1,58 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T03:37:12.117Z",
-  "summary": "REQ-53 and REQ-54 appear implemented: HomePage now shows a 4th ModeCard linking to a new /real-apa-match route, App.tsx registers that route, and a new placeholder page component exists with English text and back-to-home navigation. However, the diff summary also indicates additional unrelated frontend changes (auth/loading logic, profile skill level selector, Accepting Gifts persistence and other behavior changes), which conflict with the constraint to keep the change limited to the 4th tile + placeholder page.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-14T04:36:28.711Z",
+  "summary": "Frontend changes clearly add save UX for the Official APA Match Log page and update Match History/Details rendering for a new officialApaMatchLogData shape. However, the diff summary does not provide clear evidence that the backend match storage APIs (save/list/fetch/delete) were extended to persist and return the new Official/Real APA match log record type as required; only a migration file addition is visible but is truncated.",
+  "missing_requirements": [
     {
-      "description": "Unrelated authentication/loading behavior changes (\"AuthGate\" loading logic changes, deadlock prevention) beyond adding a 4th mode tile and placeholder page.",
-      "reason": "BuildRequest explicitly constrains the change to adding the 4th mode tile + blank placeholder page and says not to modify existing behavior beyond that scope.",
+      "id": "REQ-64",
+      "requirement": "Add backend persistence support for an Official/Real APA match log record type (save/list/fetch/delete via existing match storage APIs; include in matchHistory; no extra computations; add migration if needed).",
+      "reason": "The provided backend/main.mo diff snippet is truncated and does not show any new MatchLogRecord variant/field mapping or updates to save/getAllMatches/getMatch/deleteMatch to support an Official/Real APA match log record. backend/migration.mo is added but truncated and does not visibly include the Official/Real APA match log transformation/mapping either, so persistence and API mapping cannot be confirmed from the diff summary.",
       "evidence": [
-        "frontend-file-summaries.txt (entry for frontend/src/components/auth/AuthGate.tsx)"
-      ]
-    },
-    {
-      "description": "Profile setup dialog updated to include an APA 9-Ball skill level selector and persistence via backend profile.",
-      "reason": "Not requested; also conflicts with constraint to keep the change limited and avoid modifying backend/API behavior for this placeholder step.",
-      "evidence": [
-        "frontend-file-summaries.txt (entry for frontend/src/components/auth/ProfileSetupDialog.tsx)"
-      ]
-    },
-    {
-      "description": "Changes to PracticeStartPage behavior (skill level auto-loading, manual override tracking, duplicate name validation).",
-      "reason": "BuildRequest says not to modify existing match modes behavior.",
-      "evidence": [
-        "frontend-file-summaries.txt (entry for frontend/src/pages/apa/PracticeStartPage.tsx)"
-      ]
-    },
-    {
-      "description": "Accepting Gifts mode behavior updated to load/persist baselines and automatically persist during gameplay, plus rules text changes.",
-      "reason": "BuildRequest says not to modify existing match modes or backend APIs; these are unrelated to the requested 4th tile + placeholder page.",
-      "evidence": [
-        "frontend-file-summaries.txt (entries for frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx, frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx, frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx)"
-      ]
-    },
-    {
-      "description": "Match history summary card updated with enhanced Accepting Gifts summary fields and generic end/save dialog text changes.",
-      "reason": "BuildRequest says not to modify match history behavior.",
-      "evidence": [
-        "frontend-file-summaries.txt (entries for frontend/src/components/matches/MatchSummaryCard.tsx, frontend/src/components/matches/EndMatchDialog.tsx)"
+        "backend/main.mo (truncated; no visible Official/Real APA match log record handling shown)",
+        "backend/migration.mo (added but truncated; Official/Real APA match log migration not visible)"
       ]
     }
   ],
-  "confidence": 0.72,
+  "hallucinated_features": [
+    {
+      "description": "Added/changed authentication and invite-only/approval related UX/logic (e.g., AuthGate loading logic changes, admin-only access management UI).",
+      "reason": "BuildRequest explicitly states as a non-goal: no new invite-only/approval functionality as part of this save change.",
+      "evidence": [
+        "frontend-file-summaries.txt (AuthGate.tsx: improved loading logic; AppLayout.tsx: admin-only Shield button for access management)"
+      ]
+    },
+    {
+      "description": "Profile setup dialog updated to include optional APA 9-Ball skill level selector persisted via backend profile.",
+      "reason": "Not requested by REQ-64/65/66 and outside the scope of making Official APA Match Log saving persist inputs.",
+      "evidence": [
+        "frontend-file-summaries.txt (ProfileSetupDialog.tsx: adds APA 9-Ball skill level selector and persistence)"
+      ]
+    },
+    {
+      "description": "Accepting Gifts mode baseline persistence/rules changes and additional baseline-setting UI behaviors.",
+      "reason": "BuildRequest non-goals include not changing existing APA Practice, Accepting Gifts, or Straight Shot scoring rules/logic beyond what is necessary to display the new match type safely.",
+      "evidence": [
+        "frontend-file-summaries.txt (AcceptingGiftsStartPage.tsx, AcceptingGiftsRulesPanel.tsx, AcceptingGiftsGamePage.tsx: baseline persistence and rule text changes)"
+      ]
+    },
+    {
+      "description": "APA 9-Ball practice start page logic changes (auto-loading skill levels, override tracking, duplicate name validation).",
+      "reason": "Not requested and appears to change APA Practice behavior beyond what is necessary for Official APA Match Log save persistence.",
+      "evidence": [
+        "frontend-file-summaries.txt (PracticeStartPage.tsx: skill level auto-loading, override tracking, duplicate name validation)"
+      ]
+    }
+  ],
+  "confidence": 0.62,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/components/matches/MatchSummaryCard.tsx",
+    "frontend/src/lib/matches/matchBuilders.ts",
     "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx",
+    "frontend/src/pages/history/MatchDetailsPage.tsx",
     "project_state.json"
   ]
 }

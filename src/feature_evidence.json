@@ -2,30 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-4th-mode-tile-card-to-the-home-screen-mode-grid-that-navigates-to-a-new-placeholder-route-for-a-future-real-apa-match-logging-mode",
-      "featureTitle": "Add a 4th mode tile/card to the Home screen mode grid that navigates to a new placeholder route for a future “real APA match logging” mode.",
+      "featureId": "feature-wire-the-official-apa-match-log-page-frontend-src-pages-apa-realapamatchplaceholderpage-tsx-save-button-to-persist-the-current-form-inputs-via-the-existing-react-query-save-mutation-usesavematch-by-constructing-a-matchlogrecord-for-the-official-real-apa-match-log-type-and-submitting-it-to-the-backend",
+      "featureTitle": "Wire the Official APA Match Log page (`frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx`) Save button to persist the current form inputs via the existing React Query save mutation (`useSaveMatch`) by constructing a MatchLogRecord for the Official/Real APA match log type and submitting it to the backend.",
       "files": [
-        "frontend/src/pages/HomePage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-53"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-create-a-new-blank-placeholder-page-component-for-the-4th-mode-and-register-a-new-tanstack-router-route-for-it-in-the-app-router",
-      "featureTitle": "Create a new blank placeholder page component for the 4th mode and register a new TanStack Router route for it in the app router.",
-      "files": [
-        "frontend/src/App.tsx",
+        "frontend/src/lib/matches/matchBuilders.ts",
         "frontend/src/pages/apa/RealApaMatchPlaceholderPage.tsx"
       ],
       "components": [
@@ -38,7 +18,28 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-54"
+        "REQ-65"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-match-history-and-match-details-ui-to-recognize-and-render-official-real-apa-match-log-entries-saved-from-the-official-apa-match-log-form-showing-a-compact-english-summary-in-history-and-the-full-set-of-saved-fields-in-details",
+      "featureTitle": "Update Match History and Match Details UI to recognize and render Official/Real APA match log entries saved from the Official APA Match Log form, showing a compact English summary in history and the full set of saved fields in details.",
+      "files": [
+        "frontend/src/components/matches/MatchSummaryCard.tsx",
+        "frontend/src/pages/history/MatchDetailsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-66"
       ],
       "confidence": "high"
     }
