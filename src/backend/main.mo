@@ -9,7 +9,10 @@ import List "mo:core/List";
 import Nat "mo:core/Nat";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
+import Migration "migration";
 
+// Specify the data migration function in with-clause
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -74,6 +77,12 @@ actor {
     rulesReference : Text;
     completionStatus : Bool;
     score : Nat;
+    startingObjectBallCount : Nat;
+    endingObjectBallCount : Nat;
+    totalAttempts : Nat;
+    setsCompleted : Nat;
+    finalSetScorePlayer : Nat;
+    finalSetScoreGhost : Nat;
   };
 
   type StraightShotMatch = {
@@ -209,6 +218,12 @@ actor {
     shots : ?Nat;
     ballsMade : ?Nat;
     apaMatchInfo : ?APAMatchStatsUiContainer;
+    startingObjectBallCount : ?Nat;
+    endingObjectBallCount : ?Nat;
+    totalAttempts : ?Nat;
+    setsCompleted : ?Nat;
+    finalSetScorePlayer : ?Nat;
+    finalSetScoreGhost : ?Nat;
   };
 
   type APAMatchStatsUiContainer = {
@@ -315,9 +330,15 @@ actor {
     defensiveShots : Nat;
   };
 
+  type AGSession = {
+    currentObjectBallCount : Nat;
+  };
+
   let matchHistory = Map.empty<Text, MatchRecord>();
   let apaBallState = Map.empty<Int, BallState>();
   var apaStartingPlayer : ?Text = null;
+  // Carry the Accepting Gifts state forward per user.
+  let agSessions = Map.empty<Principal, AGSession>();
 
   func convertToApiMatch(matchRecord : MatchRecord) : ApiMatch {
     switch (matchRecord) {
@@ -346,6 +367,12 @@ actor {
           shots = null;
           ballsMade = null;
           apaMatchInfo = null;
+          startingObjectBallCount = null;
+          endingObjectBallCount = null;
+          totalAttempts = null;
+          setsCompleted = null;
+          finalSetScorePlayer = null;
+          finalSetScoreGhost = null;
         };
       };
       case (#acceptingGifts(agMatch)) {
@@ -373,6 +400,12 @@ actor {
           shots = null;
           ballsMade = null;
           apaMatchInfo = null;
+          startingObjectBallCount = ?agMatch.startingObjectBallCount;
+          endingObjectBallCount = ?agMatch.endingObjectBallCount;
+          totalAttempts = ?agMatch.totalAttempts;
+          setsCompleted = ?agMatch.setsCompleted;
+          finalSetScorePlayer = ?agMatch.finalSetScorePlayer;
+          finalSetScoreGhost = ?agMatch.finalSetScoreGhost;
         };
       };
       case (#straightShot(ssMatch)) {
@@ -400,6 +433,12 @@ actor {
           shots = ?ssMatch.shots;
           ballsMade = ?ssMatch.ballsMade;
           apaMatchInfo = null;
+          startingObjectBallCount = null;
+          endingObjectBallCount = null;
+          totalAttempts = null;
+          setsCompleted = null;
+          finalSetScorePlayer = null;
+          finalSetScoreGhost = null;
         };
       };
       case (#apaNineBall(apaMatch)) {
@@ -434,6 +473,12 @@ actor {
               .map<ApaPlayerStats, ?APA9MatchPlayerStatsUi>(func(stats) { ?convertToUiPlayerStats(stats, apaMatch.seasonType, apaMatch.matchType) })
               .toArray();
           };
+          startingObjectBallCount = null;
+          endingObjectBallCount = null;
+          totalAttempts = null;
+          setsCompleted = null;
+          finalSetScorePlayer = null;
+          finalSetScoreGhost = null;
         };
       };
     };
@@ -582,7 +627,6 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save matches");
     };
-    // Always set the owner to the caller to prevent ownership spoofing
     let secureMatch = setMatchOwner(matchRecord, caller);
     matchHistory.add(matchId, secureMatch);
   };
@@ -632,7 +676,6 @@ actor {
         if (caller != existingOwner) {
           Runtime.trap("Unauthorized: Can only update your own matches");
         };
-        // Preserve the original owner to prevent ownership changes
         let secureMatch = setMatchOwner(updatedMatch, existingOwner);
         matchHistory.add(matchId, secureMatch);
       };
@@ -727,6 +770,38 @@ actor {
       points = playerAPoints;
       deadBalls = playerADeadBalls;
       defensiveShots = playerADefensiveShots;
+    };
+  };
+
+  // Minimum 2, max 7. Any other value returns current state.
+  // Will initialize with 2 if no existing state is found
+  public shared ({ caller }) func setCurrentObjectBallCount(newCount : Nat) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can modify state");
+    };
+    if (newCount < 2 or newCount > 7) {
+      Runtime.trap("Invalid value. Only the range 2–7 is allowed");
+    };
+    let newState : AGSession = {
+      currentObjectBallCount = newCount;
+    };
+    agSessions.add(caller, newState);
+    newCount;
+  };
+
+  // Carry forward current state when session is completed.
+  public shared ({ caller }) func completeSession(finalCount : Nat) : async Nat {
+    await setCurrentObjectBallCount(finalCount);
+  };
+
+  // Get persisted current count (/carry forward for new sessions).
+  public query ({ caller }) func getCurrentObjectBallCount() : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can fetch state");
+    };
+    switch (agSessions.get(caller)) {
+      case (null) { 2 }; // Default to 2 if not found
+      case (?session) { session.currentObjectBallCount };
     };
   };
 };

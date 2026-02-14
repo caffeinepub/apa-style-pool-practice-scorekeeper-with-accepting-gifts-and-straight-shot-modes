@@ -2,12 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-current-apa-rack-scoring-entry-ui-numeric-inputs-for-points-innings-with-a-seamless-per-inning-gui-for-apa-9-ball-practice-matches-show-balls-1-9-for-the-current-rack-allow-the-scorekeeper-to-tap-select-which-balls-were-pocketed-during-the-current-inning-and-provide-a-clear-turn-over-control-to-advance-to-the-next-player-s-inning",
-      "featureTitle": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
+      "featureId": "feature-persist-the-accepting-gifts-drill-progression-per-user-so-the-current-object-ball-count-and-optionally-the-in-progress-session-state-is-saved-server-side-and-automatically-restored-after-logout-login-page-reloads-or-starting-a-new-accepting-gifts-session",
+      "featureTitle": "Persist the Accepting Gifts drill progression per user so the current object-ball count (and optionally the in-progress session state) is saved server-side and automatically restored after logout/login, page reloads, or starting a new Accepting Gifts session.",
       "files": [
-        "frontend/src/components/apa/ApaBallButton.tsx",
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/components/apa/apaBallStyles.ts"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,16 +18,18 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-18"
+        "REQ-28"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-automatic-innings-tracking-for-apa-practice-gameplay-based-on-the-per-inning-flow-innings-should-be-incremented-automatically-as-the-scorekeeper-uses-the-turn-over-workflow-no-manual-innings-numeric-input-fields",
-      "featureTitle": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
+      "featureId": "feature-enforce-a-minimum-object-ball-count-of-2-not-1-for-accepting-gifts-progression-and-inputs-and-update-all-related-ui-copy-to-reflect-the-2-7-range-in-english",
+      "featureTitle": "Enforce a minimum object-ball count of 2 (not 1) for Accepting Gifts progression and inputs, and update all related UI copy to reflect the 2–7 range in English.",
       "files": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/components/apa/useApaInningFlow.ts"
+        "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,16 +40,17 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-19"
+        "REQ-29"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-in-flow-controls-to-mark-dead-balls-and-defensive-shots-during-apa-per-inning-entry-without-breaking-the-existing-per-rack-10-point-accounting-and-defensive-shot-totals",
-      "featureTitle": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
+      "featureId": "feature-add-a-user-controlled-reset-override-mechanism-for-accepting-gifts-so-the-user-can-explicitly-set-the-starting-current-object-ball-count-2-7-and-have-that-choice-persisted-as-the-new-carry-forward-baseline",
+      "featureTitle": "Add a user-controlled reset/override mechanism for Accepting Gifts so the user can explicitly set the starting/current object-ball count (2–7) and have that choice persisted as the new carry-forward baseline.",
       "files": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/lib/apa/apaScoring.ts"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -58,15 +61,17 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-20"
+        "REQ-30"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-apa-practice-game-flow-to-compute-and-submit-the-existing-per-rack-summary-data-playera-playerb-points-dead-balls-innings-defensive-shots-from-the-new-per-inning-ball-based-ui-keeping-the-saved-match-record-shape-and-match-history-details-rendering-compatible-with-existing-apa-match-persistence",
-      "featureTitle": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
+      "featureId": "feature-implement-backend-api-support-for-accepting-gifts-carry-forward-state-and-in-progress-session-storage-tied-to-the-authenticated-principal-and-wire-it-into-the-existing-react-query-data-layer",
+      "featureTitle": "Implement backend API support for Accepting Gifts carry-forward state and in-progress session storage tied to the authenticated principal, and wire it into the existing React Query data layer.",
       "files": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -77,7 +82,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-21"
+        "REQ-31"
       ],
       "confidence": "high"
     }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,6 +34,7 @@ export default function ApaRackScoringPanel({
   const [ballStates, setBallStates] = useState<Record<number, BallState>>({});
   const [player1DefensiveShots, setPlayer1DefensiveShots] = useState(0);
   const [player2DefensiveShots, setPlayer2DefensiveShots] = useState(0);
+  const [autoDeadBalls, setAutoDeadBalls] = useState<Set<number>>(new Set());
   
   const inningFlow = useApaInningFlow('A');
 
@@ -44,6 +45,39 @@ export default function ApaRackScoringPanel({
     : totals.totalAccounted < POINTS_PER_RACK
     ? `Need ${POINTS_PER_RACK - totals.totalAccounted} more point${POINTS_PER_RACK - totals.totalAccounted > 1 ? 's' : ''}.`
     : null;
+
+  // Auto-dead logic: when 9-ball is pocketed by active player, mark remaining unscored balls as dead
+  useEffect(() => {
+    const nineBallState = ballStates[9];
+    const activePlayerState = inningFlow.activePlayer === 'A' ? 'playerA' : 'playerB';
+
+    if (nineBallState === activePlayerState) {
+      // 9-ball is pocketed by active player - auto-mark remaining unscored balls as dead
+      const unscoredBalls = [1, 2, 3, 4, 5, 6, 7, 8].filter(ball => !ballStates[ball]);
+      if (unscoredBalls.length > 0) {
+        setBallStates(prev => {
+          const updated = { ...prev };
+          unscoredBalls.forEach(ball => {
+            updated[ball] = 'dead';
+          });
+          return updated;
+        });
+        setAutoDeadBalls(new Set(unscoredBalls));
+      }
+    } else if (!nineBallState && autoDeadBalls.size > 0) {
+      // 9-ball was unmarked - revert auto-dead balls back to unscored
+      setBallStates(prev => {
+        const updated = { ...prev };
+        autoDeadBalls.forEach(ball => {
+          if (updated[ball] === 'dead') {
+            delete updated[ball];
+          }
+        });
+        return updated;
+      });
+      setAutoDeadBalls(new Set());
+    }
+  }, [ballStates[9], inningFlow.activePlayer]);
 
   const handleBallClick = (ballNumber: number) => {
     setBallStates(prev => {
@@ -75,6 +109,15 @@ export default function ApaRackScoringPanel({
       if (currentState === 'unscored') {
         return { ...prev, [ballNumber]: 'dead' };
       } else if (currentState === 'dead') {
+        // User is manually unmarking a dead ball
+        // If it was auto-marked, remove it from the auto-dead set
+        if (autoDeadBalls.has(ballNumber)) {
+          setAutoDeadBalls(prevSet => {
+            const newSet = new Set(prevSet);
+            newSet.delete(ballNumber);
+            return newSet;
+          });
+        }
         const newStates = { ...prev };
         delete newStates[ballNumber];
         return newStates;
@@ -110,6 +153,7 @@ export default function ApaRackScoringPanel({
       setBallStates({});
       setPlayer1DefensiveShots(0);
       setPlayer2DefensiveShots(0);
+      setAutoDeadBalls(new Set());
       inningFlow.reset();
     }
   };
@@ -118,6 +162,7 @@ export default function ApaRackScoringPanel({
     setBallStates({});
     setPlayer1DefensiveShots(0);
     setPlayer2DefensiveShots(0);
+    setAutoDeadBalls(new Set());
     inningFlow.reset();
   };
 
@@ -135,7 +180,7 @@ export default function ApaRackScoringPanel({
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Select balls pocketed by the active player. Balls 1-8 = 1 point, 9-ball = 2 points. Total must equal {POINTS_PER_RACK} points.
+            Select balls pocketed by the active player. Balls 1-8 = 1 point, 9-ball = 2 points. Total must equal {POINTS_PER_RACK} points. When 9-ball is pocketed early, remaining balls are auto-marked dead.
           </AlertDescription>
         </Alert>
 

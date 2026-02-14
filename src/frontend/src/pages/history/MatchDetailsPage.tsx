@@ -168,6 +168,61 @@ export default function MatchDetailsPage() {
             </div>
           )}
 
+          {match.mode === MatchMode.acceptingGifts && (
+            <div>
+              <h3 className="mb-3 font-semibold">Accepting Gifts Session Results</h3>
+              <div className="space-y-3">
+                {match.startingObjectBallCount !== undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Starting Object Balls</span>
+                    <span className="font-semibold">{Number(match.startingObjectBallCount)}</span>
+                  </div>
+                )}
+                {match.endingObjectBallCount !== undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Ending Object Balls</span>
+                    <span className="font-semibold">{Number(match.endingObjectBallCount)}</span>
+                  </div>
+                )}
+                {match.setsCompleted !== undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Sets Completed</span>
+                    <span className="font-semibold">{Number(match.setsCompleted)}</span>
+                  </div>
+                )}
+                {match.totalAttempts !== undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Total Attempts</span>
+                    <span className="font-semibold">{Number(match.totalAttempts)}</span>
+                  </div>
+                )}
+                {match.finalSetScorePlayer !== undefined && match.finalSetScoreGhost !== undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Final Set Score</span>
+                    <span className="font-semibold">
+                      Player {Number(match.finalSetScorePlayer)} – Ghost {Number(match.finalSetScoreGhost)}
+                    </span>
+                  </div>
+                )}
+                {/* Legacy score field fallback */}
+                {match.score !== undefined && match.finalSetScorePlayer === undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Score</span>
+                    <span className="font-semibold">{Number(match.score)}</span>
+                  </div>
+                )}
+                {match.completionStatus !== undefined && (
+                  <div className="flex justify-between rounded-lg border p-3">
+                    <span className="text-muted-foreground">Status</span>
+                    <Badge variant={match.completionStatus ? 'default' : 'secondary'}>
+                      {match.completionStatus ? 'Completed' : 'In Progress'}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {match.mode === MatchMode.straightShot && match.totalScore !== undefined && (
             <div>
               <h3 className="mb-3 font-semibold">Strokes Drill Results</h3>
@@ -182,38 +237,10 @@ export default function MatchDetailsPage() {
                     {Number(match.totalScore) <= 20 ? 'Win (20 or under) ✓' : 'Over 20'}
                   </span>
                 </div>
-                {match.scratchStrokes && match.scratchStrokes.length > 0 && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Scratches</span>
-                    <span className="font-semibold">
-                      {match.scratchStrokes.length} ({match.scratchStrokes.length * 2} strokes)
-                    </span>
-                  </div>
-                )}
                 {match.ballsMade !== undefined && (
                   <div className="flex justify-between rounded-lg border p-3">
                     <span className="text-muted-foreground">Balls Made</span>
-                    <span className="font-semibold">{Number(match.ballsMade)} / 15</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {match.mode === MatchMode.acceptingGifts && match.score !== undefined && (
-            <div>
-              <h3 className="mb-3 font-semibold">Drill Results</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between rounded-lg border p-3">
-                  <span className="text-muted-foreground">Score</span>
-                  <span className="text-2xl font-bold">{Number(match.score)}</span>
-                </div>
-                {match.completionStatus !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Status</span>
-                    <Badge variant={match.completionStatus ? 'default' : 'secondary'}>
-                      {match.completionStatus ? 'Completed' : 'In Progress'}
-                    </Badge>
+                    <span className="font-semibold">{Number(match.ballsMade)}</span>
                   </div>
                 )}
               </div>
@@ -223,7 +250,7 @@ export default function MatchDetailsPage() {
           {match.notes && (
             <div>
               <h3 className="mb-2 font-semibold">Notes</h3>
-              <p className="text-sm text-muted-foreground">{match.notes}</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
             </div>
           )}
 

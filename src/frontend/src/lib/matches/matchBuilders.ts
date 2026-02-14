@@ -115,10 +115,15 @@ export function buildApaNineBallMatch(params: ApaNineBallParams): { matchId: str
 
 interface AcceptingGiftsParams {
   playerName: string;
-  score: number;
   notes?: string;
   completionStatus: boolean;
   identity: Identity;
+  startingObjectBallCount: number;
+  endingObjectBallCount: number;
+  totalAttempts: number;
+  setsCompleted: number;
+  finalSetScorePlayer: number;
+  finalSetScoreGhost: number;
 }
 
 export function buildAcceptingGiftsMatch(params: AcceptingGiftsParams): { matchId: string; matchRecord: MatchRecord } {
@@ -136,9 +141,15 @@ export function buildAcceptingGiftsMatch(params: AcceptingGiftsParams): { matchI
         notes: params.notes,
         owner: principal,
       },
-      score: BigInt(params.score),
+      score: BigInt(params.finalSetScorePlayer),
       completionStatus: params.completionStatus,
       rulesReference: 'Accepting Gifts drill - practice position play and shot selection',
+      startingObjectBallCount: BigInt(params.startingObjectBallCount),
+      endingObjectBallCount: BigInt(params.endingObjectBallCount),
+      totalAttempts: BigInt(params.totalAttempts),
+      setsCompleted: BigInt(params.setsCompleted),
+      finalSetScorePlayer: BigInt(params.finalSetScorePlayer),
+      finalSetScoreGhost: BigInt(params.finalSetScoreGhost),
     },
   };
 

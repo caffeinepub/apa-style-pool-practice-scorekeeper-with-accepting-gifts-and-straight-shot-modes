@@ -57,8 +57,15 @@ export default function MatchSummaryCard({ match }: MatchSummaryCardProps) {
         </span>
       );
     }
-    if (match.mode === MatchMode.acceptingGifts && match.score !== undefined) {
-      return `Score: ${match.score}`;
+    if (match.mode === MatchMode.acceptingGifts) {
+      // Prefer new fields if available
+      if (match.startingObjectBallCount !== undefined && match.finalSetScorePlayer !== undefined && match.finalSetScoreGhost !== undefined) {
+        return `Start: ${match.startingObjectBallCount} balls • Final: ${match.finalSetScorePlayer}–${match.finalSetScoreGhost}`;
+      }
+      // Fallback to legacy score field
+      if (match.score !== undefined) {
+        return `Score: ${match.score}`;
+      }
     }
     if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
       const players = match.apaMatchInfo.players.filter(p => p !== null);

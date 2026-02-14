@@ -1,16 +1,10 @@
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
-import List "mo:core/List";
-import Iter "mo:core/Iter";
-import Nat32 "mo:core/Nat32";
+import Nat "mo:core/Nat";
 
 module {
-  type UserProfile = {
-    name : Text;
-  };
-
   type Player = {
-    id : Principal;
+    id : Principal.Principal;
     name : Text;
     skillLevel : ?Nat;
   };
@@ -27,7 +21,7 @@ module {
     dateTime : Int;
     players : [Player];
     notes : ?Text;
-    owner : Principal;
+    owner : Principal.Principal;
   };
 
   type PracticeMatch = {
@@ -42,6 +36,12 @@ module {
     rulesReference : Text;
     completionStatus : Bool;
     score : Nat;
+    startingObjectBallCount : Nat;
+    endingObjectBallCount : Nat;
+    totalAttempts : Nat;
+    setsCompleted : Nat;
+    finalSetScorePlayer : Nat;
+    finalSetScoreGhost : Nat;
   };
 
   type StraightShotMatch = {
@@ -60,29 +60,8 @@ module {
     };
   };
 
-  type OldMatchRecord = {
-    #practice : PracticeMatch;
-    #acceptingGifts : AcceptingGiftsMatch;
-    #straightShot : StraightShotMatch;
-  };
-
-  type NewMatchRecord = {
-    #practice : PracticeMatch;
-    #acceptingGifts : AcceptingGiftsMatch;
-    #straightShot : StraightShotMatch;
-    #apaNineBall : {
-      base : BaseMatchEntry;
-      seasonType : Text;
-      matchType : Text;
-      playerStats : [NewApaPlayerStats];
-      winner : Principal;
-      umpire : ?Principal;
-      teamStats : [TeamStats];
-    };
-  };
-
-  type NewApaPlayerStats = {
-    playerId : Principal;
+  type ApaPlayerStats = {
+    playerId : Principal.Principal;
     skillLevel : Nat;
     pointsNeeded : Nat;
     defensiveShots : Nat;
@@ -106,6 +85,16 @@ module {
     ballsOnBreakAwardedToOpponent : Nat;
     inningScore : Int;
     totalRackScore : Nat;
+  };
+
+  type ApaNineBallMatch = {
+    base : BaseMatchEntry;
+    seasonType : Text;
+    matchType : Text;
+    playerStats : [ApaPlayerStats];
+    winner : Principal.Principal;
+    umpire : ?Principal.Principal;
+    teamStats : [TeamStats];
   };
 
   type TeamStats = {
@@ -132,22 +121,29 @@ module {
     };
   };
 
-  public type OldActor = {
-    userProfiles : Map.Map<Principal, UserProfile>;
-    matchHistory : Map.Map<Text, OldMatchRecord>;
+  type MatchRecord = {
+    #practice : PracticeMatch;
+    #acceptingGifts : AcceptingGiftsMatch;
+    #straightShot : StraightShotMatch;
+    #apaNineBall : ApaNineBallMatch;
   };
 
-  public type NewActor = {
-    userProfiles : Map.Map<Principal, UserProfile>;
-    matchHistory : Map.Map<Text, NewMatchRecord>;
+  type OldActor = {
+    userProfiles : Map.Map<Principal.Principal, { name : Text }>;
+    matchHistory : Map.Map<Text, MatchRecord>;
+  };
+
+  type AGSession = {
+    currentObjectBallCount : Nat;
+  };
+
+  type NewActor = {
+    userProfiles : Map.Map<Principal.Principal, { name : Text }>;
+    matchHistory : Map.Map<Text, MatchRecord>;
+    agSessions : Map.Map<Principal.Principal, AGSession>;
   };
 
   public func run(old : OldActor) : NewActor {
-    {
-      old with
-      matchHistory = old.matchHistory.map<Text, OldMatchRecord, NewMatchRecord>(
-        func(_id, oldRecord) { oldRecord },
-      )
-    };
+    { old with agSessions = Map.empty<Principal.Principal, AGSession>() };
   };
 };

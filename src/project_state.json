@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
+  "projectStateVersion": 13,
   "summary": "APA pool practice scorekeeper app focused on APA 9-ball (not 8-ball), using The Equalizer® point-based scoring with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, and end-of-match team match-point conversion; plus additional practice modes: Accepting Gifts and Straight Shot.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -8,7 +8,9 @@
     "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
     "APA 9-ball session tracking should support rack-by-rack 10-point accounting: player A points + player B points + dead balls = 10 each rack; include 9-ball worth 2, dead balls worth 0, and support defensive shots + innings for correct PPI.",
     "APA 9-ball rules constraints to encode: no push-outs (standard handicapped APA 9-ball), 9-on-the-snap ends rack with 2 points, three consecutive fouls within a rack loses the rack and remaining balls become dead.",
-    "APA 9-ball active scoring UI should mirror official APA scorekeeper flow: per-rack display of balls 1–9, tap-to-select pocketed balls for the current inning, Turn Over control to switch players, innings auto-increment logic, and in-flow toggles/controls to mark dead balls and defensive shots."
+    "APA 9-ball active scoring UI should mirror official APA scorekeeper flow: per-rack display of balls 1–9, tap-to-select pocketed balls for the current inning, Turn Over control to switch players, innings auto-increment logic, and in-flow toggles/controls to mark dead balls and defensive shots.",
+    "APA 9-ball practice rule: when the 9-ball is pocketed early (ends the rack), all remaining balls in that rack should be marked dead (0 points) to preserve 10-point rack accounting.",
+    "Accepting Gifts progression: user wants minimum object balls = 2 (not 1) and the starting ball count for a new session should default to the last saved/current count from the prior session; also provide a manual reset/override to any allowed count (e.g., jump to 7)."
   ],
   "known_issues": [
     "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials."
@@ -174,6 +176,86 @@
         "REQ-21"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-accepting-gifts-session-setup-to-support-a-configurable-starting-object-ball-count-defaulting-to-3-object-balls-plus-the-8-and-persist-this-setting-in-the-in-progress-session-state",
+      "title": "Update Accepting Gifts session setup to support a configurable starting object-ball count, defaulting to 3 object balls (plus the 8), and persist this setting in the in-progress session state.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-accepting-gifts-rules-ui-copy-with-an-english-rules-description-that-matches-the-user-provided-rules-including-play-with-1-7-object-balls-of-one-group-plus-the-8-break-then-take-ball-in-hand-balls-made-on-break-are-spotted-reset-on-spots-goal-is-to-run-out-in-one-attempt-scoring-as-a-race-to-7-points-vs-a-ghost-next-set-increases-decreases-object-balls-based-on-set-win-loss-note-the-optional-blocking-ball-progression-after-winning-with-7-object-balls",
+      "title": "Replace the Accepting Gifts rules UI copy with an English rules description that matches the user-provided rules, including: play with 1–7 object balls of one group plus the 8; break then take ball-in-hand; balls made on break are spotted (reset on spots); goal is to run out in one attempt; scoring as a race to 7 points vs a ghost; next set increases/decreases object balls based on set win/loss; note the optional blocking-ball progression after winning with 7 object balls.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-accepting-gifts-gameplay-tracking-according-to-the-provided-ghost-opponent-set-rules-track-current-set-score-player-points-vs-ghost-points-to-7-represent-each-run-out-as-an-attempt-with-a-success-fail-outcome-award-1-point-to-the-player-on-success-or-to-the-ghost-on-failure-end-the-set-when-either-reaches-7-after-set-end-automatically-prepare-the-next-set-with-starting-object-balls-adjusted-1-on-set-win-1-on-set-loss-clamped-to-1-7-start-each-new-attempt-with-ball-in-hand-represented-in-ui-as-a-new-attempt",
+      "title": "Implement Accepting Gifts gameplay tracking according to the provided “ghost opponent” set rules: track current set score (player points vs ghost points) to 7; represent each run-out as an attempt with a success/fail outcome; award 1 point to the player on success or to the ghost on failure; end the set when either reaches 7; after set end, automatically prepare the next set with starting object balls adjusted (+1 on set win, −1 on set loss), clamped to 1–7; start each new attempt with ball-in-hand (represented in UI as a new attempt).",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-accepting-gifts-saved-match-data-to-include-the-new-rule-tracking-fields-at-minimum-starting-object-ball-count-ending-object-ball-count-or-current-count-at-session-end-total-attempts-number-of-sets-completed-and-final-set-score-player-vs-ghost-and-save-these-fields-when-ending-the-session",
+      "title": "Extend Accepting Gifts saved match data to include the new rule-tracking fields (at minimum: starting object-ball count, ending object-ball count or current count at session end, total attempts, number of sets completed, and final set score Player vs Ghost) and save these fields when ending the session.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-match-history-summary-cards-and-match-details-rendering-for-accepting-gifts-to-show-the-new-key-summary-information-starting-object-balls-sets-completed-final-player-vs-ghost-score-attempts-in-english-while-keeping-existing-display-for-older-matches-that-lack-these-fields",
+      "title": "Update Match History summary cards and Match Details rendering for Accepting Gifts to show the new key summary information (starting object balls, sets completed, final Player vs Ghost score, attempts) in English, while keeping existing display for older matches that lack these fields.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-apa-9-ball-practice-rack-scoring-if-the-9-ball-is-recorded-as-pocketed-by-either-player-before-the-rack-is-otherwise-accounted-for-automatically-mark-all-remaining-unscored-balls-as-dead-so-that-the-rack-totals-reach-10-points-without-manual-dead-ball-entry",
+      "title": "In APA 9-ball practice rack scoring, if the 9-ball is recorded as pocketed (by either player) before the rack is otherwise accounted for, automatically mark all remaining unscored balls as dead so that the rack totals reach 10 points without manual dead-ball entry.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-persist-the-accepting-gifts-drill-progression-per-user-so-the-current-object-ball-count-and-optionally-the-in-progress-session-state-is-saved-server-side-and-automatically-restored-after-logout-login-page-reloads-or-starting-a-new-accepting-gifts-session",
+      "title": "Persist the Accepting Gifts drill progression per user so the current object-ball count (and optionally the in-progress session state) is saved server-side and automatically restored after logout/login, page reloads, or starting a new Accepting Gifts session.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enforce-a-minimum-object-ball-count-of-2-not-1-for-accepting-gifts-progression-and-inputs-and-update-all-related-ui-copy-to-reflect-the-2-7-range-in-english",
+      "title": "Enforce a minimum object-ball count of 2 (not 1) for Accepting Gifts progression and inputs, and update all related UI copy to reflect the 2–7 range in English.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-user-controlled-reset-override-mechanism-for-accepting-gifts-so-the-user-can-explicitly-set-the-starting-current-object-ball-count-2-7-and-have-that-choice-persisted-as-the-new-carry-forward-baseline",
+      "title": "Add a user-controlled reset/override mechanism for Accepting Gifts so the user can explicitly set the starting/current object-ball count (2–7) and have that choice persisted as the new carry-forward baseline.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-backend-api-support-for-accepting-gifts-carry-forward-state-and-in-progress-session-storage-tied-to-the-authenticated-principal-and-wire-it-into-the-existing-react-query-data-layer",
+      "title": "Implement backend API support for Accepting Gifts carry-forward state and in-progress session storage tied to the authenticated principal, and wire it into the existing React Query data layer.",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -218,6 +300,12 @@
     {
       "id": "AR-8",
       "summary": "Improve APA 9-ball scoring UI to a seamless, APA-scorekeeper-like per-inning GUI: display balls 1–9 each rack, allow selecting pocketed balls per inning, provide a Turn Over button to alternate turns, auto-adjust innings, and support marking dead balls and defensive shots during entry.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Accepting Gifts: persist and carry forward the current object-ball count across sessions (including mid-session resume) so new sessions default to where the user left off; allow user to optionally reset/override the starting ball count; enforce minimum of 2 balls.",
       "reqIds": [],
       "status": "pending"
     }

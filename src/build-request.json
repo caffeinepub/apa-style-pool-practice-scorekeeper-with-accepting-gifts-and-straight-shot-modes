@@ -1,97 +1,92 @@
 {
   "kind": "build_request",
-  "title": "Revamp APA 9-Ball scoring UI to a ball-based per-inning workflow",
+  "title": "Persist Accepting Gifts object-ball progression across sessions (min 2) with resume + reset controls",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-18",
-      "text": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "i want it more seemless. i would want more or less a gui that has 9 balls (numbered 1-9) for each round. turns would alternate and you select which balls were pocketed per inning. then a button kind of for turn over."
-        ]
-      },
-      "acceptanceCriteria": [
-        "On the APA Practice game screen, rack scoring no longer relies on manually typing player points for the rack; instead, balls 1–9 are displayed as selectable controls for the current rack.",
-        "Tapping a ball marks it as scored for the currently active player for the current inning; tapping again unmarks it (until the rack is completed).",
-        "A \"Turn Over\" button toggles the active player for the next inning entry, and the UI clearly indicates whose inning it is.",
-        "The 9-ball is scored as 2 points; balls 1–8 are scored as 1 point each, consistent with existing APA logic.",
-        "The rack can only be completed when exactly 10 rack points are accounted for via (player-scored balls + dead balls), matching POINTS_PER_RACK = 10.",
-        "All user-facing text is in English."
-      ]
-    },
-    {
-      "id": "REQ-19",
-      "text": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "innings are automatically adjusted."
-        ]
-      },
-      "acceptanceCriteria": [
-        "The APA Practice game screen no longer requires the user to manually enter innings values per rack for either player.",
-        "Each press of \"Turn Over\" increments innings for the player whose inning is being ended, and then switches the active player indicator.",
-        "The player cards on the game screen continue to show innings totals and PPI updates correctly as innings advance.",
-        "Existing end-of-match summary (ApaResultsSummary) continues to display innings and PPI without regression."
-      ]
-    },
-    {
-      "id": "REQ-20",
-      "text": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "we mark deadballs somehow and defensive shot too see."
-        ]
-      },
-      "acceptanceCriteria": [
-        "The rack scoring UI includes a way to mark one or more balls as \"dead\" for the rack; dead balls count toward the 10-ball accounting but add 0 points to either player.",
-        "The rack scoring UI includes a way to record a defensive shot for the currently active player during an inning (e.g., a toggle/button that increments a defensive-shot counter for that player).",
-        "Defensive shots recorded during the rack update the defensive shot totals shown on the game screen player cards and persist into the saved match summary as they do today.",
-        "The UI prevents impossible states (e.g., more dead balls than remaining unscored balls in the rack)."
-      ]
-    },
-    {
-      "id": "REQ-21",
-      "text": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
+      "id": "REQ-28",
+      "text": "Persist the Accepting Gifts drill progression per user so the current object-ball count (and optionally the in-progress session state) is saved server-side and automatically restored after logout/login, page reloads, or starting a new Accepting Gifts session.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "I love what it saves. but the interface is laccking. lets correct these things first."
+          "the number of object balls needs to change and be tracked ... even the next time i login ... it should tell me where we left off (even if in middle of session match). once its saved then it continues from there"
         ]
       },
       "acceptanceCriteria": [
-        "Completing a rack via the new GUI produces the same RackData shape used today by PracticeGamePage (rackNumber, playerA points/innings/defensiveShots, playerB points/innings/defensiveShots, deadBalls).",
-        "The APA Practice match can still be completed and saved successfully using the existing save flow, and saved matches continue to appear in Match History and Match Details with correct totals.",
-        "No backend schema/state migration is required for this UI-only change; saved APA matches created before the change remain viewable.",
-        "The rack history section (if kept) displays correct per-rack totals derived from the new UI."
+        "When a signed-in user changes the Accepting Gifts current object-ball count via normal gameplay (set win/loss progression), the latest value is persisted to the backend under that user.",
+        "If the user returns later (new browser session / after re-authentication) and starts Accepting Gifts, the app defaults to the last persisted object-ball count instead of always defaulting to 3.",
+        "If the user leaves in the middle of an Accepting Gifts session, the app can restore that in-progress session state after reload/login (resume flow) without requiring the user to re-enter the starting ball count.",
+        "If no persisted Accepting Gifts state exists for the user, the app uses 3 object balls as the initial default."
+      ]
+    },
+    {
+      "id": "REQ-29",
+      "text": "Enforce a minimum object-ball count of 2 (not 1) for Accepting Gifts progression and inputs, and update all related UI copy to reflect the 2–7 range in English.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "with lowest being 2 balls"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Accepting Gifts object-ball clamp logic enforces 2–7 inclusive (backend-validated and frontend-validated).",
+        "The Accepting Gifts Start page numeric input prevents values below 2 and above 7.",
+        "Any rules/help text that currently says clamped between 1 and 7 is updated to say clamped between 2 and 7.",
+        "Existing saved matches with starting/ending object-ball counts of 1 still render without crashing; however new gameplay cannot produce values below 2."
+      ]
+    },
+    {
+      "id": "REQ-30",
+      "text": "Add a user-controlled reset/override mechanism for Accepting Gifts so the user can explicitly set the starting/current object-ball count (2–7) and have that choice persisted as the new carry-forward baseline.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "i shoould also be able to reset to a number if i want like say, i just try for 7 one day and go from there"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On the Accepting Gifts Start page, the starting object-ball count field is pre-filled from the user’s persisted baseline (or 3 if none).",
+        "The user can change the starting object-ball count (2–7) before starting, and if they proceed, that chosen value becomes the session’s starting/current count and is persisted as the new baseline for future sessions.",
+        "An explicit “Reset” or “Set baseline” action is available (Start page and/or Game page) to set the baseline count without requiring the user to finish and save a match; the change persists across reload/login.",
+        "All user-facing text for these controls is in English and clearly indicates the allowed range (2–7)."
+      ]
+    },
+    {
+      "id": "REQ-31",
+      "text": "Implement backend API support for Accepting Gifts carry-forward state and in-progress session storage tied to the authenticated principal, and wire it into the existing React Query data layer.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes authenticated methods to: (a) get the caller’s Accepting Gifts persistent baseline/current object-ball count, (b) set/update that baseline/current count, (c) get the caller’s in-progress Accepting Gifts session (if any), (d) save/update in-progress session state, and (e) clear in-progress state when the session is ended/saved.",
+        "Frontend adds React Query hooks/mutations (in the existing hooks pattern) to call these new backend methods and keep UI state in sync.",
+        "When the user saves an Accepting Gifts match, the in-progress backend session state is cleared, and the persisted baseline/current count is updated to match where the session ended (ending/current object-ball count).",
+        "Authorization rules match existing profile/match rules: only the caller can read/write their own Accepting Gifts state."
       ]
     }
   ],
   "constraints": [
-    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Backend must remain single-actor; all Motoko logic stays in backend/main.mo.",
     "Use English for all user-facing text.",
-    "Do not introduce external services, databases, or unsupported frameworks."
+    "Respect single-actor backend architecture: all Motoko logic in backend/main.mo; add backend/migration.mo only if required by existing stable state changes per the conditional migration policy.",
+    "Do not edit files under frontend immutablePaths (auth hooks, main.tsx, and UI component sources); compose existing UI components instead.",
+    "Do not introduce external databases or third-party auth providers; Internet Identity remains the only auth method."
   ],
   "nonGoals": [
-    "Do not add full turn-by-turn shot log persistence to match history unless explicitly requested later.",
-    "Do not change APA 9-ball Equalizer rules, match-point conversion tables, or existing saved-match summary fields beyond what is needed to support the new UI.",
-    "Do not add real-time/multiplayer features or third-party auth providers beyond Internet Identity."
+    "Do not change Accepting Gifts scoring rules beyond (a) persisting progression state across sessions and (b) enforcing the minimum of 2 object balls.",
+    "Do not redesign other modes (APA Practice, Straight Shot) as part of this change.",
+    "Do not add real-time/multiplayer features."
   ],
   "imageRequirements": {
     "required": [],

@@ -108,3 +108,50 @@ export function useDeleteMatch() {
     },
   });
 }
+
+// Accepting Gifts persistence hooks
+export function useGetCurrentObjectBallCount() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<number>({
+    queryKey: ['acceptingGiftsBaseline'],
+    queryFn: async () => {
+      if (!actor) return 3;
+      const count = await actor.getCurrentObjectBallCount();
+      return Number(count);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSetCurrentObjectBallCount() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newCount: number) => {
+      if (!actor) throw new Error('Actor not available');
+      const result = await actor.setCurrentObjectBallCount(BigInt(newCount));
+      return Number(result);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acceptingGiftsBaseline'] });
+    },
+  });
+}
+
+export function useCompleteSession() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (finalCount: number) => {
+      if (!actor) throw new Error('Actor not available');
+      const result = await actor.completeSession(BigInt(finalCount));
+      return Number(result);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acceptingGiftsBaseline'] });
+    },
+  });
+}

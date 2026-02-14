@@ -1,53 +1,66 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T21:56:30.093Z",
-  "summary": "The diff adds a new ball-based rack scoring UI (ball buttons with states for Player A/B/dead), an inning-flow hook, and updates the rack scoring panel to compute rack totals from ball selections and to auto-track innings/defensive shots. However, some acceptance-criteria details are either not evidenced or appear implemented differently than requested, and there are backend changes that look unrelated to the UI-only scope.",
+  "generatedAt": "2026-02-14T00:13:04.091Z",
+  "summary": "Diff adds frontend baseline persistence hooks and UI updates for Accepting Gifts (2–7 clamp, baseline load/save, set-baseline actions) and introduces a backend migration adding an agSessions map. However, evidence for the full backend API (including in-progress session storage/clear) and backend-side validation/clamping is not present in the provided diff summary, and in-progress session persistence appears to remain client-side via sessionStorage.",
   "missing_requirements": [
     {
-      "id": "REQ-19",
-      "requirement": "Each press of \"Turn Over\" increments innings for the player whose inning is being ended, and then switches the active player indicator.",
-      "reason": "The new inning flow only increments innings when `currentInningHasBalls` is true; if no balls were marked in the inning, `turnOver()` does not increment innings. This does not match the AC statement that each press increments innings for the player whose inning is being ended.",
+      "id": "REQ-28",
+      "requirement": "Persist Accepting Gifts drill progression per user server-side and restore it across sessions; optionally restore in-progress session state after reload/login (resume flow).",
+      "reason": "The diff shows baseline/current object-ball count being persisted (via new frontend hooks), but the in-progress session resume appears to rely on browser sessionStorage rather than backend storage tied to the authenticated principal; no backend API for in-progress session get/save is evidenced.",
       "evidence": [
-        "frontend/src/components/apa/useApaInningFlow.ts"
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx (loads/saves sessionStorage 'acceptingGiftsGame')",
+        "backend/migration.mo (AGSession only contains currentObjectBallCount; no in-progress session fields shown)"
       ]
     },
     {
-      "id": "REQ-20",
-      "requirement": "UI prevents impossible states (e.g., more dead balls than remaining unscored balls in the rack).",
-      "reason": "The dead-ball toggle allows marking any unscored ball as dead without an explicit guard against exceeding the rack accounting limit; the only evidenced behavior is showing an error when totals exceed POINTS_PER_RACK. No disabling/prevention logic is shown in the provided diff summary.",
+      "id": "REQ-29",
+      "requirement": "Enforce minimum object-ball count of 2 (2–7 inclusive) with both backend and frontend validation; update UI copy to 2–7; do not crash rendering old matches with 1.",
+      "reason": "Frontend clamp/copy updates are evidenced, but backend-validated clamping (2–7 inclusive) is not evidenced in backend/main.mo in the provided truncated diff; cannot confirm backend enforcement.",
       "evidence": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+        "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts (clampObjectBallCount uses 2..7)",
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx (text: 'clamped between 2 and 7')",
+        "backend/main.mo (truncated; no clamp/validation logic shown)"
       ]
     },
     {
-      "id": "REQ-21",
-      "requirement": "Completing a rack via the new GUI produces the same RackData shape used today by PracticeGamePage (rackNumber, playerA points/innings/defensiveShots, playerB points/innings/defensiveShots, deadBalls).",
-      "reason": "The updated rack panel’s `onRackComplete` payload uses `player1Points/player2Points/player1Innings/...` naming (player1/player2), not the explicitly required `playerA/playerB` RackData shape. The diff is truncated before seeing final mapping, so there is not enough evidence that the emitted data is converted back into the exact `RackData` shape as required.",
+      "id": "REQ-31",
+      "requirement": "Backend API support for Accepting Gifts carry-forward baseline and in-progress session storage (get/set baseline; get/save/clear in-progress session), wired into React Query; clear in-progress state when session ended/saved; per-caller authorization.",
+      "reason": "Frontend React Query hooks show get/set baseline only; there is no evidence of backend methods for get/save/clear of an in-progress session, nor evidence of clearing in-progress state on save, nor evidence of authorization rules for these new endpoints.",
       "evidence": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/lib/apa/apaScoring.ts"
+        "frontend/src/hooks/useQueries.ts (adds useGetCurrentObjectBallCount/useSetCurrentObjectBallCount; no in-progress hooks shown in provided truncation)",
+        "backend/migration.mo (adds agSessions map but no actor methods)",
+        "backend/main.mo (truncated; new Accepting Gifts persistence methods not shown)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Backend addition of a detailed `BallState` type suggesting ball-by-ball/inning event logging structures.",
-      "reason": "The BuildRequest explicitly frames this as a UI-only change with no backend schema/migration required, and non-goals include not adding turn-by-turn shot log persistence. The diff shows a new/expanded backend `type BallState = { ballNumber; inn; pocketed; by; ... }` which is not requested by REQ-18–REQ-21 and appears to introduce ball-level event schema.",
+      "description": "App-wide branding/content changes emphasizing APA 9-Ball scorekeeper (e.g., header/title/auth gate/home page copy) unrelated to Accepting Gifts persistence requirements.",
+      "reason": "BuildRequest is narrowly scoped to Accepting Gifts progression persistence/minimum clamp/reset controls and associated backend APIs; branding changes are not requested.",
       "evidence": [
-        "backend/main.mo"
+        "frontend-file-summaries.txt (summaries for AppLayout/AuthGate/HomePage mentioning updated branding and APA 9-Ball focus)",
+        "project_state.json (summary emphasizes APA 9-ball; indicates broader scope changes)"
+      ]
+    },
+    {
+      "description": "Straight Shot mode enhancements (e.g., moving average display, additional in-game controls) not requested.",
+      "reason": "BuildRequest explicitly lists Straight Shot redesign as a non-goal; these changes are not part of REQ-28..31.",
+      "evidence": [
+        "frontend-file-summaries.txt (StraightShotStartPage moving average; StraightShotGamePage controls/threshold behavior)"
       ]
     }
   ],
   "confidence": 0.66,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/apa/ApaBallButton.tsx",
-    "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-    "frontend/src/components/apa/apaBallStyles.ts",
-    "frontend/src/components/apa/useApaInningFlow.ts",
-    "frontend/src/lib/apa/apaScoring.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
     "project_state.json"
   ]
 }

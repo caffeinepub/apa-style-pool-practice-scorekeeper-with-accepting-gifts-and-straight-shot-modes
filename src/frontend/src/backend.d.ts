@@ -134,10 +134,16 @@ export interface APAMatchStatsUiContainer {
     seasonType: string;
 }
 export interface AcceptingGiftsMatch {
+    startingObjectBallCount: bigint;
     completionStatus: boolean;
     base: BaseMatchEntry;
+    endingObjectBallCount: bigint;
     score: bigint;
+    finalSetScorePlayer: bigint;
     rulesReference: string;
+    totalAttempts: bigint;
+    finalSetScoreGhost: bigint;
+    setsCompleted: bigint;
 }
 export interface APADetailedInnningSummary {
     defensiveShots: bigint;
@@ -223,27 +229,33 @@ export interface APAMatchStatsUiSummary {
 export interface ApiMatch {
     makes?: bigint;
     thirdShotScore?: bigint;
+    startingObjectBallCount?: bigint;
     completionTime?: bigint;
     completionStatus?: boolean;
     owner: Principal;
     scratchStrokes?: Array<bigint>;
     mode: MatchMode;
     attempts?: bigint;
+    endingObjectBallCount?: bigint;
     score?: bigint;
     shots?: bigint;
+    finalSetScorePlayer?: bigint;
     totalScore?: bigint;
     rulesReference?: string;
     fourthShotScore?: bigint;
     matchId: string;
     players: Array<Player>;
+    totalAttempts?: bigint;
     firstShotScore?: bigint;
     ballsMade?: bigint;
     notes?: string;
     apaMatchInfo?: APAMatchStatsUiContainer;
     secondShotScore?: bigint;
     dateTime: Time;
+    finalSetScoreGhost?: bigint;
     streaks?: bigint;
     strokes?: Array<bigint>;
+    setsCompleted?: bigint;
 }
 export interface BallState {
     by: string;
@@ -291,15 +303,18 @@ export enum Variant_all_playerMatch_teamMatch_detailRack {
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearHistory(): Promise<void>;
+    completeSession(finalCount: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getCurrentObjectBallCount(): Promise<bigint>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveMatch(matchId: string, matchRecord: MatchRecord): Promise<void>;
+    setCurrentObjectBallCount(newCount: bigint): Promise<bigint>;
     updateMatch(matchId: string, updatedMatch: MatchRecord): Promise<void>;
 }

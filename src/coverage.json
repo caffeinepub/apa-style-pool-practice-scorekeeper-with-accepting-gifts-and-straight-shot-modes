@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T21:56:30.096Z",
+  "generatedAt": "2026-02-14T00:13:04.094Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -11,78 +11,89 @@
     "implemented": 4,
     "items": [
       {
-        "id": "REQ-18",
-        "summary": "Replace the current APA rack scoring entry UI (numeric inputs for points/innings) with a seamless per-inning GUI for APA 9-ball practice matches: show balls 1–9 for the current rack, allow the scorekeeper to tap/select which balls were pocketed during the current inning, and provide a clear \"Turn Over\" control to advance to the next player's inning.",
+        "id": "REQ-28",
+        "summary": "Persist the Accepting Gifts drill progression per user so the current object-ball count (and optionally the in-progress session state) is saved server-side and automatically restored after logout/login, page reloads, or starting a new Accepting Gifts session.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/components/apa/ApaBallButton.tsx",
-          "frontend/src/components/apa/apaBallStyles.ts"
+          "frontend/src/backend.d.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/components/apa/ApaBallButton.tsx",
-          "frontend/src/components/apa/apaBallStyles.ts"
+          "frontend/src/backend.d.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
         ]
       },
       {
-        "id": "REQ-19",
-        "summary": "Implement automatic innings tracking for APA Practice gameplay based on the per-inning flow: innings should be incremented automatically as the scorekeeper uses the \"Turn Over\" workflow (no manual innings numeric input fields).",
+        "id": "REQ-29",
+        "summary": "Enforce a minimum object-ball count of 2 (not 1) for Accepting Gifts progression and inputs, and update all related UI copy to reflect the 2–7 range in English.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/useApaInningFlow.ts",
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx"
+          "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/useApaInningFlow.ts",
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+          "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
         ]
       },
       {
-        "id": "REQ-20",
-        "summary": "Add in-flow controls to mark dead balls and defensive shots during APA per-inning entry, without breaking the existing per-rack 10-point accounting and defensive-shot totals.",
+        "id": "REQ-30",
+        "summary": "Add a user-controlled reset/override mechanism for Accepting Gifts so the user can explicitly set the starting/current object-ball count (2–7) and have that choice persisted as the new carry-forward baseline.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/lib/apa/apaScoring.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx"
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/lib/apa/apaScoring.ts"
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
-        "id": "REQ-21",
-        "summary": "Update the APA Practice game flow to compute and submit the existing per-rack summary data (playerA/playerB points, dead balls, innings, defensive shots) from the new per-inning ball-based UI, keeping the saved match record shape and Match History/Details rendering compatible with existing APA match persistence.",
+        "id": "REQ-31",
+        "summary": "Implement backend API support for Accepting Gifts carry-forward state and in-progress session storage tied to the authenticated principal, and wire it into the existing React Query data layer.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/lib/matches/matchBuilders.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/backend.d.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/backend.d.ts"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/apa/ApaBallButton.tsx",
-    "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-    "frontend/src/components/apa/apaBallStyles.ts",
-    "frontend/src/components/apa/useApaInningFlow.ts",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/lib/apa/apaScoring.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

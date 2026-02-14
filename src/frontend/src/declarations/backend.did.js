@@ -152,27 +152,33 @@ export const APAMatchStatsUiContainer = IDL.Record({
 export const ApiMatch = IDL.Record({
   'makes' : IDL.Opt(IDL.Nat),
   'thirdShotScore' : IDL.Opt(IDL.Nat),
+  'startingObjectBallCount' : IDL.Opt(IDL.Nat),
   'completionTime' : IDL.Opt(IDL.Nat),
   'completionStatus' : IDL.Opt(IDL.Bool),
   'owner' : IDL.Principal,
   'scratchStrokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
   'mode' : MatchMode,
   'attempts' : IDL.Opt(IDL.Nat),
+  'endingObjectBallCount' : IDL.Opt(IDL.Nat),
   'score' : IDL.Opt(IDL.Nat),
   'shots' : IDL.Opt(IDL.Nat),
+  'finalSetScorePlayer' : IDL.Opt(IDL.Nat),
   'totalScore' : IDL.Opt(IDL.Nat),
   'rulesReference' : IDL.Opt(IDL.Text),
   'fourthShotScore' : IDL.Opt(IDL.Nat),
   'matchId' : IDL.Text,
   'players' : IDL.Vec(Player),
+  'totalAttempts' : IDL.Opt(IDL.Nat),
   'firstShotScore' : IDL.Opt(IDL.Nat),
   'ballsMade' : IDL.Opt(IDL.Nat),
   'notes' : IDL.Opt(IDL.Text),
   'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
   'secondShotScore' : IDL.Opt(IDL.Nat),
   'dateTime' : Time,
+  'finalSetScoreGhost' : IDL.Opt(IDL.Nat),
   'streaks' : IDL.Opt(IDL.Nat),
   'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
+  'setsCompleted' : IDL.Opt(IDL.Nat),
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const BaseMatchEntry = IDL.Record({
@@ -199,10 +205,16 @@ export const StraightShotMatch = IDL.Record({
   'strokes' : IDL.Vec(IDL.Nat),
 });
 export const AcceptingGiftsMatch = IDL.Record({
+  'startingObjectBallCount' : IDL.Nat,
   'completionStatus' : IDL.Bool,
   'base' : BaseMatchEntry,
+  'endingObjectBallCount' : IDL.Nat,
   'score' : IDL.Nat,
+  'finalSetScorePlayer' : IDL.Nat,
   'rulesReference' : IDL.Text,
+  'totalAttempts' : IDL.Nat,
+  'finalSetScoreGhost' : IDL.Nat,
+  'setsCompleted' : IDL.Nat,
 });
 export const PracticeMatch = IDL.Record({
   'makes' : IDL.Opt(IDL.Nat),
@@ -276,6 +288,7 @@ export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clearHistory' : IDL.Func([], [], []),
+  'completeSession' : IDL.Func([IDL.Nat], [IDL.Nat], []),
   'computeAPASummary' : IDL.Func(
       [IDL.Text, IDL.Vec(BallState)],
       [APADetailedInnningSummary],
@@ -285,6 +298,7 @@ export const idlService = IDL.Service({
   'getAllMatches' : IDL.Func([], [IDL.Vec(ApiMatch)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getCurrentObjectBallCount' : IDL.Func([], [IDL.Nat], ['query']),
   'getMatch' : IDL.Func([IDL.Text], [IDL.Opt(ApiMatch)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -294,6 +308,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+  'setCurrentObjectBallCount' : IDL.Func([IDL.Nat], [IDL.Nat], []),
   'updateMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
 });
 
@@ -444,27 +459,33 @@ export const idlFactory = ({ IDL }) => {
   const ApiMatch = IDL.Record({
     'makes' : IDL.Opt(IDL.Nat),
     'thirdShotScore' : IDL.Opt(IDL.Nat),
+    'startingObjectBallCount' : IDL.Opt(IDL.Nat),
     'completionTime' : IDL.Opt(IDL.Nat),
     'completionStatus' : IDL.Opt(IDL.Bool),
     'owner' : IDL.Principal,
     'scratchStrokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
     'mode' : MatchMode,
     'attempts' : IDL.Opt(IDL.Nat),
+    'endingObjectBallCount' : IDL.Opt(IDL.Nat),
     'score' : IDL.Opt(IDL.Nat),
     'shots' : IDL.Opt(IDL.Nat),
+    'finalSetScorePlayer' : IDL.Opt(IDL.Nat),
     'totalScore' : IDL.Opt(IDL.Nat),
     'rulesReference' : IDL.Opt(IDL.Text),
     'fourthShotScore' : IDL.Opt(IDL.Nat),
     'matchId' : IDL.Text,
     'players' : IDL.Vec(Player),
+    'totalAttempts' : IDL.Opt(IDL.Nat),
     'firstShotScore' : IDL.Opt(IDL.Nat),
     'ballsMade' : IDL.Opt(IDL.Nat),
     'notes' : IDL.Opt(IDL.Text),
     'apaMatchInfo' : IDL.Opt(APAMatchStatsUiContainer),
     'secondShotScore' : IDL.Opt(IDL.Nat),
     'dateTime' : Time,
+    'finalSetScoreGhost' : IDL.Opt(IDL.Nat),
     'streaks' : IDL.Opt(IDL.Nat),
     'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
+    'setsCompleted' : IDL.Opt(IDL.Nat),
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const BaseMatchEntry = IDL.Record({
@@ -491,10 +512,16 @@ export const idlFactory = ({ IDL }) => {
     'strokes' : IDL.Vec(IDL.Nat),
   });
   const AcceptingGiftsMatch = IDL.Record({
+    'startingObjectBallCount' : IDL.Nat,
     'completionStatus' : IDL.Bool,
     'base' : BaseMatchEntry,
+    'endingObjectBallCount' : IDL.Nat,
     'score' : IDL.Nat,
+    'finalSetScorePlayer' : IDL.Nat,
     'rulesReference' : IDL.Text,
+    'totalAttempts' : IDL.Nat,
+    'finalSetScoreGhost' : IDL.Nat,
+    'setsCompleted' : IDL.Nat,
   });
   const PracticeMatch = IDL.Record({
     'makes' : IDL.Opt(IDL.Nat),
@@ -568,6 +595,7 @@ export const idlFactory = ({ IDL }) => {
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clearHistory' : IDL.Func([], [], []),
+    'completeSession' : IDL.Func([IDL.Nat], [IDL.Nat], []),
     'computeAPASummary' : IDL.Func(
         [IDL.Text, IDL.Vec(BallState)],
         [APADetailedInnningSummary],
@@ -577,6 +605,7 @@ export const idlFactory = ({ IDL }) => {
     'getAllMatches' : IDL.Func([], [IDL.Vec(ApiMatch)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getCurrentObjectBallCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getMatch' : IDL.Func([IDL.Text], [IDL.Opt(ApiMatch)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
@@ -586,6 +615,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
+    'setCurrentObjectBallCount' : IDL.Func([IDL.Nat], [IDL.Nat], []),
     'updateMatch' : IDL.Func([IDL.Text, MatchRecord], [], []),
   });
 };

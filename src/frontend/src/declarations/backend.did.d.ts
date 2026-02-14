@@ -96,10 +96,16 @@ export interface APAMatchStatsUiSummary {
   'points' : bigint,
 }
 export interface AcceptingGiftsMatch {
+  'startingObjectBallCount' : bigint,
   'completionStatus' : boolean,
   'base' : BaseMatchEntry,
+  'endingObjectBallCount' : bigint,
   'score' : bigint,
+  'finalSetScorePlayer' : bigint,
   'rulesReference' : string,
+  'totalAttempts' : bigint,
+  'finalSetScoreGhost' : bigint,
+  'setsCompleted' : bigint,
 }
 export interface ApaNineBallMatch {
   'matchType' : string,
@@ -128,27 +134,33 @@ export interface ApaPlayerStats {
 export interface ApiMatch {
   'makes' : [] | [bigint],
   'thirdShotScore' : [] | [bigint],
+  'startingObjectBallCount' : [] | [bigint],
   'completionTime' : [] | [bigint],
   'completionStatus' : [] | [boolean],
   'owner' : Principal,
   'scratchStrokes' : [] | [Array<bigint>],
   'mode' : MatchMode,
   'attempts' : [] | [bigint],
+  'endingObjectBallCount' : [] | [bigint],
   'score' : [] | [bigint],
   'shots' : [] | [bigint],
+  'finalSetScorePlayer' : [] | [bigint],
   'totalScore' : [] | [bigint],
   'rulesReference' : [] | [string],
   'fourthShotScore' : [] | [bigint],
   'matchId' : string,
   'players' : Array<Player>,
+  'totalAttempts' : [] | [bigint],
   'firstShotScore' : [] | [bigint],
   'ballsMade' : [] | [bigint],
   'notes' : [] | [string],
   'apaMatchInfo' : [] | [APAMatchStatsUiContainer],
   'secondShotScore' : [] | [bigint],
   'dateTime' : Time,
+  'finalSetScoreGhost' : [] | [bigint],
   'streaks' : [] | [bigint],
   'strokes' : [] | [Array<bigint>],
+  'setsCompleted' : [] | [bigint],
 }
 export interface BallState {
   'by' : string,
@@ -260,6 +272,7 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearHistory' : ActorMethod<[], undefined>,
+  'completeSession' : ActorMethod<[bigint], bigint>,
   'computeAPASummary' : ActorMethod<
     [string, Array<BallState>],
     APADetailedInnningSummary
@@ -268,11 +281,13 @@ export interface _SERVICE {
   'getAllMatches' : ActorMethod<[], Array<ApiMatch>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getCurrentObjectBallCount' : ActorMethod<[], bigint>,
   'getMatch' : ActorMethod<[string], [] | [ApiMatch]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveMatch' : ActorMethod<[string, MatchRecord], undefined>,
+  'setCurrentObjectBallCount' : ActorMethod<[bigint], bigint>,
   'updateMatch' : ActorMethod<[string, MatchRecord], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

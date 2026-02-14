@@ -1,115 +1,128 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "APA 9-Ball Practice: Ball-based per-inning rack scoring UI (frontend-only)",
+  "title": "Accepting Gifts persistence + min 2 balls + baseline reset (frontend wiring)",
   "requirements": [
     {
-      "id": "REQ-18",
-      "summary": "Replace numeric rack scoring inputs with a ball-based per-inning workflow (select balls 1–9, show active player, and provide Turn Over to switch innings).",
+      "id": "REQ-28",
+      "summary": "Restore and persist Accepting Gifts progression per authenticated user across reloads and sessions (baseline count + optional in-progress resume).",
       "acceptanceCriteria": [
-        "On the APA Practice game screen, rack scoring no longer relies on manually typing player points for the rack; instead, balls 1–9 are displayed as selectable controls for the current rack.",
-        "Tapping a ball marks it as scored for the currently active player for the current inning; tapping again unmarks it (until the rack is completed).",
-        "A \"Turn Over\" button toggles the active player for the next inning entry, and the UI clearly indicates whose inning it is.",
-        "The 9-ball is scored as 2 points; balls 1–8 are scored as 1 point each, consistent with existing APA logic.",
-        "The rack can only be completed when exactly 10 rack points are accounted for via (player-scored balls + dead balls), matching POINTS_PER_RACK = 10.",
-        "All user-facing text is in English."
+        "When a signed-in user changes the Accepting Gifts current object-ball count via normal gameplay (set win/loss progression), the latest value is persisted to the backend under that user.",
+        "If the user returns later (new browser session / after re-authentication) and starts Accepting Gifts, the app defaults to the last persisted object-ball count instead of always defaulting to 3.",
+        "If the user leaves in the middle of an Accepting Gifts session, the app can restore that in-progress session state after reload/login (resume flow) without requiring the user to re-enter the starting ball count.",
+        "If no persisted Accepting Gifts state exists for the user, the app uses 3 object balls as the initial default."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/backend.d.ts",
           "operation": "modify",
-          "description": "Replace the current points/innings numeric-entry form with a ball-based rack UI: render selectable controls for balls 1–9, show a clear active-player indicator for the current inning, and add a prominent \"Turn Over\" control to switch the active player. Use existing shadcn-ui components (e.g., Card/Button/Badge/Alert) for layout and interactions; verify the component's usage instructions before implementing."
+          "description": "Extend the typed backend interface with Accepting Gifts persistence capabilities (get/set baseline/current ball count and get/save/clear in-progress session state) so React Query hooks can call them from the authenticated actor."
         },
         {
-          "path": "frontend/src/components/apa/ApaBallButton.tsx",
-          "operation": "create",
-          "description": "Create a reusable ball control used by the rack scoring panel to display balls 1–9 with distinct visual states (unscored, scored by Player A, scored by Player B, dead) and accessible labels. Use existing shadcn-ui primitives where appropriate; verify the component's usage instructions before implementing."
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks/mutations for Accepting Gifts carry-forward and in-progress session state using the authenticated actor. Use the existing hooks pattern and query invalidation approach. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/apa/apaBallStyles.ts",
-          "operation": "create",
-          "description": "Add shared, UI-focused helpers for mapping ball number + state to classNames/labels so ApaRackScoringPanel and ApaBallButton stay consistent and readable (English-only text)."
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "operation": "modify",
+          "description": "Load the user’s persisted Accepting Gifts baseline/current object-ball count (default to 3 if none) to prefill the Start page. If an in-progress session exists server-side, present a clear Resume control that restores that session (and seeds/updates sessionStorage to keep existing flow working). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "operation": "modify",
+          "description": "On game load, prefer restoring from server-side in-progress state (if present) over only sessionStorage. During gameplay, sync relevant in-progress fields and current object-ball count to the backend so reload/login can resume. Keep sessionStorage as a local cache but ensure backend becomes the source of truth for cross-session resume. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-19",
-      "summary": "Automatically track and update innings totals using the Turn Over workflow (remove manual innings entry).",
+      "id": "REQ-29",
+      "summary": "Enforce 2–7 object-ball range for Accepting Gifts inputs and progression, and update related English UI copy (while safely rendering historical saved data with 1).",
       "acceptanceCriteria": [
-        "The APA Practice game screen no longer requires the user to manually enter innings values per rack for either player.",
-        "Each press of \"Turn Over\" increments innings for the player whose inning is being ended, and then switches the active player indicator.",
-        "The player cards on the game screen continue to show innings totals and PPI updates correctly as innings advance.",
-        "Existing end-of-match summary (ApaResultsSummary) continues to display innings and PPI without regression."
+        "The Accepting Gifts object-ball clamp logic enforces 2–7 inclusive (backend-validated and frontend-validated).",
+        "The Accepting Gifts Start page numeric input prevents values below 2 and above 7.",
+        "Any rules/help text that currently says clamped between 1 and 7 is updated to say clamped between 2 and 7.",
+        "Existing saved matches with starting/ending object-ball counts of 1 still render without crashing; however new gameplay cannot produce values below 2."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/useApaInningFlow.ts",
-          "operation": "create",
-          "description": "Implement a focused React hook to manage per-rack inning flow state: active player, inning-in-progress detection, per-player inning counts for the rack, and a Turn Over action that increments innings for the ending player and switches turns. The hook should expose derived rack totals needed by the UI."
+          "path": "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
+          "operation": "modify",
+          "description": "Update Accepting Gifts progression helpers so new gameplay clamps object-ball count to 2–7 inclusive. Preserve safe rendering of any previously stored value of 1 by ensuring UI/session hydration can tolerate 1 without crashing, while progression/inputs never create values below 2."
         },
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
           "operation": "modify",
-          "description": "Integrate the per-inning flow hook to remove manual innings inputs and to drive automatic innings updates via Turn Over. Ensure the rack completion action also finalizes inning counting consistently (without requiring numeric inputs). Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+          "description": "Change the starting object-ball numeric input to enforce min=2 and max=7 and update helper copy to state the 2–7 range in English. Ensure manual typing cannot set values outside the range."
         },
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
           "operation": "modify",
-          "description": "Adjust the APA practice gameplay page to rely on the rack panel’s computed innings (no manual inputs), ensuring the player cards update innings totals and PPI as racks are completed. Keep existing routing and save flow unchanged."
+          "description": "Update all Accepting Gifts rules/help text to state the ball count range is 2–7 (including the clamp sentence) and adjust any other references that currently mention 1–7."
+        },
+        {
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "operation": "modify",
+          "description": "Ensure any user-facing ball-count phrasing and pluralization remains correct with the new minimum of 2, while still tolerating display of an older persisted value of 1 without crashing."
         }
       ]
     },
     {
-      "id": "REQ-20",
-      "summary": "Add in-flow dead ball and defensive shot controls to the per-inning UI while preventing impossible rack states.",
+      "id": "REQ-30",
+      "summary": "Add user controls to override/reset Accepting Gifts baseline (2–7) and persist the chosen baseline for future sessions.",
       "acceptanceCriteria": [
-        "The rack scoring UI includes a way to mark one or more balls as \"dead\" for the rack; dead balls count toward the 10-ball accounting but add 0 points to either player.",
-        "The rack scoring UI includes a way to record a defensive shot for the currently active player during an inning (e.g., a toggle/button that increments a defensive-shot counter for that player).",
-        "Defensive shots recorded during the rack update the defensive shot totals shown on the game screen player cards and persist into the saved match summary as they do today.",
-        "The UI prevents impossible states (e.g., more dead balls than remaining unscored balls in the rack)."
+        "On the Accepting Gifts Start page, the starting object-ball count field is pre-filled from the user’s persisted baseline (or 3 if none).",
+        "The user can change the starting object-ball count (2–7) before starting, and if they proceed, that chosen value becomes the session’s starting/current count and is persisted as the new baseline for future sessions.",
+        "An explicit “Reset” or “Set baseline” action is available (Start page and/or Game page) to set the baseline count without requiring the user to finish and save a match; the change persists across reload/login.",
+        "All user-facing text for these controls is in English and clearly indicates the allowed range (2–7)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
           "operation": "modify",
-          "description": "Add in-flow controls for (1) marking balls as dead (with dead contributing to rack accounting but awarding 0 points) and (2) recording a defensive shot for the active player (incrementing that player’s defensive-shot counter). Prevent invalid states by disallowing dead/scored assignment on already-assigned balls and by ensuring the rack cannot be completed unless total accounted rack points equals POINTS_PER_RACK. Use existing shadcn-ui components (e.g., Button/Badge/Alert); verify the component's usage instructions before implementing."
+          "description": "Add an explicit baseline override/reset control (English copy) that lets the user set the baseline count (2–7) without starting/saving a match, persisted via the new React Query mutation. Also, when starting a session, persist the chosen starting count as the new baseline. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/lib/apa/apaScoring.ts",
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
           "operation": "modify",
-          "description": "Add small, shared scoring helpers needed by the new UI (e.g., compute ball value for 1–9 with 9-ball=2, compute rack totals from per-ball assignments, and a validation helper that confirms accounted rack points equals POINTS_PER_RACK). Keep existing exports working to avoid regressions."
+          "description": "Optionally add an in-session baseline control (English copy) to set/persist the current count as baseline immediately, without requiring match completion. Ensure it uses the same React Query mutation and reflects the allowed range (2–7). Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Ensure defensive shots and dead-ball totals received from the new rack UI continue to roll up correctly into game totals and rack history display, and persist through the existing save flow."
+          "description": "Ensure Accepting Gifts baseline mutations invalidate/refetch any baseline/in-progress queries so Start/Game UI stays consistent immediately after a reset/override. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-21",
-      "summary": "Derive and submit the existing per-rack summary data (points, dead balls, innings, defensive shots) from the new per-inning UI while keeping saved match records and history views compatible.",
+      "id": "REQ-31",
+      "summary": "Wire frontend React Query layer to new backend capabilities for Accepting Gifts baseline and in-progress session storage, and keep state consistent when saving matches.",
       "acceptanceCriteria": [
-        "Completing a rack via the new GUI produces the same RackData shape used today by PracticeGamePage (rackNumber, playerA points/innings/defensiveShots, playerB points/innings/defensiveShots, deadBalls).",
-        "The APA Practice match can still be completed and saved successfully using the existing save flow, and saved matches continue to appear in Match History and Match Details with correct totals.",
-        "No backend schema/state migration is required for this UI-only change; saved APA matches created before the change remain viewable.",
-        "The rack history section (if kept) displays correct per-rack totals derived from the new UI."
+        "Backend exposes authenticated methods to: (a) get the caller’s Accepting Gifts persistent baseline/current object-ball count, (b) set/update that baseline/current count, (c) get the caller’s in-progress Accepting Gifts session (if any), (d) save/update in-progress session state, and (e) clear in-progress state when the session is ended/saved.",
+        "Frontend adds React Query hooks/mutations (in the existing hooks pattern) to call these new backend methods and keep UI state in sync.",
+        "When the user saves an Accepting Gifts match, the in-progress backend session state is cleared, and the persisted baseline/current count is updated to match where the session ended (ending/current object-ball count).",
+        "Authorization rules match existing profile/match rules: only the caller can read/write their own Accepting Gifts state."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Ensure the rack completion callback produces the same numeric per-rack summary fields as before (player points, dead ball points, innings, defensive shots), derived from the ball-based per-inning UI, so PracticeGamePage can continue building RackData without changing its shape."
+          "description": "Implement Accepting Gifts-specific queries/mutations in the existing React Query data layer (baseline + in-progress). Ensure they are enabled only when the authenticated actor is available and handle authorization failures gracefully in the UI. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
           "operation": "modify",
-          "description": "Keep RackData construction and session persistence compatible while accepting the new rack panel output. Ensure rack history rendering remains accurate using the derived per-rack totals from the new UI (no shape changes)."
+          "description": "Integrate new React Query mutations into gameplay: (1) save/update in-progress session state as the user plays, (2) persist updated current object-ball count when it changes via progression, and (3) on match save, clear the in-progress state and update the persisted baseline to the ending/current count. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/lib/matches/matchBuilders.ts",
+          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
           "operation": "modify",
-          "description": "Confirm APA match building continues to use the same per-rack fields (points/innings/defensiveShots/deadBalls) supplied by PracticeGamePage, ensuring saved match record shape remains compatible with existing Match History/Details rendering."
+          "description": "Use React Query to fetch baseline and in-progress state on Start page load to support both fresh starts and resume. Ensure authenticated-only data access aligns with the existing authorization-based app gating. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Keep TypeScript types in sync with the new Accepting Gifts backend capabilities so hooks and pages compile and can safely serialize/deserialize in-progress session payloads."
         }
       ]
     }

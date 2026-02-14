@@ -216,10 +216,16 @@ export interface APAMatchStatsUiContainer {
     seasonType: string;
 }
 export interface AcceptingGiftsMatch {
+    startingObjectBallCount: bigint;
     completionStatus: boolean;
     base: BaseMatchEntry;
+    endingObjectBallCount: bigint;
     score: bigint;
+    finalSetScorePlayer: bigint;
     rulesReference: string;
+    totalAttempts: bigint;
+    finalSetScoreGhost: bigint;
+    setsCompleted: bigint;
 }
 export interface APADetailedInnningSummary {
     defensiveShots: bigint;
@@ -305,27 +311,33 @@ export interface APAMatchStatsUiSummary {
 export interface ApiMatch {
     makes?: bigint;
     thirdShotScore?: bigint;
+    startingObjectBallCount?: bigint;
     completionTime?: bigint;
     completionStatus?: boolean;
     owner: Principal;
     scratchStrokes?: Array<bigint>;
     mode: MatchMode;
     attempts?: bigint;
+    endingObjectBallCount?: bigint;
     score?: bigint;
     shots?: bigint;
+    finalSetScorePlayer?: bigint;
     totalScore?: bigint;
     rulesReference?: string;
     fourthShotScore?: bigint;
     matchId: string;
     players: Array<Player>;
+    totalAttempts?: bigint;
     firstShotScore?: bigint;
     ballsMade?: bigint;
     notes?: string;
     apaMatchInfo?: APAMatchStatsUiContainer;
     secondShotScore?: bigint;
     dateTime: Time;
+    finalSetScoreGhost?: bigint;
     streaks?: bigint;
     strokes?: Array<bigint>;
+    setsCompleted?: bigint;
 }
 export interface BallState {
     by: string;
@@ -374,16 +386,19 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearHistory(): Promise<void>;
+    completeSession(finalCount: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getCurrentObjectBallCount(): Promise<bigint>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveMatch(matchId: string, matchRecord: MatchRecord): Promise<void>;
+    setCurrentObjectBallCount(newCount: bigint): Promise<bigint>;
     updateMatch(matchId: string, updatedMatch: MatchRecord): Promise<void>;
 }
 import type { APA9MatchPlayerStatsUi as _APA9MatchPlayerStatsUi, APAMatchStatsUiContainer as _APAMatchStatsUiContainer, APAMatchStatsUiRackStats as _APAMatchStatsUiRackStats, APAMatchStatsUiSummary as _APAMatchStatsUiSummary, AcceptingGiftsMatch as _AcceptingGiftsMatch, ApaNineBallMatch as _ApaNineBallMatch, ApaPlayerStats as _ApaPlayerStats, ApiMatch as _ApiMatch, BaseMatchEntry as _BaseMatchEntry, MatchMode as _MatchMode, MatchRecord as _MatchRecord, Player as _Player, PracticeMatch as _PracticeMatch, RackStat as _RackStat, StraightShotMatch as _StraightShotMatch, TeamStats as _TeamStats, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
@@ -428,6 +443,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.clearHistory();
+            return result;
+        }
+    }
+    async completeSession(arg0: bigint): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.completeSession(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.completeSession(arg0);
             return result;
         }
     }
@@ -501,6 +530,20 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n29(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getCurrentObjectBallCount(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCurrentObjectBallCount();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCurrentObjectBallCount();
+            return result;
+        }
+    }
     async getMatch(arg0: string): Promise<ApiMatch | null> {
         if (this.processError) {
             try {
@@ -568,6 +611,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveMatch(arg0, to_candid_MatchRecord_n32(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async setCurrentObjectBallCount(arg0: bigint): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setCurrentObjectBallCount(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setCurrentObjectBallCount(arg0);
             return result;
         }
     }
@@ -890,76 +947,94 @@ function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uin
 function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     makes: [] | [bigint];
     thirdShotScore: [] | [bigint];
+    startingObjectBallCount: [] | [bigint];
     completionTime: [] | [bigint];
     completionStatus: [] | [boolean];
     owner: Principal;
     scratchStrokes: [] | [Array<bigint>];
     mode: _MatchMode;
     attempts: [] | [bigint];
+    endingObjectBallCount: [] | [bigint];
     score: [] | [bigint];
     shots: [] | [bigint];
+    finalSetScorePlayer: [] | [bigint];
     totalScore: [] | [bigint];
     rulesReference: [] | [string];
     fourthShotScore: [] | [bigint];
     matchId: string;
     players: Array<_Player>;
+    totalAttempts: [] | [bigint];
     firstShotScore: [] | [bigint];
     ballsMade: [] | [bigint];
     notes: [] | [string];
     apaMatchInfo: [] | [_APAMatchStatsUiContainer];
     secondShotScore: [] | [bigint];
     dateTime: _Time;
+    finalSetScoreGhost: [] | [bigint];
     streaks: [] | [bigint];
     strokes: [] | [Array<bigint>];
+    setsCompleted: [] | [bigint];
 }): {
     makes?: bigint;
     thirdShotScore?: bigint;
+    startingObjectBallCount?: bigint;
     completionTime?: bigint;
     completionStatus?: boolean;
     owner: Principal;
     scratchStrokes?: Array<bigint>;
     mode: MatchMode;
     attempts?: bigint;
+    endingObjectBallCount?: bigint;
     score?: bigint;
     shots?: bigint;
+    finalSetScorePlayer?: bigint;
     totalScore?: bigint;
     rulesReference?: string;
     fourthShotScore?: bigint;
     matchId: string;
     players: Array<Player>;
+    totalAttempts?: bigint;
     firstShotScore?: bigint;
     ballsMade?: bigint;
     notes?: string;
     apaMatchInfo?: APAMatchStatsUiContainer;
     secondShotScore?: bigint;
     dateTime: Time;
+    finalSetScoreGhost?: bigint;
     streaks?: bigint;
     strokes?: Array<bigint>;
+    setsCompleted?: bigint;
 } {
     return {
         makes: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.makes)),
         thirdShotScore: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.thirdShotScore)),
+        startingObjectBallCount: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.startingObjectBallCount)),
         completionTime: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.completionTime)),
         completionStatus: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.completionStatus)),
         owner: value.owner,
         scratchStrokes: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.scratchStrokes)),
         mode: from_candid_MatchMode_n9(_uploadFile, _downloadFile, value.mode),
         attempts: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.attempts)),
+        endingObjectBallCount: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.endingObjectBallCount)),
         score: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.score)),
         shots: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.shots)),
+        finalSetScorePlayer: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.finalSetScorePlayer)),
         totalScore: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.totalScore)),
         rulesReference: record_opt_to_undefined(from_candid_opt_n11(_uploadFile, _downloadFile, value.rulesReference)),
         fourthShotScore: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.fourthShotScore)),
         matchId: value.matchId,
         players: from_candid_vec_n12(_uploadFile, _downloadFile, value.players),
+        totalAttempts: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.totalAttempts)),
         firstShotScore: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.firstShotScore)),
         ballsMade: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.ballsMade)),
         notes: record_opt_to_undefined(from_candid_opt_n11(_uploadFile, _downloadFile, value.notes)),
         apaMatchInfo: record_opt_to_undefined(from_candid_opt_n15(_uploadFile, _downloadFile, value.apaMatchInfo)),
         secondShotScore: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.secondShotScore)),
         dateTime: value.dateTime,
+        finalSetScoreGhost: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.finalSetScoreGhost)),
         streaks: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.streaks)),
-        strokes: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.strokes))
+        strokes: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.strokes)),
+        setsCompleted: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.setsCompleted))
     };
 }
 function from_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -1192,21 +1267,39 @@ function to_candid_record_n49(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     };
 }
 function to_candid_record_n51(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    startingObjectBallCount: bigint;
     completionStatus: boolean;
     base: BaseMatchEntry;
+    endingObjectBallCount: bigint;
     score: bigint;
+    finalSetScorePlayer: bigint;
     rulesReference: string;
+    totalAttempts: bigint;
+    finalSetScoreGhost: bigint;
+    setsCompleted: bigint;
 }): {
+    startingObjectBallCount: bigint;
     completionStatus: boolean;
     base: _BaseMatchEntry;
+    endingObjectBallCount: bigint;
     score: bigint;
+    finalSetScorePlayer: bigint;
     rulesReference: string;
+    totalAttempts: bigint;
+    finalSetScoreGhost: bigint;
+    setsCompleted: bigint;
 } {
     return {
+        startingObjectBallCount: value.startingObjectBallCount,
         completionStatus: value.completionStatus,
         base: to_candid_BaseMatchEntry_n36(_uploadFile, _downloadFile, value.base),
+        endingObjectBallCount: value.endingObjectBallCount,
         score: value.score,
-        rulesReference: value.rulesReference
+        finalSetScorePlayer: value.finalSetScorePlayer,
+        rulesReference: value.rulesReference,
+        totalAttempts: value.totalAttempts,
+        finalSetScoreGhost: value.finalSetScoreGhost,
+        setsCompleted: value.setsCompleted
     };
 }
 function to_candid_record_n53(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
