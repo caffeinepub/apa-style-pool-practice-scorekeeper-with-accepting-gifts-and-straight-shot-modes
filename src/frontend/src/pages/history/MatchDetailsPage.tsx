@@ -3,9 +3,10 @@ import { useGetMatch } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Users, Target, Shield, Activity } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Target, Shield, Activity, TrendingUp } from 'lucide-react';
 import DeleteMatchButton from '../../components/matches/DeleteMatchButton';
 import { MatchMode } from '../../backend';
+import { getPlayerStatsRoute } from '../../utils/playerRoutes';
 
 export default function MatchDetailsPage() {
   const navigate = useNavigate();
@@ -99,12 +100,23 @@ export default function MatchDetailsPage() {
               <Users className="h-4 w-4" />
               Players
             </h3>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {match.players.map((player, idx) => (
-                <p key={idx} className="text-sm text-muted-foreground">
-                  {player.name}
-                  {player.skillLevel !== undefined && ` (SL ${player.skillLevel})`}
-                </p>
+                <div key={idx} className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {player.name}
+                    {player.skillLevel !== undefined && ` (SL ${player.skillLevel})`}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate({ to: getPlayerStatsRoute(player.name) })}
+                    className="gap-1"
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                    View Stats
+                  </Button>
+                </div>
               ))}
             </div>
           </div>
@@ -136,29 +148,31 @@ export default function MatchDetailsPage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Points Earned</span>
-                          <span className="text-xl font-bold text-emerald-600">{Number(player.totalScore)}</span>
+                          <span className="text-lg font-bold text-emerald-600">
+                            {Number(player.pointsEarnedRunningTotal)}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
                             <Shield className="mr-1 inline h-4 w-4" />
                             Defensive Shots
                           </span>
-                          <span className="font-semibold">{Number(player.defensiveShots)}</span>
+                          <span>{Number(player.defensiveShots)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
                             <Activity className="mr-1 inline h-4 w-4" />
                             Innings
                           </span>
-                          <span className="font-semibold">{Number(player.innings)}</span>
-                        </div>
-                        <div className="flex justify-between rounded-lg border bg-muted/50 p-2">
-                          <span className="text-sm font-medium">PPI</span>
-                          <span className="font-bold">{player.ppi.toFixed(2)}</span>
+                          <span>{Number(player.innings)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Team Match Points</span>
-                          <span className="font-semibold">{Number(player.pointsWonConverted)}</span>
+                          <span className="text-muted-foreground">PPI</span>
+                          <span className="font-semibold">{player.ppi.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Match Points Converted</span>
+                          <Badge variant="outline">{Number(player.pointsWonConverted)}</Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -170,77 +184,62 @@ export default function MatchDetailsPage() {
 
           {match.mode === MatchMode.acceptingGifts && (
             <div>
-              <h3 className="mb-3 font-semibold">Accepting Gifts Session Results</h3>
-              <div className="space-y-3">
-                {match.startingObjectBallCount !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Starting Object Balls</span>
-                    <span className="font-semibold">{Number(match.startingObjectBallCount)}</span>
-                  </div>
-                )}
-                {match.endingObjectBallCount !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Ending Object Balls</span>
-                    <span className="font-semibold">{Number(match.endingObjectBallCount)}</span>
-                  </div>
-                )}
-                {match.setsCompleted !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Sets Completed</span>
-                    <span className="font-semibold">{Number(match.setsCompleted)}</span>
-                  </div>
-                )}
-                {match.totalAttempts !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Total Attempts</span>
-                    <span className="font-semibold">{Number(match.totalAttempts)}</span>
-                  </div>
-                )}
+              <h3 className="mb-3 font-semibold">Accepting Gifts Session</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Starting Object Balls</span>
+                  <span className="font-semibold">{match.startingObjectBallCount !== undefined ? Number(match.startingObjectBallCount) : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Ending Object Balls</span>
+                  <span className="font-semibold">{match.endingObjectBallCount !== undefined ? Number(match.endingObjectBallCount) : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Sets Completed</span>
+                  <span className="font-semibold">{match.setsCompleted !== undefined ? Number(match.setsCompleted) : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Attempts</span>
+                  <span className="font-semibold">{match.totalAttempts !== undefined ? Number(match.totalAttempts) : 'N/A'}</span>
+                </div>
                 {match.finalSetScorePlayer !== undefined && match.finalSetScoreGhost !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Final Set Score</span>
                     <span className="font-semibold">
-                      Player {Number(match.finalSetScorePlayer)} – Ghost {Number(match.finalSetScoreGhost)}
+                      Player {Number(match.finalSetScorePlayer)} - Ghost {Number(match.finalSetScoreGhost)}
                     </span>
                   </div>
                 )}
-                {/* Legacy score field fallback */}
-                {match.score !== undefined && match.finalSetScorePlayer === undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Score</span>
-                    <span className="font-semibold">{Number(match.score)}</span>
-                  </div>
-                )}
-                {match.completionStatus !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Status</span>
-                    <Badge variant={match.completionStatus ? 'default' : 'secondary'}>
-                      {match.completionStatus ? 'Completed' : 'In Progress'}
-                    </Badge>
-                  </div>
-                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Completion Status</span>
+                  <Badge variant={match.completionStatus ? 'default' : 'secondary'}>
+                    {match.completionStatus ? 'Completed' : 'In Progress'}
+                  </Badge>
+                </div>
               </div>
             </div>
           )}
 
-          {match.mode === MatchMode.straightShot && match.totalScore !== undefined && (
+          {match.mode === MatchMode.straightShot && (
             <div>
-              <h3 className="mb-3 font-semibold">Strokes Drill Results</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between rounded-lg border p-3">
-                  <span className="text-muted-foreground">Total Strokes</span>
-                  <span className="text-2xl font-bold">{Number(match.totalScore)}</span>
+              <h3 className="mb-3 font-semibold">Straight Shot Strokes Drill</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Shots</span>
+                  <span className="font-semibold">{match.shots !== undefined ? Number(match.shots) : 'N/A'}</span>
                 </div>
-                <div className="flex justify-between rounded-lg border p-3">
-                  <span className="text-muted-foreground">Result</span>
-                  <span className={`font-semibold ${Number(match.totalScore) <= 20 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {Number(match.totalScore) <= 20 ? 'Win (20 or under) ✓' : 'Over 20'}
-                  </span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Balls Made</span>
+                  <span className="font-semibold">{match.ballsMade !== undefined ? Number(match.ballsMade) : 'N/A'}</span>
                 </div>
-                {match.ballsMade !== undefined && (
-                  <div className="flex justify-between rounded-lg border p-3">
-                    <span className="text-muted-foreground">Balls Made</span>
-                    <span className="font-semibold">{Number(match.ballsMade)}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Score</span>
+                  <span className="font-semibold">{match.totalScore !== undefined ? Number(match.totalScore) : 'N/A'}</span>
+                </div>
+                {match.completionTime !== undefined && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Completion Time</span>
+                    <span className="font-semibold">{Number(match.completionTime)}s</span>
                   </div>
                 )}
               </div>
@@ -250,11 +249,15 @@ export default function MatchDetailsPage() {
           {match.notes && (
             <div>
               <h3 className="mb-2 font-semibold">Notes</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
+              <p className="text-sm text-muted-foreground">{match.notes}</p>
             </div>
           )}
 
-          <div className="pt-4">
+          <div className="flex justify-between border-t pt-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              {formatDate(match.dateTime)}
+            </div>
             <DeleteMatchButton matchId={match.matchId} />
           </div>
         </CardContent>

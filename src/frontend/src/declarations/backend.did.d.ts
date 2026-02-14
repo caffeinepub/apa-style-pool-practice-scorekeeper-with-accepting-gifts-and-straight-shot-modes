@@ -264,7 +264,10 @@ export interface TeamStats {
     { 'penaltyAwarded' : string },
 }
 export type Time = bigint;
-export interface UserProfile { 'name' : string }
+export interface UserProfile {
+  'name' : string,
+  'apaSkillLevel' : [] | [bigint],
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };

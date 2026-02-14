@@ -180,7 +180,10 @@ export const ApiMatch = IDL.Record({
   'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
   'setsCompleted' : IDL.Opt(IDL.Nat),
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'apaSkillLevel' : IDL.Opt(IDL.Nat),
+});
 export const BaseMatchEntry = IDL.Record({
   'owner' : IDL.Principal,
   'mode' : MatchMode,
@@ -487,7 +490,10 @@ export const idlFactory = ({ IDL }) => {
     'strokes' : IDL.Opt(IDL.Vec(IDL.Nat)),
     'setsCompleted' : IDL.Opt(IDL.Nat),
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'apaSkillLevel' : IDL.Opt(IDL.Nat),
+  });
   const BaseMatchEntry = IDL.Record({
     'owner' : IDL.Principal,
     'mode' : MatchMode,

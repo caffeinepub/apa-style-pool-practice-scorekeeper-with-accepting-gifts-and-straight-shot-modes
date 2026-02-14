@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 15,
+  "projectStateVersion": 19,
   "summary": "APA pool practice scorekeeper app focused on APA 9-ball (not 8-ball), using The Equalizer® point-based scoring with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, and end-of-match team match-point conversion; plus additional practice modes: Accepting Gifts and Straight Shot.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -10,7 +10,9 @@
     "APA 9-ball rules constraints to encode: no push-outs (standard handicapped APA 9-ball), 9-on-the-snap ends rack with 2 points, three consecutive fouls within a rack loses the rack and remaining balls become dead.",
     "APA 9-ball active scoring UI should mirror official APA scorekeeper flow: per-rack display of balls 1–9, tap-to-select pocketed balls for the current inning, Turn Over control to switch players, innings auto-increment logic, and in-flow toggles/controls to mark dead balls and defensive shots.",
     "APA 9-ball practice rule: when the 9-ball is pocketed early (ends the rack), all remaining balls in that rack should be marked dead (0 points) to preserve 10-point rack accounting.",
-    "Accepting Gifts progression: user wants minimum object balls = 2 (not 1) and the starting ball count for a new session should default to the last saved/current count from the prior session; also provide a manual reset/override to any allowed count (e.g., jump to 7)."
+    "Accepting Gifts progression: user wants minimum object balls = 2 (not 1) and the starting ball count for a new session should default to the last saved/current count from the prior session; also provide a manual reset/override to any allowed count (e.g., jump to 7).",
+    "Introduce a per-device/account \"Primary Player\" concept so the app recognizes the main user across matches while still allowing ad-hoc opponent names.",
+    "Results UX: keep individual match view; add navigation/button to a per-player Aggregate Stats view with graphs computed from that player name across saved matches."
   ],
   "known_issues": [
     "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials."
@@ -264,6 +266,62 @@
         "REQ-32"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-auto-remember-and-auto-fill-the-signed-in-user-s-primary-player-name-from-the-existing-caller-user-profile-when-starting-new-matches-so-the-user-does-not-need-to-retype-their-name-each-time",
+      "title": "Auto-remember and auto-fill the signed-in user’s primary player name (from the existing caller user profile) when starting new matches, so the user does not need to retype their name each time.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-a-per-player-aggregate-stats-view-that-can-be-opened-for-any-player-name-that-appears-in-the-user-s-saved-matches-and-compute-the-stats-from-the-signed-in-user-s-match-history-data",
+      "title": "Provide a per-player Aggregate Stats view that can be opened for any player name that appears in the user’s saved matches, and compute the stats from the signed-in user’s match history data.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-aggregate-stats-page-add-apa-9-ball-charts-for-the-selected-player-1-ppi-by-match-with-a-rolling-line-for-best-10-of-last-20-with-the-user-specified-fallback-rules-and-2-match-by-match-results-plotted-with-the-same-rolling-line-overlaid",
+      "title": "On the Aggregate Stats page, add APA 9-ball charts for the selected player: (1) PPI by match with a rolling line for “best 10 of last 20” (with the user-specified fallback rules), and (2) match-by-match results plotted with the same rolling line overlaid.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-navigation-from-individual-match-details-to-the-per-player-aggregate-stats-page-for-each-listed-player-so-the-user-can-jump-from-an-individual-result-to-that-player-s-aggregate-graphs",
+      "title": "Add navigation from individual match details to the per-player Aggregate Stats page for each listed player, so the user can jump from an individual result to that player’s aggregate graphs.",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-app-s-primary-player-concept-is-per-account-device-by-using-the-existing-internet-identity-caller-profile-as-the-source-of-truth-and-provide-an-easy-way-to-set-or-change-it-using-the-existing-profile-setup-flow",
+      "title": "Ensure the app’s primary player concept is per account/device by using the existing Internet Identity caller profile as the source of truth, and provide an easy way to set or change it using the existing profile setup flow.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-profile-setup-edit-profile-dialog-to-allow-viewing-and-editing-the-primary-player-s-apa-9-ball-skill-level-alongside-the-name-and-save-both-fields-to-the-user-profile-implement-this-in-frontend-src-components-auth-profilesetupdialog-tsx-by-adding-an-apa-skill-level-selector-using-the-existing-apa-skill-level-constants-utilities-from-frontend-src-lib-apa-apaequalizer-ts-user-facing-text-must-be-in-english-and-should-clearly-indicate-this-skill-level-is-used-as-the-default-for-apa-matches-e-g-label-like-apa-9-ball-skill-level-default",
+      "title": "Update the Profile Setup / Edit Profile dialog to allow viewing and editing the primary player’s APA 9-ball skill level alongside the name, and save both fields to the user profile.\n\nImplement this in `frontend/src/components/auth/ProfileSetupDialog.tsx` by adding an APA skill level selector using the existing APA skill-level constants/utilities (from `frontend/src/lib/apa/apaEqualizer.ts`).\n\nUser-facing text must be in English and should clearly indicate this skill level is used as the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”).",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-auto-fill-the-saved-primary-player-apa-skill-level-when-starting-a-new-apa-practice-match-update-frontend-src-pages-apa-practicestartpage-tsx-so-that-when-the-signed-in-user-has-a-saved-profile-skill-level-the-apa-start-page-uses-it-as-the-default-selection-for-the-primary-player-instead-of-always-defaulting-to-sl-5-the-auto-fill-behavior-should-not-block-manual-overrides-if-the-user-changes-the-skill-level-in-the-start-form-it-must-respect-the-user-s-selection",
+      "title": "Auto-fill the saved primary player APA skill level when starting a new APA practice match.\n\nUpdate `frontend/src/pages/apa/PracticeStartPage.tsx` so that when the signed-in user has a saved profile skill level, the APA start page uses it as the default selection for the primary player instead of always defaulting to SL 5.\n\nThe auto-fill behavior should not block manual overrides: if the user changes the skill level in the start form, it must respect the user’s selection.",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -315,6 +373,32 @@
       "id": "AR-9",
       "summary": "Accepting Gifts: persist and carry forward the current object-ball count across sessions (including mid-session resume) so new sessions default to where the user left off; allow user to optionally reset/override the starting ball count; enforce minimum of 2 balls.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Add primary player profile selection (per device/account) to auto-remember the main user name and auto-fill it in new matches; support optional opponent name persistence.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Add aggregated player stats and graphs in Results: per-player aggregate view with (1) PPI trend line plus rolling best-10-of-last-20 average line; (2) match-by-match results plotted with rolling best-10-of-last-20 average line; include a button from individual match results to the aggregate player view.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Persist and auto-fill the Primary Player’s APA skill level (SL) from the user profile so new APA matches automatically load the saved SL instead of requiring re-entry each match.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Extend the backend user profile to store the primary player’s APA 9-ball skill level, and return/save it via the existing profile APIs.\n\nContext: backend/main.mo currently defines `public type UserProfile = { name : Text; };` and profile is saved via `saveCallerUserProfile` / fetched via `getCallerUserProfile`.\n\nAdd a new optional field (e.g., `apaSkillLevel : ?Nat`) so existing users who only have a name saved remain valid.",
+      "reqIds": [
+        "REQ-38"
+      ],
       "status": "pending"
     }
   ],

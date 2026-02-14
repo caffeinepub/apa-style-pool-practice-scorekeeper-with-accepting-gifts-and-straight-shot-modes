@@ -1,37 +1,71 @@
 {
   "kind": "build_request",
-  "title": "APA 9-ball: End the rack immediately when the 9-ball is made",
+  "title": "Remember primary player APA skill level in user profile and auto-fill in APA match setup",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-32",
-      "text": "Update APA 9-ball rack scoring so that once the 9-ball is recorded as pocketed by either player, the rack is treated as over: automatically mark all remaining unscored balls (1–8) as dead, and prevent any further ball scoring/dead-ball changes for that rack except allowing the user to undo/unmark the 9-ball to correct mistakes.",
-      "target": "frontend",
+      "id": "REQ-38",
+      "text": "Extend the backend user profile to store the primary player’s APA 9-ball skill level, and return/save it via the existing profile APIs.\n\nContext: backend/main.mo currently defines `public type UserProfile = { name : Text; };` and profile is saved via `saveCallerUserProfile` / fetched via `getCallerUserProfile`.\n\nAdd a new optional field (e.g., `apaSkillLevel : ?Nat`) so existing users who only have a name saved remain valid.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "ummm, once the nine ball is made thats the end of the rack for apa score keeper"
+          "ummm, LS  skill level should be remembered.  in the edit your profile where it says uipdate your name, technically thats where you should set skill level for the main player...if LS loads in an APA match it should know skill level..."
         ]
       },
       "acceptanceCriteria": [
-        "In the APA rack scoring panel, if ball 9 is marked as pocketed by Player A or Player B, all remaining unscored balls 1–8 are automatically set to Dead Ball so the rack totals reach 10 points.",
-        "After ball 9 is marked as pocketed, the UI disallows changing the state of balls 1–8 (including marking/unmarking dead balls) and disallows switching turns, unless the user first unmarks ball 9.",
-        "If ball 9 is unmarked after being pocketed, any balls that were auto-marked dead solely due to the 9-ball being made are reverted back to unscored, restoring normal editing for the rack.",
-        "The existing behavior of awarding the 9-ball’s 2 points to the player who pocketed it (based on the active player at the time of selection) remains intact.",
-        "All user-facing text related to this behavior is in English and clearly states that making the 9-ball ends the rack."
+        "Calling `getCallerUserProfile()` returns the saved skill level when previously set, and returns `null`/missing value for users who have never set one.",
+        "Calling `saveCallerUserProfile(profile)` persists both `name` and the new APA skill level field for the authenticated caller.",
+        "Existing saved profiles that only contain a name do not cause traps/errors and still load successfully."
+      ]
+    },
+    {
+      "id": "REQ-39",
+      "text": "Update the Profile Setup / Edit Profile dialog to allow viewing and editing the primary player’s APA 9-ball skill level alongside the name, and save both fields to the user profile.\n\nImplement this in `frontend/src/components/auth/ProfileSetupDialog.tsx` by adding an APA skill level selector using the existing APA skill-level constants/utilities (from `frontend/src/lib/apa/apaEqualizer.ts`).\n\nUser-facing text must be in English and should clearly indicate this skill level is used as the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "in the edit your profile where it says uipdate your name, technically thats where you should set skill level for the main player..."
+        ]
+      },
+      "acceptanceCriteria": [
+        "In Edit Profile mode, the dialog pre-fills both the current saved name and the current saved APA skill level (if present).",
+        "Saving the dialog updates the backend profile so subsequent loads show the updated skill level.",
+        "All new/updated UI copy in this dialog is English-only."
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "text": "Auto-fill the saved primary player APA skill level when starting a new APA practice match.\n\nUpdate `frontend/src/pages/apa/PracticeStartPage.tsx` so that when the signed-in user has a saved profile skill level, the APA start page uses it as the default selection for the primary player instead of always defaulting to SL 5.\n\nThe auto-fill behavior should not block manual overrides: if the user changes the skill level in the start form, it must respect the user’s selection.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "...it saves my name and then i have to set skill level before each match...."
+        ]
+      },
+      "acceptanceCriteria": [
+        "If the user has a saved APA skill level in their profile, opening the APA Practice Start page shows that skill level selected by default for the primary player.",
+        "If the user changes the skill level on the start page, starting the match uses the changed value (not forcibly overwritten by profile defaults).",
+        "If the user has no saved APA skill level, the start page continues to behave sensibly (e.g., keeps the current default)."
       ]
     }
   ],
   "constraints": [
-    "Frontend immutable paths must not be modified: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Keep all changes within the existing single-actor backend architecture; no backend changes are required for this request."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "Use English for all user-facing text added/changed in this scope."
   ],
   "nonGoals": [
-    "Do not change APA match-point conversion, skill level targets, or overall match completion rules.",
-    "Do not add new game modes or alter Accepting Gifts or Straight Shot logic.",
-    "Do not implement additional APA rule variations beyond the specific '9-ball ends the rack' behavior."
+    "Persisting or auto-filling the opponent’s skill level or name beyond the current match start form (unless already implemented elsewhere).",
+    "Changing APA scoring rules, match history schemas, or aggregate stats logic beyond what is necessary to support profile skill level persistence and auto-fill."
   ],
   "imageRequirements": {
     "required": [],

@@ -283,6 +283,7 @@ export interface BallState {
 }
 export interface UserProfile {
     name: string;
+    apaSkillLevel?: bigint;
 }
 export enum MatchMode {
     straightShot = "straightShot",

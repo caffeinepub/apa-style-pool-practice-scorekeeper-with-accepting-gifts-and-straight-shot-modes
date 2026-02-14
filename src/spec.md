@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Ensure APA 9-ball rack scoring ends immediately when the 9-ball is made, matching scorekeeper rules.
+**Goal:** Remember the signed-in user’s primary player APA 9-ball skill level in their profile and use it to auto-fill APA practice match setup.
 
 **Planned changes:**
-- When ball 9 is marked as pocketed by either player, automatically mark any remaining unscored balls (1–8) as Dead Ball to complete the rack total.
-- After ball 9 is pocketed, lock rack interactions so balls 1–8 cannot be changed and turns cannot be switched unless ball 9 is first unmarked.
-- If ball 9 is unmarked, revert any balls that were auto-marked dead solely due to ball 9 being made back to unscored, restoring normal rack editing.
-- Add/adjust English UI text to clearly communicate that making the 9-ball ends the rack while preserving existing 9-ball point assignment behavior.
+- Extend the backend `UserProfile` to include an optional APA 9-ball skill level field and persist/return it through the existing profile save/get APIs without breaking existing saved profiles.
+- Update the Profile Setup / Edit Profile dialog to display and edit “APA 9-Ball Skill Level (Default)” alongside the name, using existing APA skill level utilities, and save both fields to the user profile.
+- Update the APA Practice Start page to default the primary player skill level to the saved profile value when present, while still allowing the user to manually override it.
 
-**User-visible outcome:** When a user marks the 9-ball as made, the rack immediately completes (remaining balls become dead and the UI locks); the user can still correct mistakes by unmarking the 9-ball to reopen the rack.
+**User-visible outcome:** Users can set a default APA 9-ball skill level in their profile, and the APA Practice Start page will preselect it automatically (unless the user changes it for that match).

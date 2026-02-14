@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import { Outlet } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
+import { Settings } from 'lucide-react';
 import LoginButton from '../auth/LoginButton';
 import ProfileSetupDialog from '../auth/ProfileSetupDialog';
+import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 
 export default function AppLayout() {
+  const { identity } = useInternetIdentity();
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const isAuthenticated = !!identity;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -13,7 +21,19 @@ export default function AppLayout() {
             </div>
             <h1 className="text-xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
           </div>
-          <LoginButton />
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditProfileOpen(true)}
+                title="Edit Profile"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            )}
+            <LoginButton />
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
@@ -34,6 +54,11 @@ export default function AppLayout() {
         </div>
       </footer>
       <ProfileSetupDialog />
+      <ProfileSetupDialog 
+        open={editProfileOpen} 
+        onOpenChange={setEditProfileOpen} 
+        mode="edit" 
+      />
     </div>
   );
 }

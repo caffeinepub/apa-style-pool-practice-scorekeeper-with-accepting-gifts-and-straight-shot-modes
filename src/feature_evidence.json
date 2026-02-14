@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-apa-9-ball-rack-scoring-so-that-once-the-9-ball-is-recorded-as-pocketed-by-either-player-the-rack-is-treated-as-over-automatically-mark-all-remaining-unscored-balls-1-8-as-dead-and-prevent-any-further-ball-scoring-dead-ball-changes-for-that-rack-except-allowing-the-user-to-undo-unmark-the-9-ball-to-correct-mistakes",
-      "featureTitle": "Update APA 9-ball rack scoring so that once the 9-ball is recorded as pocketed by either player, the rack is treated as over: automatically mark all remaining unscored balls (1–8) as dead, and prevent any further ball scoring/dead-ball changes for that rack except allowing the user to undo/unmark the 9-ball to correct mistakes.",
+      "featureId": "feature-update-the-profile-setup-edit-profile-dialog-to-allow-viewing-and-editing-the-primary-player-s-apa-9-ball-skill-level-alongside-the-name-and-save-both-fields-to-the-user-profile-implement-this-in-frontend-src-components-auth-profilesetupdialog-tsx-by-adding-an-apa-skill-level-selector-using-the-existing-apa-skill-level-constants-utilities-from-frontend-src-lib-apa-apaequalizer-ts-user-facing-text-must-be-in-english-and-should-clearly-indicate-this-skill-level-is-used-as-the-default-for-apa-matches-e-g-label-like-apa-9-ball-skill-level-default",
+      "featureTitle": "Update the Profile Setup / Edit Profile dialog to allow viewing and editing the primary player’s APA 9-ball skill level alongside the name, and save both fields to the user profile.\n\nImplement this in `frontend/src/components/auth/ProfileSetupDialog.tsx` by adding an APA skill level selector using the existing APA skill-level constants/utilities (from `frontend/src/lib/apa/apaEqualizer.ts`).\n\nUser-facing text must be in English and should clearly indicate this skill level is used as the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”).",
       "files": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+        "frontend/src/components/auth/ProfileSetupDialog.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,7 +16,26 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-32"
+        "REQ-39"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-auto-fill-the-saved-primary-player-apa-skill-level-when-starting-a-new-apa-practice-match-update-frontend-src-pages-apa-practicestartpage-tsx-so-that-when-the-signed-in-user-has-a-saved-profile-skill-level-the-apa-start-page-uses-it-as-the-default-selection-for-the-primary-player-instead-of-always-defaulting-to-sl-5-the-auto-fill-behavior-should-not-block-manual-overrides-if-the-user-changes-the-skill-level-in-the-start-form-it-must-respect-the-user-s-selection",
+      "featureTitle": "Auto-fill the saved primary player APA skill level when starting a new APA practice match.\n\nUpdate `frontend/src/pages/apa/PracticeStartPage.tsx` so that when the signed-in user has a saved profile skill level, the APA start page uses it as the default selection for the primary player instead of always defaulting to SL 5.\n\nThe auto-fill behavior should not block manual overrides: if the user changes the skill level in the start form, it must respect the user’s selection.",
+      "files": [
+        "frontend/src/pages/apa/PracticeStartPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-40"
       ],
       "confidence": "high"
     }

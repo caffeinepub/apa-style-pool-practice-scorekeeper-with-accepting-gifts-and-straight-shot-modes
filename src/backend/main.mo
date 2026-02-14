@@ -3,22 +3,22 @@ import Iter "mo:core/Iter";
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Time "mo:core/Time";
-import MixinAuthorization "authorization/MixinAuthorization";
-import AccessControl "authorization/access-control";
+import Migration "migration";
 import List "mo:core/List";
 import Nat "mo:core/Nat";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
+import MixinAuthorization "authorization/MixinAuthorization";
+import AccessControl "authorization/access-control";
 
-
-// Specify the data migration function in with-clause
-
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   public type UserProfile = {
     name : Text;
+    apaSkillLevel : ?Nat;
   };
 
   let userProfiles = Map.empty<Principal, UserProfile>();

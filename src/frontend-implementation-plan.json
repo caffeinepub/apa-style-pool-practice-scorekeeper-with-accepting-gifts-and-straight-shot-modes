@@ -1,28 +1,42 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "APA 9-ball rack scoring: 9-ball ends rack and locks edits",
+  "title": "Remember primary player APA skill level in profile UI and auto-fill APA practice match setup",
   "requirements": [
     {
-      "id": "REQ-32",
-      "summary": "When ball 9 is marked pocketed, auto-mark remaining balls 1–8 as dead, lock rack editing/turn switching, and allow undoing only by unmarking ball 9 (which reverts only auto-dead balls).",
+      "id": "REQ-39",
+      "summary": "Add an APA 9-ball skill level selector to the Profile Setup / Edit Profile dialog, prefill from profile, and save alongside name.",
       "acceptanceCriteria": [
-        "In the APA rack scoring panel, if ball 9 is marked as pocketed by Player A or Player B, all remaining unscored balls 1–8 are automatically set to Dead Ball so the rack totals reach 10 points.",
-        "After ball 9 is marked as pocketed, the UI disallows changing the state of balls 1–8 (including marking/unmarking dead balls) and disallows switching turns, unless the user first unmarks ball 9.",
-        "If ball 9 is unmarked after being pocketed, any balls that were auto-marked dead solely due to the 9-ball being made are reverted back to unscored, restoring normal editing for the rack.",
-        "The existing behavior of awarding the 9-ball’s 2 points to the player who pocketed it (based on the active player at the time of selection) remains intact.",
-        "All user-facing text related to this behavior is in English and clearly states that making the 9-ball ends the rack."
+        "In Edit Profile mode, the dialog pre-fills both the current saved name and the current saved APA skill level (if present).",
+        "Saving the dialog updates the backend profile so subsequent loads show the updated skill level.",
+        "All new/updated UI copy in this dialog is English-only."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
           "operation": "modify",
-          "description": "Implement a rack-locked state when ball 9 is pocketed (by either player), automatically set all remaining unscored balls 1–8 to 'dead', and disable all scoring/dead-ball interactions for balls 1–8 plus disable turn switching while locked. Ensure ball 9 remains clickable to unmark/undo, and when unmarked revert only balls that were auto-marked dead due to the 9-ball (do not affect balls previously marked dead or scored). Update the panel’s English helper text to explicitly state that making the 9-ball ends the rack and locks editing until the 9-ball is unmarked."
+          "description": "Extend the dialog to view/edit the primary player’s APA 9-ball skill level alongside name, and persist both via useSaveCallerUserProfile. Use the existing shadcn-ui Select component to render the selector UI and use APA_SKILL_LEVELS/formatSkillLevel utilities from frontend/src/lib/apa/apaEqualizer.ts for options/labels (verify the component's usage instructions before implementing). Ensure the field is optional (supports unset), pre-fills from userProfile.apaSkillLevel when present, and saves as a bigint-compatible value when provided. Update dialog copy in English to clearly indicate it is the default for APA matches (e.g., label like “APA 9-Ball Skill Level (Default)”)."
         },
         {
-          "path": "frontend/src/components/apa/ApaBallButton.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Ensure the ball button disabled state is properly supported for the rack-locked behavior (visual/interaction consistency), so balls 1–8 are disabled when the rack is locked while ball 9 remains enabled for undo."
+          "description": "Confirm the profile query/mutation typing and cache invalidation correctly supports the additional optional apaSkillLevel field on UserProfile (no behavior change beyond ensuring the new field is carried through saveCallerUserProfile and reflected in the cached currentUserProfile)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "summary": "Auto-fill the primary player's APA skill level on APA practice match start from the saved profile, without overriding manual changes.",
+      "acceptanceCriteria": [
+        "If the user has a saved APA skill level in their profile, opening the APA Practice Start page shows that skill level selected by default for the primary player.",
+        "If the user changes the skill level on the start page, starting the match uses the changed value (not forcibly overwritten by profile defaults).",
+        "If the user has no saved APA skill level, the start page continues to behave sensibly (e.g., keeps the current default)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/apa/PracticeStartPage.tsx",
+          "operation": "modify",
+          "description": "When userProfile.apaSkillLevel is present, initialize Player 1 skill level default from it (convert bigint to number and validate against APA_SKILL_LEVELS). Implement one-time/guarded autofill so it does not overwrite the user’s manual selection (e.g., track whether Player 1 SL has been touched and only apply profile default before user interaction). Keep current default behavior (SL 5) when profile has no saved skill level."
         }
       ]
     }

@@ -11,6 +11,7 @@ import StraightShotStartPage from './pages/straight-shot/StraightShotStartPage';
 import StraightShotGamePage from './pages/straight-shot/StraightShotGamePage';
 import MatchHistoryPage from './pages/history/MatchHistoryPage';
 import MatchDetailsPage from './pages/history/MatchDetailsPage';
+import PlayerAggregateStatsPage from './pages/players/PlayerAggregateStatsPage';
 import AuthGate from './components/auth/AuthGate';
 
 const rootRoute = createRootRoute({
@@ -78,6 +79,12 @@ const matchDetailsRoute = createRoute({
   component: MatchDetailsPage,
 });
 
+const playerStatsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/players/$playerName',
+  component: PlayerAggregateStatsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   practiceStartRoute,
@@ -88,6 +95,7 @@ const routeTree = rootRoute.addChildren([
   straightShotGameRoute,
   historyRoute,
   matchDetailsRoute,
+  playerStatsRoute,
 ]);
 
 const router = createRouter({ routeTree });

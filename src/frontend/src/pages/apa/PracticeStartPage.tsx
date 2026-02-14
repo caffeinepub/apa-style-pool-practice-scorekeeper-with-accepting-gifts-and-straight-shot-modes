@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,17 +6,49 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Play } from 'lucide-react';
-import { APA_SKILL_LEVELS, getPointsToWin, formatSkillLevel } from '../../lib/apa/apaEqualizer';
+import { ArrowLeft, Play, User } from 'lucide-react';
+import { APA_SKILL_LEVELS, getPointsToWin, formatSkillLevel, isValidSkillLevel } from '../../lib/apa/apaEqualizer';
+import { useGetCallerUserProfile } from '../../hooks/useQueries';
 import type { RackData } from '../../lib/apa/apaScoring';
 
 export default function PracticeStartPage() {
   const navigate = useNavigate();
+  const { data: userProfile } = useGetCallerUserProfile();
   const [player1, setPlayer1] = useState('');
   const [player2, setPlayer2] = useState('');
   const [player1SL, setPlayer1SL] = useState<number>(5);
   const [player2SL, setPlayer2SL] = useState<number>(5);
   const [notes, setNotes] = useState('');
+  const [player1SLTouched, setPlayer1SLTouched] = useState(false);
+
+  const myName = userProfile?.name || '';
+
+  // Auto-fill Player 1 skill level from profile on mount (one-time)
+  useEffect(() => {
+    if (userProfile?.apaSkillLevel && !player1SLTouched) {
+      const profileSL = Number(userProfile.apaSkillLevel);
+      if (isValidSkillLevel(profileSL)) {
+        setPlayer1SL(profileSL);
+      }
+    }
+  }, [userProfile, player1SLTouched]);
+
+  const handleUseMyNamePlayer1 = () => {
+    if (myName) {
+      setPlayer1(myName);
+    }
+  };
+
+  const handleUseMyNamePlayer2 = () => {
+    if (myName) {
+      setPlayer2(myName);
+    }
+  };
+
+  const handlePlayer1SLChange = (value: string) => {
+    setPlayer1SL(parseInt(value));
+    setPlayer1SLTouched(true);
+  };
 
   const handleStart = () => {
     if (player1.trim() && player2.trim()) {
@@ -64,16 +96,30 @@ export default function PracticeStartPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="player1">Player 1 Name</Label>
-                <Input
-                  id="player1"
-                  value={player1}
-                  onChange={(e) => setPlayer1(e.target.value)}
-                  placeholder="Enter player 1 name"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="player1"
+                    value={player1}
+                    onChange={(e) => setPlayer1(e.target.value)}
+                    placeholder="Enter player 1 name"
+                    className="flex-1"
+                  />
+                  {myName && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleUseMyNamePlayer1}
+                      title="Use my name"
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="player1-sl">Player 1 Skill Level</Label>
-                <Select value={player1SL.toString()} onValueChange={(v) => setPlayer1SL(parseInt(v))}>
+                <Select value={player1SL.toString()} onValueChange={handlePlayer1SLChange}>
                   <SelectTrigger id="player1-sl">
                     <SelectValue />
                   </SelectTrigger>
@@ -95,12 +141,26 @@ export default function PracticeStartPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="player2">Player 2 Name</Label>
-                <Input
-                  id="player2"
-                  value={player2}
-                  onChange={(e) => setPlayer2(e.target.value)}
-                  placeholder="Enter player 2 name"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="player2"
+                    value={player2}
+                    onChange={(e) => setPlayer2(e.target.value)}
+                    placeholder="Enter player 2 name"
+                    className="flex-1"
+                  />
+                  {myName && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleUseMyNamePlayer2}
+                      title="Use my name"
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="player2-sl">Player 2 Skill Level</Label>
