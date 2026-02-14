@@ -9,10 +9,10 @@ import List "mo:core/List";
 import Nat "mo:core/Nat";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
-import Migration "migration";
+
 
 // Specify the data migration function in with-clause
-(with migration = Migration.run)
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);

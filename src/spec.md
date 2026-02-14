@@ -1,13 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Persist each user’s Accepting Gifts object-ball progression across sessions, support resuming in-progress sessions, enforce a 2–7 ball range, and provide reset/override controls for the baseline.
+**Goal:** Ensure APA 9-ball rack scoring ends immediately when the 9-ball is made, matching scorekeeper rules.
 
 **Planned changes:**
-- Add backend persistence for the authenticated user’s Accepting Gifts baseline/current object-ball count and optional in-progress session state (get/set/clear APIs).
-- Wire new persistence APIs into the existing React Query data layer so Accepting Gifts restores the last saved baseline (defaulting to 3 if none) and can resume an in-progress session after reload/login.
-- Enforce a minimum of 2 object balls (2–7 inclusive) in both frontend inputs/validation and backend validation, while remaining tolerant of older saved data that includes 1.
-- Add Start/Game page controls to explicitly set/reset the baseline/current object-ball count (2–7) and persist it immediately; ensure all related UI copy reflects the 2–7 range in English.
-- Clear any in-progress session state on match end/save, and update the persisted baseline/current count to the session’s ending object-ball count.
+- When ball 9 is marked as pocketed by either player, automatically mark any remaining unscored balls (1–8) as Dead Ball to complete the rack total.
+- After ball 9 is pocketed, lock rack interactions so balls 1–8 cannot be changed and turns cannot be switched unless ball 9 is first unmarked.
+- If ball 9 is unmarked, revert any balls that were auto-marked dead solely due to ball 9 being made back to unscored, restoring normal rack editing.
+- Add/adjust English UI text to clearly communicate that making the 9-ball ends the rack while preserving existing 9-ball point assignment behavior.
 
-**User-visible outcome:** Returning users see Accepting Gifts pick up where they left off (including resuming mid-session when applicable), can only play within 2–7 object balls, and can manually set/reset the baseline object-ball count for future sessions.
+**User-visible outcome:** When a user marks the 9-ball as made, the rack immediately completes (remaining balls become dead and the UI locks); the user can still correct mistakes by unmarking the 9-ball to reopen the rack.

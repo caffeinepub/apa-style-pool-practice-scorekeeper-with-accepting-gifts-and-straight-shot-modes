@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 13,
+  "projectStateVersion": 15,
   "summary": "APA pool practice scorekeeper app focused on APA 9-ball (not 8-ball), using The Equalizer® point-based scoring with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, and end-of-match team match-point conversion; plus additional practice modes: Accepting Gifts and Straight Shot.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -254,6 +254,14 @@
       "title": "Implement backend API support for Accepting Gifts carry-forward state and in-progress session storage tied to the authenticated principal, and wire it into the existing React Query data layer.",
       "reqIds": [
         "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-9-ball-rack-scoring-so-that-once-the-9-ball-is-recorded-as-pocketed-by-either-player-the-rack-is-treated-as-over-automatically-mark-all-remaining-unscored-balls-1-8-as-dead-and-prevent-any-further-ball-scoring-dead-ball-changes-for-that-rack-except-allowing-the-user-to-undo-unmark-the-9-ball-to-correct-mistakes",
+      "title": "Update APA 9-ball rack scoring so that once the 9-ball is recorded as pocketed by either player, the rack is treated as over: automatically mark all remaining unscored balls (1–8) as dead, and prevent any further ball scoring/dead-ball changes for that rack except allowing the user to undo/unmark the 9-ball to correct mistakes.",
+      "reqIds": [
+        "REQ-32"
       ],
       "version": 1
     }

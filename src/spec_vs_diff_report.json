@@ -1,66 +1,46 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T00:13:04.091Z",
-  "summary": "Diff adds frontend baseline persistence hooks and UI updates for Accepting Gifts (2–7 clamp, baseline load/save, set-baseline actions) and introduces a backend migration adding an agSessions map. However, evidence for the full backend API (including in-progress session storage/clear) and backend-side validation/clamping is not present in the provided diff summary, and in-progress session persistence appears to remain client-side via sessionStorage.",
+  "generatedAt": "2026-02-14T00:55:55.758Z",
+  "summary": "REQ-32 is partially implemented in ApaRackScoringPanel: when the 9-ball is marked pocketed it auto-marks remaining unscored balls 1–8 as dead, locks interaction for balls other than 9, and attempts to revert auto-dead balls when 9 is unmarked. However, the diff summary does not show implementation of the required prevention of turn switching after the 9-ball is made, nor any explicit English user-facing text explaining that making the 9-ball ends the rack. Additionally, unrelated project metadata/docs were modified without being requested.",
   "missing_requirements": [
     {
-      "id": "REQ-28",
-      "requirement": "Persist Accepting Gifts drill progression per user server-side and restore it across sessions; optionally restore in-progress session state after reload/login (resume flow).",
-      "reason": "The diff shows baseline/current object-ball count being persisted (via new frontend hooks), but the in-progress session resume appears to rely on browser sessionStorage rather than backend storage tied to the authenticated principal; no backend API for in-progress session get/save is evidenced.",
+      "id": "REQ-32",
+      "requirement": "After ball 9 is marked as pocketed, the UI disallows switching turns, unless the user first unmarks ball 9.",
+      "reason": "The diff shows ball-click locking (no changes allowed for balls 1–8 when 9 is pocketed), but does not show any logic disabling the 'switch turns' control/flow (likely managed by useApaInningFlow or UI buttons not visible in the truncated snippet).",
       "evidence": [
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx (loads/saves sessionStorage 'acceptingGiftsGame')",
-        "backend/migration.mo (AGSession only contains currentObjectBallCount; no in-progress session fields shown)"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ]
     },
     {
-      "id": "REQ-29",
-      "requirement": "Enforce minimum object-ball count of 2 (2–7 inclusive) with both backend and frontend validation; update UI copy to 2–7; do not crash rendering old matches with 1.",
-      "reason": "Frontend clamp/copy updates are evidenced, but backend-validated clamping (2–7 inclusive) is not evidenced in backend/main.mo in the provided truncated diff; cannot confirm backend enforcement.",
+      "id": "REQ-32",
+      "requirement": "All user-facing text related to this behavior is in English and clearly states that making the 9-ball ends the rack.",
+      "reason": "The diff includes new state/logic and imports (e.g., Lock icon) but does not show any explicit user-facing message/label/alert communicating that pocketing the 9-ball ends the rack.",
       "evidence": [
-        "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts (clampObjectBallCount uses 2..7)",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx (text: 'clamped between 2 and 7')",
-        "backend/main.mo (truncated; no clamp/validation logic shown)"
-      ]
-    },
-    {
-      "id": "REQ-31",
-      "requirement": "Backend API support for Accepting Gifts carry-forward baseline and in-progress session storage (get/set baseline; get/save/clear in-progress session), wired into React Query; clear in-progress state when session ended/saved; per-caller authorization.",
-      "reason": "Frontend React Query hooks show get/set baseline only; there is no evidence of backend methods for get/save/clear of an in-progress session, nor evidence of clearing in-progress state on save, nor evidence of authorization rules for these new endpoints.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts (adds useGetCurrentObjectBallCount/useSetCurrentObjectBallCount; no in-progress hooks shown in provided truncation)",
-        "backend/migration.mo (adds agSessions map but no actor methods)",
-        "backend/main.mo (truncated; new Accepting Gifts persistence methods not shown)"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "App-wide branding/content changes emphasizing APA 9-Ball scorekeeper (e.g., header/title/auth gate/home page copy) unrelated to Accepting Gifts persistence requirements.",
-      "reason": "BuildRequest is narrowly scoped to Accepting Gifts progression persistence/minimum clamp/reset controls and associated backend APIs; branding changes are not requested.",
+      "description": "Updated/added project metadata documentation (project_state.json) unrelated to REQ-32 frontend scoring behavior.",
+      "reason": "BuildRequest explicitly scoped to REQ-32 frontend rack scoring behavior and stated no backend changes required; updating project_state.json is not requested.",
       "evidence": [
-        "frontend-file-summaries.txt (summaries for AppLayout/AuthGate/HomePage mentioning updated branding and APA 9-Ball focus)",
-        "project_state.json (summary emphasizes APA 9-ball; indicates broader scope changes)"
+        "project_state.json"
       ]
     },
     {
-      "description": "Straight Shot mode enhancements (e.g., moving average display, additional in-game controls) not requested.",
-      "reason": "BuildRequest explicitly lists Straight Shot redesign as a non-goal; these changes are not part of REQ-28..31.",
+      "description": "Updated generated file summary documentation (frontend-file-summaries.txt) with broad branding/mode descriptions unrelated to REQ-32.",
+      "reason": "BuildRequest only asks for APA 9-ball rack scoring behavior changes; updating this summary file is not requested by REQ-32.",
       "evidence": [
-        "frontend-file-summaries.txt (StraightShotStartPage moving average; StraightShotGamePage controls/threshold behavior)"
+        "frontend-file-summaries.txt"
       ]
     }
   ],
   "confidence": 0.66,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+    "frontend/src/components/apa/ApaRackScoringPanel.tsx",
     "project_state.json"
   ]
 }

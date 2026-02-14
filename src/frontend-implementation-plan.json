@@ -1,128 +1,28 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Accepting Gifts persistence + min 2 balls + baseline reset (frontend wiring)",
+  "title": "APA 9-ball rack scoring: 9-ball ends rack and locks edits",
   "requirements": [
     {
-      "id": "REQ-28",
-      "summary": "Restore and persist Accepting Gifts progression per authenticated user across reloads and sessions (baseline count + optional in-progress resume).",
+      "id": "REQ-32",
+      "summary": "When ball 9 is marked pocketed, auto-mark remaining balls 1–8 as dead, lock rack editing/turn switching, and allow undoing only by unmarking ball 9 (which reverts only auto-dead balls).",
       "acceptanceCriteria": [
-        "When a signed-in user changes the Accepting Gifts current object-ball count via normal gameplay (set win/loss progression), the latest value is persisted to the backend under that user.",
-        "If the user returns later (new browser session / after re-authentication) and starts Accepting Gifts, the app defaults to the last persisted object-ball count instead of always defaulting to 3.",
-        "If the user leaves in the middle of an Accepting Gifts session, the app can restore that in-progress session state after reload/login (resume flow) without requiring the user to re-enter the starting ball count.",
-        "If no persisted Accepting Gifts state exists for the user, the app uses 3 object balls as the initial default."
+        "In the APA rack scoring panel, if ball 9 is marked as pocketed by Player A or Player B, all remaining unscored balls 1–8 are automatically set to Dead Ball so the rack totals reach 10 points.",
+        "After ball 9 is marked as pocketed, the UI disallows changing the state of balls 1–8 (including marking/unmarking dead balls) and disallows switching turns, unless the user first unmarks ball 9.",
+        "If ball 9 is unmarked after being pocketed, any balls that were auto-marked dead solely due to the 9-ball being made are reverted back to unscored, restoring normal editing for the rack.",
+        "The existing behavior of awarding the 9-ball’s 2 points to the player who pocketed it (based on the active player at the time of selection) remains intact.",
+        "All user-facing text related to this behavior is in English and clearly states that making the 9-ball ends the rack."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/backend.d.ts",
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Extend the typed backend interface with Accepting Gifts persistence capabilities (get/set baseline/current ball count and get/save/clear in-progress session state) so React Query hooks can call them from the authenticated actor."
+          "description": "Implement a rack-locked state when ball 9 is pocketed (by either player), automatically set all remaining unscored balls 1–8 to 'dead', and disable all scoring/dead-ball interactions for balls 1–8 plus disable turn switching while locked. Ensure ball 9 remains clickable to unmark/undo, and when unmarked revert only balls that were auto-marked dead due to the 9-ball (do not affect balls previously marked dead or scored). Update the panel’s English helper text to explicitly state that making the 9-ball ends the rack and locks editing until the 9-ball is unmarked."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/apa/ApaBallButton.tsx",
           "operation": "modify",
-          "description": "Add React Query hooks/mutations for Accepting Gifts carry-forward and in-progress session state using the authenticated actor. Use the existing hooks pattern and query invalidation approach. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "modify",
-          "description": "Load the user’s persisted Accepting Gifts baseline/current object-ball count (default to 3 if none) to prefill the Start page. If an in-progress session exists server-side, present a clear Resume control that restores that session (and seeds/updates sessionStorage to keep existing flow working). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-          "operation": "modify",
-          "description": "On game load, prefer restoring from server-side in-progress state (if present) over only sessionStorage. During gameplay, sync relevant in-progress fields and current object-ball count to the backend so reload/login can resume. Keep sessionStorage as a local cache but ensure backend becomes the source of truth for cross-session resume. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-29",
-      "summary": "Enforce 2–7 object-ball range for Accepting Gifts inputs and progression, and update related English UI copy (while safely rendering historical saved data with 1).",
-      "acceptanceCriteria": [
-        "The Accepting Gifts object-ball clamp logic enforces 2–7 inclusive (backend-validated and frontend-validated).",
-        "The Accepting Gifts Start page numeric input prevents values below 2 and above 7.",
-        "Any rules/help text that currently says clamped between 1 and 7 is updated to say clamped between 2 and 7.",
-        "Existing saved matches with starting/ending object-ball counts of 1 still render without crashing; however new gameplay cannot produce values below 2."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
-          "operation": "modify",
-          "description": "Update Accepting Gifts progression helpers so new gameplay clamps object-ball count to 2–7 inclusive. Preserve safe rendering of any previously stored value of 1 by ensuring UI/session hydration can tolerate 1 without crashing, while progression/inputs never create values below 2."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "modify",
-          "description": "Change the starting object-ball numeric input to enforce min=2 and max=7 and update helper copy to state the 2–7 range in English. Ensure manual typing cannot set values outside the range."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
-          "operation": "modify",
-          "description": "Update all Accepting Gifts rules/help text to state the ball count range is 2–7 (including the clamp sentence) and adjust any other references that currently mention 1–7."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-          "operation": "modify",
-          "description": "Ensure any user-facing ball-count phrasing and pluralization remains correct with the new minimum of 2, while still tolerating display of an older persisted value of 1 without crashing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-30",
-      "summary": "Add user controls to override/reset Accepting Gifts baseline (2–7) and persist the chosen baseline for future sessions.",
-      "acceptanceCriteria": [
-        "On the Accepting Gifts Start page, the starting object-ball count field is pre-filled from the user’s persisted baseline (or 3 if none).",
-        "The user can change the starting object-ball count (2–7) before starting, and if they proceed, that chosen value becomes the session’s starting/current count and is persisted as the new baseline for future sessions.",
-        "An explicit “Reset” or “Set baseline” action is available (Start page and/or Game page) to set the baseline count without requiring the user to finish and save a match; the change persists across reload/login.",
-        "All user-facing text for these controls is in English and clearly indicates the allowed range (2–7)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "modify",
-          "description": "Add an explicit baseline override/reset control (English copy) that lets the user set the baseline count (2–7) without starting/saving a match, persisted via the new React Query mutation. Also, when starting a session, persist the chosen starting count as the new baseline. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-          "operation": "modify",
-          "description": "Optionally add an in-session baseline control (English copy) to set/persist the current count as baseline immediately, without requiring match completion. Ensure it uses the same React Query mutation and reflects the allowed range (2–7). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Ensure Accepting Gifts baseline mutations invalidate/refetch any baseline/in-progress queries so Start/Game UI stays consistent immediately after a reset/override. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-31",
-      "summary": "Wire frontend React Query layer to new backend capabilities for Accepting Gifts baseline and in-progress session storage, and keep state consistent when saving matches.",
-      "acceptanceCriteria": [
-        "Backend exposes authenticated methods to: (a) get the caller’s Accepting Gifts persistent baseline/current object-ball count, (b) set/update that baseline/current count, (c) get the caller’s in-progress Accepting Gifts session (if any), (d) save/update in-progress session state, and (e) clear in-progress state when the session is ended/saved.",
-        "Frontend adds React Query hooks/mutations (in the existing hooks pattern) to call these new backend methods and keep UI state in sync.",
-        "When the user saves an Accepting Gifts match, the in-progress backend session state is cleared, and the persisted baseline/current count is updated to match where the session ended (ending/current object-ball count).",
-        "Authorization rules match existing profile/match rules: only the caller can read/write their own Accepting Gifts state."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Implement Accepting Gifts-specific queries/mutations in the existing React Query data layer (baseline + in-progress). Ensure they are enabled only when the authenticated actor is available and handle authorization failures gracefully in the UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-          "operation": "modify",
-          "description": "Integrate new React Query mutations into gameplay: (1) save/update in-progress session state as the user plays, (2) persist updated current object-ball count when it changes via progression, and (3) on match save, clear the in-progress state and update the persisted baseline to the ending/current count. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "modify",
-          "description": "Use React Query to fetch baseline and in-progress state on Start page load to support both fresh starts and resume. Ensure authenticated-only data access aligns with the existing authorization-based app gating. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/backend.d.ts",
-          "operation": "modify",
-          "description": "Keep TypeScript types in sync with the new Accepting Gifts backend capabilities so hooks and pages compile and can safely serialize/deserialize in-progress session payloads."
+          "description": "Ensure the ball button disabled state is properly supported for the rack-locked behavior (visual/interaction consistency), so balls 1–8 are disabled when the rack is locked while ball 9 remains enabled for undo."
         }
       ]
     }

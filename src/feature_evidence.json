@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-persist-the-accepting-gifts-drill-progression-per-user-so-the-current-object-ball-count-and-optionally-the-in-progress-session-state-is-saved-server-side-and-automatically-restored-after-logout-login-page-reloads-or-starting-a-new-accepting-gifts-session",
-      "featureTitle": "Persist the Accepting Gifts drill progression per user so the current object-ball count (and optionally the in-progress session state) is saved server-side and automatically restored after logout/login, page reloads, or starting a new Accepting Gifts session.",
+      "featureId": "feature-update-apa-9-ball-rack-scoring-so-that-once-the-9-ball-is-recorded-as-pocketed-by-either-player-the-rack-is-treated-as-over-automatically-mark-all-remaining-unscored-balls-1-8-as-dead-and-prevent-any-further-ball-scoring-dead-ball-changes-for-that-rack-except-allowing-the-user-to-undo-unmark-the-9-ball-to-correct-mistakes",
+      "featureTitle": "Update APA 9-ball rack scoring so that once the 9-ball is recorded as pocketed by either player, the rack is treated as over: automatically mark all remaining unscored balls (1–8) as dead, and prevent any further ball scoring/dead-ball changes for that rack except allowing the user to undo/unmark the 9-ball to correct mistakes.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,71 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-28"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-enforce-a-minimum-object-ball-count-of-2-not-1-for-accepting-gifts-progression-and-inputs-and-update-all-related-ui-copy-to-reflect-the-2-7-range-in-english",
-      "featureTitle": "Enforce a minimum object-ball count of 2 (not 1) for Accepting Gifts progression and inputs, and update all related UI copy to reflect the 2–7 range in English.",
-      "files": [
-        "frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsRulesPanel.tsx",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-29"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-user-controlled-reset-override-mechanism-for-accepting-gifts-so-the-user-can-explicitly-set-the-starting-current-object-ball-count-2-7-and-have-that-choice-persisted-as-the-new-carry-forward-baseline",
-      "featureTitle": "Add a user-controlled reset/override mechanism for Accepting Gifts so the user can explicitly set the starting/current object-ball count (2–7) and have that choice persisted as the new carry-forward baseline.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-30"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-backend-api-support-for-accepting-gifts-carry-forward-state-and-in-progress-session-storage-tied-to-the-authenticated-principal-and-wire-it-into-the-existing-react-query-data-layer",
-      "featureTitle": "Implement backend API support for Accepting Gifts carry-forward state and in-progress session storage tied to the authenticated principal, and wire it into the existing React Query data layer.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-31"
+        "REQ-32"
       ],
       "confidence": "high"
     }

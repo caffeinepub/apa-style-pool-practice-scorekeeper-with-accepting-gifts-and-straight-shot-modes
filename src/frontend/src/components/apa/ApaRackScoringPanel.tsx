@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Plus, AlertCircle, RotateCcw, Shield } from 'lucide-react';
+import { Plus, AlertCircle, RotateCcw, Shield, Lock } from 'lucide-react';
 import { POINTS_PER_RACK } from '../../lib/apa/apaScoring';
 import ApaBallButton from './ApaBallButton';
 import { useApaInningFlow } from './useApaInningFlow';
@@ -40,19 +40,22 @@ export default function ApaRackScoringPanel({
 
   const totals = calculateRackTotals(ballStates);
   const isRackComplete = totals.totalAccounted === POINTS_PER_RACK;
+  
+  // Check if 9-ball is pocketed (by either player)
+  const nineBallState = ballStates[9];
+  const isNineBallPocketed = nineBallState === 'playerA' || nineBallState === 'playerB';
+  const isRackLocked = isNineBallPocketed;
+  
   const error = totals.totalAccounted > POINTS_PER_RACK 
     ? `Too many points! Remove ${totals.totalAccounted - POINTS_PER_RACK} point${totals.totalAccounted - POINTS_PER_RACK > 1 ? 's' : ''}.`
     : totals.totalAccounted < POINTS_PER_RACK
     ? `Need ${POINTS_PER_RACK - totals.totalAccounted} more point${POINTS_PER_RACK - totals.totalAccounted > 1 ? 's' : ''}.`
     : null;
 
-  // Auto-dead logic: when 9-ball is pocketed by active player, mark remaining unscored balls as dead
+  // Auto-dead logic: when 9-ball is pocketed, mark remaining unscored balls as dead
   useEffect(() => {
-    const nineBallState = ballStates[9];
-    const activePlayerState = inningFlow.activePlayer === 'A' ? 'playerA' : 'playerB';
-
-    if (nineBallState === activePlayerState) {
-      // 9-ball is pocketed by active player - auto-mark remaining unscored balls as dead
+    if (isNineBallPocketed) {
+      // 9-ball is pocketed - auto-mark remaining unscored balls 1-8 as dead
       const unscoredBalls = [1, 2, 3, 4, 5, 6, 7, 8].filter(ball => !ballStates[ball]);
       if (unscoredBalls.length > 0) {
         setBallStates(prev => {
@@ -64,7 +67,7 @@ export default function ApaRackScoringPanel({
         });
         setAutoDeadBalls(new Set(unscoredBalls));
       }
-    } else if (!nineBallState && autoDeadBalls.size > 0) {
+    } else if (!isNineBallPocketed && autoDeadBalls.size > 0) {
       // 9-ball was unmarked - revert auto-dead balls back to unscored
       setBallStates(prev => {
         const updated = { ...prev };
@@ -77,9 +80,14 @@ export default function ApaRackScoringPanel({
       });
       setAutoDeadBalls(new Set());
     }
-  }, [ballStates[9], inningFlow.activePlayer]);
+  }, [isNineBallPocketed]);
 
   const handleBallClick = (ballNumber: number) => {
+    // If rack is locked and this is not ball 9, do nothing
+    if (isRackLocked && ballNumber !== 9) {
+      return;
+    }
+
     setBallStates(prev => {
       const currentState = prev[ballNumber] || 'unscored';
       const activePlayerState = inningFlow.activePlayer === 'A' ? 'playerA' : 'playerB';
@@ -104,6 +112,11 @@ export default function ApaRackScoringPanel({
   };
 
   const handleMarkDead = (ballNumber: number) => {
+    // If rack is locked, do nothing
+    if (isRackLocked) {
+      return;
+    }
+
     setBallStates(prev => {
       const currentState = prev[ballNumber] || 'unscored';
       if (currentState === 'unscored') {
@@ -135,6 +148,10 @@ export default function ApaRackScoringPanel({
   };
 
   const handleTurnOver = () => {
+    // Disable turn over when rack is locked
+    if (isRackLocked) {
+      return;
+    }
     inningFlow.turnOver();
   };
 
@@ -180,9 +197,19 @@ export default function ApaRackScoringPanel({
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Select balls pocketed by the active player. Balls 1-8 = 1 point, 9-ball = 2 points. Total must equal {POINTS_PER_RACK} points. When 9-ball is pocketed early, remaining balls are auto-marked dead.
+            Select balls pocketed by the active player. Balls 1-8 = 1 point, 9-ball = 2 points. Total must equal {POINTS_PER_RACK} points. Making the 9-ball ends the rack and locks editing until the 9-ball is unmarked.
           </AlertDescription>
         </Alert>
+
+        {/* Rack Locked Warning */}
+        {isRackLocked && (
+          <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950">
+            <Lock className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-900 dark:text-amber-100">
+              Rack locked: 9-ball has been made. Unmark the 9-ball to continue editing.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Active Player Indicator */}
         <div className="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-4 dark:bg-emerald-950">
@@ -213,6 +240,7 @@ export default function ApaRackScoringPanel({
                 ballNumber={ballNumber}
                 state={ballStates[ballNumber] || 'unscored'}
                 onClick={() => handleBallClick(ballNumber)}
+                disabled={isRackLocked && ballNumber !== 9}
               />
             ))}
           </div>
@@ -232,7 +260,7 @@ export default function ApaRackScoringPanel({
                   variant={isDead ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleMarkDead(ballNumber)}
-                  disabled={!isUnscored && !isDead}
+                  disabled={(!isUnscored && !isDead) || isRackLocked}
                   className={isDead ? 'bg-gray-500 hover:bg-gray-600' : ''}
                 >
                   {ballNumber}
@@ -330,6 +358,7 @@ export default function ApaRackScoringPanel({
             variant="outline"
             size="lg"
             className="w-full"
+            disabled={isRackLocked}
           >
             Turn Over
           </Button>
