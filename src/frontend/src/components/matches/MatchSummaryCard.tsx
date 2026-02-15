@@ -45,7 +45,9 @@ export default function MatchSummaryCard({ match }: MatchSummaryCardProps) {
     }
 
     if (match.mode === MatchMode.straightShot) {
-      const result = (match.totalScore ?? 0) <= 20 ? 'Win' : 'Loss';
+      // Prefer strokes[0], fallback to totalScore for backward compatibility
+      const totalShots = match.strokes?.[0] !== undefined ? Number(match.strokes[0]) : Number(match.totalScore ?? 0);
+      const result = totalShots > 0 && totalShots <= 20 ? 'Win' : totalShots > 20 ? 'Loss' : '—';
       return `${match.players[0]?.name || 'Player'} • ${result}`;
     }
 

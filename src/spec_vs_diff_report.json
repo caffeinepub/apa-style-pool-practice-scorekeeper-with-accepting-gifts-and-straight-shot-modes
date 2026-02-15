@@ -1,61 +1,80 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T00:52:25.631Z",
-  "summary": "The diff implements a retry mechanism for actor initialization and adds client-side timeouts to save/update mutations, but the core Save/Update button-state/label logic for the Official/Real APA Match Log form is not fully evidenced in the provided truncated diff. Backend changes add invite-only/public access toggling and a migration scaffold, but there isn’t sufficient evidence that `saveMatch` trapping/deadlock issues (if any) were specifically addressed for REQ-110.",
+  "generatedAt": "2026-02-15T02:04:49.337Z",
+  "summary": "REQ-122 is primarily about re-running deployment and verifying the live app/navigation. The diff shows multiple code changes (new SmokeCheckPage, router error fallback, match history UI tweaks, backend access/approval logic), but there is no evidence in the diff summary of any deployment trigger/run, deployment success verification, or live reachability checks being performed. Several new UI/behavior changes appear unrelated to simply re-running/verifying deployment.",
   "missing_requirements": [
     {
-      "id": "REQ-107",
-      "requirement": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an actor instance is available, even if the actor hook reports isFetching=true; button labels must distinguish “No actor yet” vs “Mutation in progress” vs ready.",
-      "reason": "RealApaMatchForm.tsx is truncated before any primary action button render/disabled/label logic is shown. The diff shows actor/identity checks and a delayed warning timer, but does not provide evidence that the Save/Update button is enabled when `actor` exists regardless of `isFetching`, nor that the label distinguishes connecting vs saving vs ready states.",
+      "id": "REQ-122",
+      "requirement": "Trigger a new deployment run using the current repository state and verify it completes successfully, with the app reachable and basic navigation intact (Home -> Match History -> Home).",
+      "reason": "The diff summary only includes application code changes. It does not show any CI/CD workflow trigger, deployment pipeline configuration/run output, or any verification artifacts (e.g., workflow files, deployment logs, health checks). While UI navigation buttons exist, there is no evidence that an actual deployment was re-run or verified as successful/live per the acceptance criteria.",
       "evidence": [
-        "frontend/src/components/apa/RealApaMatchForm.tsx (truncated)",
-        "frontend/src/hooks/useQueries.ts (mutations don’t reference isFetching, but form button behavior is not shown)"
-      ]
-    },
-    {
-      "id": "REQ-110",
-      "requirement": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against current backend schema and access-control behavior in public mode; add necessary backend fixes so `saveMatch` completes and does not trap/deadlock for authenticated users when invite-only mode is disabled.",
-      "reason": "backend/main.mo is truncated before any `saveMatch` implementation; while access control/public mode toggling is present, there is no direct evidence that `saveMatch` was fixed to avoid traps/deadlocks, nor that match history/detail visibility after save was ensured.",
-      "evidence": [
-        "backend/main.mo (truncated; shows inviteOnlyMode/hasAccess changes but not saveMatch)"
+        "File diff summary shows only app code changes (e.g., frontend/src/App.tsx, frontend/src/pages/SmokeCheckPage.tsx, backend/main.mo) and no deployment/workflow/log evidence."
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added a backend migration scaffold (migration module + actor (with migration = ...)) without evidence that a state migration is required for this bugfix.",
-      "reason": "BuildRequest allows backend/migration.mo only if a state migration is required; diff adds backend/migration.mo that appears to be a placeholder and wires it into backend/main.mo.",
+      "description": "Added a new 'SmokeCheckPage' and a new /smoke-check route for post-deployment verification UI.",
+      "reason": "REQ-122 asks to re-run deployment and verify the app is live and basic navigation works; it does not request adding new product pages/routes.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (import Migration and `(with migration = Migration.run)` )"
+        "frontend/src/pages/SmokeCheckPage.tsx",
+        "frontend/src/App.tsx (imports SmokeCheckPage; summary mentions new /smoke-check route)",
+        "frontend-file-summaries.txt (mentions new /smoke-check route)"
       ]
     },
     {
-      "description": "Implemented/modified admin approvals and invite-only mode owner UI flows (e.g., OwnerApprovalsPage behavior changes).",
-      "reason": "Not requested by REQ-107..REQ-110, which focus on the Official/Real APA Match Log save UX and ensuring saveMatch completes in public mode; owner approvals UI changes appear out of scope.",
+      "description": "Introduced/expanded route-level error fallback UI ('Something went wrong' page with Try Again/Go Home).",
+      "reason": "Not requested by REQ-122; this is an application feature/change beyond re-running/verifying deployment.",
       "evidence": [
-        "frontend/src/pages/owner/OwnerApprovalsPage.tsx"
+        "frontend/src/App.tsx (RouteErrorFallback and errorComponent usage)"
       ]
     },
     {
-      "description": "Various other frontend feature changes described in frontend-file-summaries.txt (new routes, profile APA skill selector, match summary skill level mapping changes, multiple mode page changes).",
-      "reason": "These changes are not requested by the BuildRequest and are only mentioned via the summaries file; they appear unrelated to fixing the Official APA Match Log save ‘Connecting…’ issue.",
+      "description": "Backend invite-only mode and approval/admin access-control endpoints/logic changes (get/set invite-only mode, approvals).",
+      "reason": "REQ-122 does not request new authorization features; it is about re-running deployment and verifying reachability/navigation.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "backend/main.mo (inviteOnlyMode, approval checks, access control functions)"
+      ]
+    },
+    {
+      "description": "Match History UI enhancements (back-to-home button, filtering tabs, sort toggle/order UI).",
+      "reason": "REQ-122 only requires verifying basic navigation; it does not request UI/feature enhancements to Match History.",
+      "evidence": [
+        "frontend/src/pages/history/MatchHistoryPage.tsx (sort toggle, tabs, back button)"
+      ]
+    },
+    {
+      "description": "Home page UI changes (layout/grid updates, new placeholder tile, added data-testid on View Match History button).",
+      "reason": "Not requested as part of re-running deployment; this is a product/UI change.",
+      "evidence": [
+        "frontend/src/pages/HomePage.tsx",
+        "frontend-file-summaries.txt (Home page updated layout and new tile/testid)"
+      ]
+    },
+    {
+      "description": "AuthGate behavior changes to loading logic (avoid deadlocks; 'Checking access...' conditions).",
+      "reason": "Not requested by REQ-122; this is a functional change to authentication/authorization flow.",
+      "evidence": [
+        "frontend-file-summaries.txt (AuthGate improved loading logic)"
+      ]
+    },
+    {
+      "description": "Profile setup dialog change to include optional APA 9-ball skill level selector and persistence.",
+      "reason": "Not requested by REQ-122.",
+      "evidence": [
+        "frontend-file-summaries.txt (ProfileSetupDialog includes skill level selector)"
       ]
     }
   ],
-  "confidence": 0.56,
+  "confidence": 0.78,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/apa/RealApaMatchForm.tsx",
-    "frontend/src/hooks/useActorRetry.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/owner/OwnerApprovalsPage.tsx",
-    "frontend/src/utils/withTimeout.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/SmokeCheckPage.tsx",
+    "frontend/src/pages/history/MatchHistoryPage.tsx",
     "project_state.json"
   ]
 }

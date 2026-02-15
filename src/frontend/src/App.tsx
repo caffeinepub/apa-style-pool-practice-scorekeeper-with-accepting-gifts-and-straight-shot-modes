@@ -1,4 +1,4 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
+import { RouterProvider, createRouter, createRoute, createRootRoute, ErrorComponent } from '@tanstack/react-router';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import AppLayout from './components/layout/AppLayout';
@@ -15,7 +15,44 @@ import PlayerAggregateStatsPage from './pages/players/PlayerAggregateStatsPage';
 import OwnerApprovalsPage from './pages/owner/OwnerApprovalsPage';
 import RealApaMatchPlaceholderPage from './pages/apa/RealApaMatchPlaceholderPage';
 import RealApaMatchEditPage from './pages/apa/RealApaMatchEditPage';
+import SmokeCheckPage from './pages/SmokeCheckPage';
 import AuthGate from './components/auth/AuthGate';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
+
+function RouteErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle>Something went wrong</CardTitle>
+              <CardDescription>An unexpected error occurred</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {error.message || 'An unknown error occurred while loading this page.'}
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={reset} variant="default">
+              Try Again
+            </Button>
+            <Button onClick={() => window.location.href = '/'} variant="outline">
+              Go Home
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -26,84 +63,105 @@ const rootRoute = createRootRoute({
       <Toaster />
     </ThemeProvider>
   ),
+  errorComponent: RouteErrorFallback,
 });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: HomePage,
+  errorComponent: RouteErrorFallback,
 });
 
 const practiceStartRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/apa-practice/start',
   component: PracticeStartPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const practiceGameRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/apa-practice/game',
   component: PracticeGamePage,
+  errorComponent: RouteErrorFallback,
 });
 
 const acceptingGiftsStartRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/accepting-gifts/start',
   component: AcceptingGiftsStartPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const acceptingGiftsGameRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/accepting-gifts/game',
   component: AcceptingGiftsGamePage,
+  errorComponent: RouteErrorFallback,
 });
 
 const straightShotStartRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/straight-shot/start',
   component: StraightShotStartPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const straightShotGameRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/straight-shot/game',
   component: StraightShotGamePage,
+  errorComponent: RouteErrorFallback,
 });
 
 const historyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/history',
   component: MatchHistoryPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const matchDetailsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/history/$matchId',
   component: MatchDetailsPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const playerStatsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/players/$playerName',
   component: PlayerAggregateStatsPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const ownerApprovalsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/owner/approvals',
   component: OwnerApprovalsPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const realApaMatchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/real-apa-match',
   component: RealApaMatchPlaceholderPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const realApaMatchEditRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/real-apa-match/$matchId/edit',
   component: RealApaMatchEditPage,
+  errorComponent: RouteErrorFallback,
+});
+
+const smokeCheckRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/smoke-check',
+  component: SmokeCheckPage,
+  errorComponent: RouteErrorFallback,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -120,6 +178,7 @@ const routeTree = rootRoute.addChildren([
   ownerApprovalsRoute,
   realApaMatchRoute,
   realApaMatchEditRoute,
+  smokeCheckRoute,
 ]);
 
 const router = createRouter({ routeTree });

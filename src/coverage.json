@@ -1,81 +1,44 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T00:52:25.638Z",
+  "generatedAt": "2026-02-15T02:04:49.342Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-107",
-        "summary": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an authenticated user is trying to save a match. The form must allow saving as soon as a usable backend actor instance exists, even if the actor hook reports a background fetching/refetching state.",
+        "id": "REQ-122",
+        "summary": "Re-run the deployment of the current application build and verify that it completes successfully after the prior deployment error, with the app reachable and basic functionality intact.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/SmokeCheckPage.tsx",
+          "frontend/src/pages/HomePage.tsx",
+          "frontend/src/pages/history/MatchHistoryPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
-        ]
-      },
-      {
-        "id": "REQ-108",
-        "summary": "Add a clear, user-facing error path on the Official/Real APA Match Log form for the case where the backend actor never becomes available. If the actor is still unavailable after a reasonable wait, show an English inline message and provide a user-invokable retry action (e.g., a “Retry connection” button) without requiring a full page refresh.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useActorRetry.ts",
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useActorRetry.ts",
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
-        ]
-      },
-      {
-        "id": "REQ-109",
-        "summary": "Harden the Official/Real APA Match Log save/update submission flow so that if the save mutation call hangs or takes unusually long, the user receives feedback and can recover. Implement a client-side timeout for the save/update request that surfaces a clear English error message and re-enables the Save/Update button so the user can retry.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/withTimeout.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/withTimeout.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
-        ]
-      },
-      {
-        "id": "REQ-110",
-        "summary": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against the current backend schema and access-control behavior in public mode, and add any necessary backend fixes so the `saveMatch` call completes and does not trap or deadlock for authenticated users when invite-only mode is disabled.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/apa/RealApaMatchForm.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/SmokeCheckPage.tsx",
+          "frontend/src/pages/HomePage.tsx",
+          "frontend/src/pages/history/MatchHistoryPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/apa/RealApaMatchForm.tsx",
-    "frontend/src/hooks/useActorRetry.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/owner/OwnerApprovalsPage.tsx",
-    "frontend/src/utils/withTimeout.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/SmokeCheckPage.tsx",
+    "frontend/src/pages/history/MatchHistoryPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { useSaveMatch } from '../../hooks/useQueries';
 import { buildApaNineBallMatch } from '../../lib/matches/matchBuilders';
-import EndMatchDialog from '../../components/matches/EndMatchDialog';
 import ApaRackScoringPanel from '../../components/apa/ApaRackScoringPanel';
 import ApaResultsSummary from '../../components/apa/ApaResultsSummary';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
@@ -15,8 +14,8 @@ import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
 import type { RackData } from '../../lib/apa/apaScoring';
 import { calculatePPI, formatPPI } from '../../lib/apa/apaScoring';
-import { calculateMatchPoints } from '../../lib/apa/apaMatchPoints';
 import { formatSkillLevel } from '../../lib/apa/apaEqualizer';
+import { computeApaPracticeMatchOutcome } from '../../lib/apa/apaPracticeMatchOutcome';
 
 interface GameState {
   player1: string;
@@ -129,16 +128,23 @@ export default function PracticeGamePage() {
     }
 
     try {
-      const player1Won = gameState.player1Points >= gameState.player1Target;
-      const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
-      const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
-      const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
+      // Compute match outcome using shared helper
+      const matchOutcome = computeApaPracticeMatchOutcome({
+        player1Points: gameState.player1Points,
+        player2Points: gameState.player2Points,
+        player1SL: gameState.player1SL,
+        player2SL: gameState.player2SL,
+        player1Target: gameState.player1Target,
+        player2Target: gameState.player2Target,
+      });
 
       const { matchId, matchRecord } = buildApaNineBallMatch({
         player1: gameState.player1,
         player2: gameState.player2,
         player1SL: gameState.player1SL,
         player2SL: gameState.player2SL,
+        player1Target: gameState.player1Target,
+        player2Target: gameState.player2Target,
         player1Points: gameState.player1Points,
         player2Points: gameState.player2Points,
         player1Innings: gameState.player1Innings,
@@ -148,7 +154,7 @@ export default function PracticeGamePage() {
         racks: gameState.racks,
         notes: gameState.notes,
         identity,
-        matchPointOutcome,
+        matchOutcome,
       });
 
       await saveMatch.mutateAsync({ matchId, matchRecord });
@@ -166,15 +172,21 @@ export default function PracticeGamePage() {
     return null;
   }
 
-  const player1Won = gameState.player1Points >= gameState.player1Target;
-  const player2Won = gameState.player2Points >= gameState.player2Target;
+  const player1Won = gameState.player1Points >= gameState.player1Target && gameState.player2Points < gameState.player2Target;
+  const player2Won = gameState.player2Points >= gameState.player2Target && gameState.player1Points < gameState.player1Target;
   const player1PPI = calculatePPI(gameState.player1Points, gameState.player1Innings);
   const player2PPI = calculatePPI(gameState.player2Points, gameState.player2Innings);
 
   if (matchComplete) {
-    const loserSL = player1Won ? gameState.player2SL : gameState.player1SL;
-    const loserPoints = player1Won ? gameState.player2Points : gameState.player1Points;
-    const matchPointOutcome = calculateMatchPoints(loserSL, loserPoints);
+    // Compute match outcome for display
+    const matchOutcome = computeApaPracticeMatchOutcome({
+      player1Points: gameState.player1Points,
+      player2Points: gameState.player2Points,
+      player1SL: gameState.player1SL,
+      player2SL: gameState.player2SL,
+      player1Target: gameState.player1Target,
+      player2Target: gameState.player2Target,
+    });
 
     const isActorReady = !!actor;
 
@@ -210,7 +222,7 @@ export default function PracticeGamePage() {
             ppi: player2PPI,
             isWinner: player2Won,
           }}
-          matchPointOutcome={matchPointOutcome}
+          matchPointOutcome={matchOutcome.outcome}
         />
 
         <div className="flex justify-center">
@@ -325,40 +337,6 @@ export default function PracticeGamePage() {
           matchComplete: matchComplete,
         }}
       />
-
-      {gameState.racks.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Rack History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {gameState.racks.map((rack) => (
-                <div key={rack.rackNumber} className="rounded-lg border p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-semibold">Rack {rack.rackNumber}</span>
-                    {rack.deadBalls > 0 && (
-                      <Badge variant="outline">{rack.deadBalls} dead</Badge>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">{gameState.player1}</p>
-                      <p className="font-semibold">{rack.playerA.points} pts, {rack.playerA.innings} inn</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">{gameState.player2}</p>
-                      <p className="font-semibold">{rack.playerB.points} pts, {rack.playerB.innings} inn</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <EndMatchDialog onConfirm={handleEndMatch} disabled={!actor} />
     </div>
   );
 }

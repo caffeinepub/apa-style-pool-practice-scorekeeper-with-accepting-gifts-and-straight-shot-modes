@@ -49,6 +49,7 @@ export default function HomePage() {
           variant="outline"
           size="lg"
           className="gap-2"
+          data-testid="home-view-history-button"
         >
           <History className="h-5 w-5" />
           View Match History

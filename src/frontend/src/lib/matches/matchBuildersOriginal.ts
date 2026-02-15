@@ -1,12 +1,15 @@
 import { MatchLogRecord, MatchMode } from '../../backend';
 import type { Identity } from '@dfinity/agent';
 import type { RackData } from '../apa/apaScoring';
+import type { MatchOutcomeResult } from '../apa/apaPracticeMatchOutcome';
 
 export function buildApaNineBallMatch({
   player1,
   player2,
   player1SL,
   player2SL,
+  player1Target,
+  player2Target,
   player1Points,
   player2Points,
   player1Innings,
@@ -16,12 +19,14 @@ export function buildApaNineBallMatch({
   racks,
   notes,
   identity,
-  matchPointOutcome,
+  matchOutcome,
 }: {
   player1: string;
   player2: string;
   player1SL: number;
   player2SL: number;
+  player1Target: number;
+  player2Target: number;
   player1Points: number;
   player2Points: number;
   player1Innings: number;
@@ -31,23 +36,19 @@ export function buildApaNineBallMatch({
   racks: RackData[];
   notes?: string;
   identity: Identity;
-  matchPointOutcome: string;
+  matchOutcome: MatchOutcomeResult;
 }): { matchId: string; matchRecord: MatchLogRecord } {
   const matchId = `apa-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   const dateTime = BigInt(Date.now() * 1_000_000);
 
-  const player1Won = player1Points >= player1SL;
+  const player1Won = matchOutcome.player1Won;
   const player1PPI = player1Innings > 0 ? player1Points / player1Innings : 0;
   const player2PPI = player2Innings > 0 ? player2Points / player2Innings : 0;
-
-  // Parse match point outcome to extract winner's points
-  const matchPointsMatch = matchPointOutcome.match(/(\d+)-(\d+)/);
-  const winnerPoints = matchPointsMatch ? parseInt(matchPointsMatch[1]) : 0;
 
   const player1Stats = {
     playerId: identity.getPrincipal(),
     skillLevel: BigInt(player1SL),
-    pointsNeeded: BigInt(player1SL),
+    pointsNeeded: BigInt(player1Target),
     defensiveShots: BigInt(player1DefensiveShots),
     innings: BigInt(player1Innings),
     ppi: player1PPI,
@@ -56,14 +57,14 @@ export function buildApaNineBallMatch({
     totalScore: BigInt(player1Points),
     winPercentage: player1Won ? 1.0 : 0.0,
     isPlayerOfMatch: player1Won,
-    pointsWonConverted: BigInt(player1Won ? winnerPoints : 0),
+    pointsWonConverted: BigInt(matchOutcome.player1MatchPoints),
     pointsEarnedRunningTotal: BigInt(player1Points),
   };
 
   const player2Stats = {
     playerId: identity.getPrincipal(),
     skillLevel: BigInt(player2SL),
-    pointsNeeded: BigInt(player2SL),
+    pointsNeeded: BigInt(player2Target),
     defensiveShots: BigInt(player2DefensiveShots),
     innings: BigInt(player2Innings),
     ppi: player2PPI,
@@ -72,7 +73,7 @@ export function buildApaNineBallMatch({
     totalScore: BigInt(player2Points),
     winPercentage: player1Won ? 0.0 : 1.0,
     isPlayerOfMatch: !player1Won,
-    pointsWonConverted: BigInt(player1Won ? 0 : winnerPoints),
+    pointsWonConverted: BigInt(matchOutcome.player2MatchPoints),
     pointsEarnedRunningTotal: BigInt(player2Points),
   };
 
@@ -113,23 +114,27 @@ export function buildApaNineBallMatch({
 export function buildAcceptingGiftsMatch({
   playerName,
   notes,
-  identity,
   startingObjectBallCount,
   endingObjectBallCount,
   totalAttempts,
   setsCompleted,
   finalSetScorePlayer,
   finalSetScoreGhost,
+  completionStatus,
+  score,
+  identity,
 }: {
   playerName: string;
   notes?: string;
-  identity: Identity;
   startingObjectBallCount: number;
   endingObjectBallCount: number;
   totalAttempts: number;
   setsCompleted: number;
   finalSetScorePlayer: number;
   finalSetScoreGhost: number;
+  completionStatus: boolean;
+  score: number;
+  identity: Identity;
 }): { matchId: string; matchRecord: MatchLogRecord } {
   const matchId = `ag-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   const dateTime = BigInt(Date.now() * 1_000_000);
@@ -151,9 +156,9 @@ export function buildAcceptingGiftsMatch({
         notes: notes || undefined,
         owner: identity.getPrincipal(),
       },
-      rulesReference: 'Accepting Gifts drill',
-      completionStatus: true,
-      score: BigInt(0),
+      rulesReference: 'Accepting Gifts Drill',
+      completionStatus,
+      score: BigInt(score),
       startingObjectBallCount: BigInt(startingObjectBallCount),
       endingObjectBallCount: BigInt(endingObjectBallCount),
       totalAttempts: BigInt(totalAttempts),
@@ -169,7 +174,6 @@ export function buildAcceptingGiftsMatch({
 export function buildStraightShotMatch({
   playerName,
   notes,
-  identity,
   strokes,
   scratchStrokes,
   shots,
@@ -179,10 +183,10 @@ export function buildStraightShotMatch({
   thirdShotScore,
   fourthShotScore,
   totalScore,
+  identity,
 }: {
   playerName: string;
   notes?: string;
-  identity: Identity;
   strokes: number[];
   scratchStrokes: number[];
   shots: number;
@@ -192,6 +196,7 @@ export function buildStraightShotMatch({
   thirdShotScore: number;
   fourthShotScore: number;
   totalScore: number;
+  identity: Identity;
 }): { matchId: string; matchRecord: MatchLogRecord } {
   const matchId = `ss-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   const dateTime = BigInt(Date.now() * 1_000_000);

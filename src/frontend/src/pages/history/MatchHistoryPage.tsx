@@ -40,6 +40,7 @@ export default function MatchHistoryPage() {
         variant="ghost"
         onClick={() => navigate({ to: '/' })}
         className="gap-2"
+        data-testid="history-back-to-home-button"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Home

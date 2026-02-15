@@ -3,7 +3,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSaveMatch } from '../../hooks/useQueries';
 import { buildStraightShotMatch } from '../../lib/matches/matchBuilders';
@@ -17,11 +19,7 @@ import StraightShotRulesPanel from './StraightShotRulesPanel';
 interface GameState {
   playerName: string;
   notes?: string;
-  strokes: number;
-  scratches: number;
-  ballsMade: number;
-  eightBallPocketed: boolean;
-  scratchOnBreak: boolean;
+  totalShots: number;
 }
 
 export default function StraightShotGamePage() {
@@ -35,7 +33,19 @@ export default function StraightShotGamePage() {
   useEffect(() => {
     const saved = sessionStorage.getItem('straightShotGame');
     if (saved) {
-      setGameState(JSON.parse(saved));
+      try {
+        const parsed = JSON.parse(saved);
+        // Backward-compatible migration: prefer totalShots, fallback to strokes if present
+        const totalShots = parsed.totalShots !== undefined ? parsed.totalShots : (parsed.strokes || 0);
+        setGameState({
+          playerName: parsed.playerName,
+          notes: parsed.notes,
+          totalShots,
+        });
+      } catch (error) {
+        console.error('Error parsing saved game state:', error);
+        navigate({ to: '/straight-shot/start' });
+      }
     } else {
       navigate({ to: '/straight-shot/start' });
     }
@@ -47,46 +57,20 @@ export default function StraightShotGamePage() {
     }
   }, [gameState]);
 
-  const recordStroke = () => {
+  const handleTotalShotsChange = (value: string) => {
     if (!gameState) return;
-    setGameState({
-      ...gameState,
-      strokes: gameState.strokes + 1,
-    });
-  };
-
-  const recordScratch = () => {
-    if (!gameState) return;
-    setGameState({
-      ...gameState,
-      strokes: gameState.strokes + 2,
-      scratches: gameState.scratches + 1,
-    });
-  };
-
-  const recordScratchOnBreak = () => {
-    if (!gameState) return;
-    setGameState({
-      ...gameState,
-      strokes: gameState.strokes + 1,
-      scratchOnBreak: true,
-    });
-  };
-
-  const recordBallMade = () => {
-    if (!gameState) return;
-    setGameState({
-      ...gameState,
-      ballsMade: gameState.ballsMade + 1,
-    });
-  };
-
-  const recordEightBall = () => {
-    if (!gameState) return;
-    setGameState({
-      ...gameState,
-      eightBallPocketed: true,
-    });
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setGameState({
+        ...gameState,
+        totalShots: numValue,
+      });
+    } else if (value === '') {
+      setGameState({
+        ...gameState,
+        totalShots: 0,
+      });
+    }
   };
 
   const handleEndMatch = async () => {
@@ -101,28 +85,20 @@ export default function StraightShotGamePage() {
     }
 
     try {
-      const totalStrokes = gameState.strokes;
-      const shots = gameState.ballsMade + (gameState.eightBallPocketed ? 1 : 0);
-
-      // Calculate scores for each shot
-      const firstShotScore = Math.min(totalStrokes, 5);
-      const secondShotScore = Math.max(0, Math.min(totalStrokes - 5, 5));
-      const thirdShotScore = Math.max(0, Math.min(totalStrokes - 10, 5));
-      const fourthShotScore = Math.max(0, Math.min(totalStrokes - 15, 5));
-      const totalScore = firstShotScore + secondShotScore + thirdShotScore + fourthShotScore;
+      const totalStrokes = gameState.totalShots;
 
       const { matchId, matchRecord } = buildStraightShotMatch({
         playerName: gameState.playerName,
         notes: gameState.notes,
         strokes: [totalStrokes],
-        scratchStrokes: [gameState.scratches],
-        shots,
-        ballsMade: gameState.ballsMade,
-        firstShotScore,
-        secondShotScore,
-        thirdShotScore,
-        fourthShotScore,
-        totalScore,
+        scratchStrokes: [0],
+        shots: 0,
+        ballsMade: 0,
+        firstShotScore: 0,
+        secondShotScore: 0,
+        thirdShotScore: 0,
+        fourthShotScore: 0,
+        totalScore: totalStrokes,
         identity,
       });
 
@@ -141,8 +117,8 @@ export default function StraightShotGamePage() {
     return null;
   }
 
-  const isComplete = gameState.strokes >= 20;
-  const isWin = isComplete && gameState.strokes <= 20;
+  const isWin = gameState.totalShots > 0 && gameState.totalShots <= 20;
+  const isLoss = gameState.totalShots > 20;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -175,65 +151,39 @@ export default function StraightShotGamePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Current Session</span>
-            {isComplete && (
-              <Badge variant={isWin ? 'default' : 'destructive'}>
-                {isWin ? 'Win' : 'Loss'}
-              </Badge>
+            <span>Record Your Result</span>
+            {isWin && (
+              <Badge variant="default">Win</Badge>
+            )}
+            {isLoss && (
+              <Badge variant="destructive">Loss</Badge>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="text-center">
-            <div className="text-6xl font-bold text-emerald-600">{gameState.strokes}</div>
-            <div className="text-sm text-muted-foreground">Total Strokes</div>
+          <div className="space-y-2">
+            <Label htmlFor="totalShots">Total Shots</Label>
+            <Input
+              id="totalShots"
+              type="number"
+              min="0"
+              value={gameState.totalShots}
+              onChange={(e) => handleTotalShotsChange(e.target.value)}
+              placeholder="Enter total shots taken"
+              className="text-2xl font-bold text-center h-16"
+            />
+            <p className="text-sm text-muted-foreground text-center">
+              Enter the total number of shots you took to clear the table
+            </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border p-4 text-center">
-              <div className="text-3xl font-bold">{gameState.scratches}</div>
-              <div className="text-sm text-muted-foreground">Scratches</div>
-            </div>
-            <div className="rounded-lg border p-4 text-center">
-              <div className="text-3xl font-bold">{gameState.ballsMade}</div>
-              <div className="text-sm text-muted-foreground">Balls Made</div>
-            </div>
-            <div className="rounded-lg border p-4 text-center">
-              <div className="text-3xl font-bold">{gameState.eightBallPocketed ? '✓' : '—'}</div>
-              <div className="text-sm text-muted-foreground">8-Ball</div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Button onClick={recordStroke} className="w-full h-16 text-lg" variant="default">
-              <Plus className="mr-2 h-5 w-5" />
-              Normal Shot (+1 stroke)
-            </Button>
-            <Button onClick={recordScratch} className="w-full h-16 text-lg" variant="outline">
-              <AlertTriangle className="mr-2 h-5 w-5" />
-              Scratch (+2 strokes)
-            </Button>
-            {!gameState.scratchOnBreak && (
-              <Button onClick={recordScratchOnBreak} className="w-full h-16 text-lg" variant="outline">
-                <AlertTriangle className="mr-2 h-5 w-5" />
-                Scratch on Break (+1 stroke)
-              </Button>
-            )}
-            <div className="grid gap-3 md:grid-cols-2">
-              <Button onClick={recordBallMade} variant="secondary" className="h-12">
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Ball Made
-              </Button>
-              <Button 
-                onClick={recordEightBall} 
-                variant="secondary" 
-                className="h-12"
-                disabled={gameState.eightBallPocketed}
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                8-Ball Pocketed
-              </Button>
-            </div>
+          <div className="rounded-lg border bg-muted/50 p-4 text-center">
+            <p className="text-sm font-medium mb-2">Win Condition</p>
+            <p className="text-xs text-muted-foreground">
+              20 shots or under is a <span className="font-semibold text-emerald-600">Win</span>
+              <br />
+              Over 20 shots is a <span className="font-semibold text-destructive">Loss</span>
+            </p>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 63,
+  "projectStateVersion": 71,
   "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -787,6 +787,102 @@
         "REQ-110"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-straight-shot-gameplay-ui-to-use-exactly-one-user-entered-input-total-number-of-shots-strokes-for-the-completed-run-remove-incremental-stroke-tracking-and-remove-all-gameplay-controls-fields-for-scratches-balls-made-and-8-ball-pocketed-state-the-straight-shot-game-page-must-show-a-single-numeric-input-non-negative-integer-labeled-in-english-e-g-total-shots-and-must-compute-display-the-result-as-win-when-the-entered-value-is-20-or-under-and-loss-when-over-20",
+      "title": "Update Straight Shot gameplay UI to use exactly one user-entered input: total number of shots/strokes for the completed run. Remove incremental stroke tracking and remove all gameplay controls/fields for scratches, balls made, and 8-ball pocketed state. The Straight Shot game page must show a single numeric input (non-negative integer) labeled in English (e.g., \"Total Shots\"), and must compute/display the result as \"Win\" when the entered value is 20 or under and \"Loss\" when over 20.",
+      "reqIds": [
+        "REQ-111"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-straight-shot-session-start-flow-to-initialize-and-persist-only-the-minimal-state-needed-for-the-single-input-model-session-storage-state-under-sessionstorage-straightshotgame-must-no-longer-require-or-depend-on-fields-related-to-incremental-tracking-scratches-ballsmade-eightballpocketed-scratchonbreak",
+      "title": "Update Straight Shot session start flow to initialize and persist only the minimal state needed for the single-input model. Session storage state under `sessionStorage['straightShotGame']` must no longer require or depend on fields related to incremental tracking (scratches, ballsMade, eightBallPocketed, scratchOnBreak).",
+      "reqIds": [
+        "REQ-112"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-straight-shot-save-behavior-so-saving-a-session-persists-the-single-entered-total-shots-value-without-relying-on-balls-made-tracking-or-incremental-stroke-logic-when-constructing-the-saved-match-record-via-buildstraightshotmatch-populate-the-saved-straight-shot-fields-consistently-from-the-single-input-e-g-strokes-should-contain-the-entered-total-as-the-primary-value-used-for-display-statistics-do-not-require-any-backend-schema-changes",
+      "title": "Update the Straight Shot save behavior so saving a session persists the single entered total shots value without relying on balls-made tracking or incremental stroke logic. When constructing the saved match record via `buildStraightShotMatch`, populate the saved Straight Shot fields consistently from the single input (e.g., `strokes` should contain the entered total as the primary value used for display/statistics). Do not require any backend schema changes.",
+      "reqIds": [
+        "REQ-113"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-match-history-summary-rendering-and-match-details-rendering-for-straight-shot-to-reflect-the-single-input-model-history-cards-and-details-must-use-the-saved-total-shots-strokes-value-to-determine-and-display-win-loss-win-20-loss-20-remove-or-de-emphasize-straight-shot-fields-that-are-no-longer-collected-scratches-balls-made-per-shot-scoring-breakdown-from-the-ui-while-remaining-backward-compatible-for-older-saved-matches-that-still-include-those-fields",
+      "title": "Update Match History summary rendering and Match Details rendering for Straight Shot to reflect the single-input model. History cards and details must use the saved total shots/strokes value to determine and display Win/Loss (Win <= 20, Loss > 20). Remove or de-emphasize Straight Shot fields that are no longer collected (scratches, balls made, per-shot scoring breakdown) from the UI, while remaining backward-compatible for older saved matches that still include those fields.",
+      "reqIds": [
+        "REQ-114"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-straight-shot-rules-copy-to-match-the-simplified-model-single-total-shots-input-recorded-after-the-run-is-completed-remove-references-to-incremental-shot-counting-ui-actions-normal-shot-button-scratch-button-scratch-on-break-special-handling-ball-made-and-8-ball-toggles-keep-the-english-win-condition-statement-20-or-under-is-a-win-over-20-is-a-loss",
+      "title": "Update Straight Shot Rules copy to match the simplified model (single total-shots input recorded after the run is completed). Remove references to incremental shot counting UI actions (normal shot button, scratch button, scratch-on-break special handling, ball-made and 8-ball toggles). Keep the English win condition statement: \"20 or under is a win; over 20 is a loss.\"",
+      "reqIds": [
+        "REQ-115"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-straight-shot-moving-average-computation-display-on-the-straight-shot-start-page-to-use-the-saved-total-shots-strokes-value-from-match-history-consistent-with-the-single-input-model-the-moving-average-label-text-must-remain-in-english-and-reflect-the-same-unit-shots-strokes",
+      "title": "Update Straight Shot moving average computation/display on the Straight Shot start page to use the saved total shots/strokes value from match history, consistent with the single-input model. The moving average label text must remain in English and reflect the same unit (shots/strokes).",
+      "reqIds": [
+        "REQ-116"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-9-ball-practice-match-point-conversion-so-it-uses-the-loser-s-apa-skill-level-row-and-the-loser-s-total-balls-points-pocketed-to-choose-the-correct-20-point-match-score-outcome-per-the-uploaded-chart-images-image-6-png-and-image-7-png",
+      "title": "Fix APA 9-Ball Practice match-point conversion so it uses the loser’s APA skill level row and the loser’s total balls/points pocketed to choose the correct 20-point match score outcome per the uploaded chart (images image-6.png and image-7.png).",
+      "reqIds": [
+        "REQ-117"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-practice-match-builder-so-winner-loser-determination-and-points-needed-are-based-on-the-apa-equalizer-points-to-win-target-for-each-player-derived-from-skill-level-not-the-skill-level-value-itself-and-so-the-saved-match-data-reflects-correct-points-to-win-winner-flag-and-match-point-conversion-values",
+      "title": "Fix the APA Practice match builder so winner/loser determination and “points needed” are based on the APA Equalizer points-to-win target for each player (derived from skill level), not the skill level value itself, and so the saved match data reflects correct points-to-win, winner flag, and match-point conversion values.",
+      "reqIds": [
+        "REQ-118"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-9-ball-practice-match-completion-screen-so-the-save-match-return-to-history-button-does-not-get-stuck-showing-connecting-indefinitely-when-the-user-is-authenticated-and-the-match-is-complete",
+      "title": "Fix the APA 9-Ball Practice match completion screen so the “Save Match & Return to History” button does not get stuck showing “Connecting...” indefinitely when the user is authenticated and the match is complete.",
+      "reqIds": [
+        "REQ-119"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-apa-practice-match-completion-screen-frontend-src-pages-apa-practicegamepage-tsx-add-a-clear-recovery-path-when-the-backend-actor-is-not-available-after-a-reasonable-wait-show-an-english-inline-message-and-provide-a-user-invokable-retry-connection-action-using-the-existing-retry-hook-frontend-src-hooks-useactorretry-ts",
+      "title": "On the APA Practice match completion screen (`frontend/src/pages/apa/PracticeGamePage.tsx`), add a clear recovery path when the backend actor is not available: after a reasonable wait, show an English inline message and provide a user-invokable “Retry connection” action using the existing retry hook (`frontend/src/hooks/useActorRetry.ts`).",
+      "reqIds": [
+        "REQ-120"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-apa-practice-match-completion-save-flow-fails-fast-with-clear-english-errors-rather-than-appearing-stuck-if-the-user-clicks-save-while-the-backend-actor-is-not-ready-show-an-english-error-and-keep-the-ui-responsive-no-permanent-disabled-state",
+      "title": "Ensure the APA Practice match completion Save flow fails fast with clear English errors rather than appearing stuck: if the user clicks save while the backend actor is not ready, show an English error and keep the UI responsive (no permanent disabled state).",
+      "reqIds": [
+        "REQ-121"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-re-run-the-deployment-of-the-current-application-build-and-verify-that-it-completes-successfully-after-the-prior-deployment-error-with-the-app-reachable-and-basic-functionality-intact",
+      "title": "Re-run the deployment of the current application build and verify that it completes successfully after the prior deployment error, with the app reachable and basic functionality intact.",
+      "reqIds": [
+        "REQ-122"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1064,6 +1160,30 @@
       "reqIds": [
         "REQ-102"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-59",
+      "summary": "Straight Shot mode: simplify gameplay tracking/UI to a single user-entered total shots/strokes value (not incremental, no balls-made tracking). Determine outcome as Win if shots <= 20, Loss if shots > 20.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-60",
+      "summary": "Fix APA 9-ball practice match-point conversion scoring so it correctly uses the loser’s skill level and the loser’s balls-pocked range per the APA chart when computing the post-match score/result after saving.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-61",
+      "summary": "Allow saving an in-progress (not yet complete) APA 9-ball practice match and later reopening it from Match History to resume scoring until completion.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-62",
+      "summary": "Fix APA 9-ball Practice match save flow: after match completion, Save button gets stuck on \"Connecting\" and does not persist the match record.",
+      "reqIds": [],
       "status": "pending"
     }
   ],

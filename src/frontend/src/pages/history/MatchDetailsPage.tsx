@@ -162,6 +162,11 @@ export default function MatchDetailsPage() {
     }
 
     if (match.mode === MatchMode.straightShot) {
+      // Prefer strokes[0], fallback to totalScore for backward compatibility
+      const totalShots = match.strokes?.[0] !== undefined ? Number(match.strokes[0]) : Number(match.totalScore ?? 0);
+      const isWin = totalShots > 0 && totalShots <= 20;
+      const isLoss = totalShots > 20;
+
       return (
         <Card>
           <CardHeader>
@@ -169,26 +174,14 @@ export default function MatchDetailsPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Strokes:</span>
-              <span className="font-semibold">{match.strokes?.[0]?.toString() || '—'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Scratches:</span>
-              <span className="font-semibold">{match.scratchStrokes?.[0]?.toString() || '—'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Balls Made:</span>
-              <span className="font-semibold">{match.ballsMade?.toString() || '—'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Score:</span>
-              <span className="font-semibold">{match.totalScore?.toString() || '—'}</span>
+              <span className="text-muted-foreground">Total Shots:</span>
+              <span className="font-semibold text-lg">{totalShots > 0 ? totalShots : '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Result:</span>
-              <Badge variant={(match.totalScore ?? 0) <= 20 ? 'default' : 'destructive'}>
-                {(match.totalScore ?? 0) <= 20 ? 'Win' : 'Loss'}
-              </Badge>
+              {isWin && <Badge variant="default">Win</Badge>}
+              {isLoss && <Badge variant="destructive">Loss</Badge>}
+              {!isWin && !isLoss && <span className="font-semibold">—</span>}
             </div>
           </CardContent>
         </Card>
@@ -326,7 +319,8 @@ export default function MatchDetailsPage() {
           {match.officialApaMatchLogData && (
             <Button
               variant="outline"
-              onClick={() => navigate({ to: `/real-apa-match/${matchId}/edit` })}
+              size="sm"
+              onClick={() => navigate({ to: `/real-apa-match/${match.matchId}/edit` })}
               className="gap-2"
             >
               <Edit className="h-4 w-4" />
@@ -340,32 +334,23 @@ export default function MatchDetailsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
+            <div>
               <CardTitle className="text-2xl">{getModeLabel(match.mode)}</CardTitle>
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className="mt-2 flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
+                {formatDate(match.dateTime)}
               </CardDescription>
             </div>
-            <Badge variant="outline" className="text-base">
+            <Badge variant="outline" className="text-sm">
               {getModeLabel(match.mode)}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {match.players.length > 0 && !match.officialApaMatchLogData && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
-                {match.players.map(p => p.name).join(' vs ')}
-              </span>
-            </div>
-          )}
-
+        <CardContent>
           {match.notes && (
-            <div className="rounded-lg border bg-muted/50 p-4">
-              <p className="text-sm font-medium mb-2">Notes:</p>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
+            <div className="mb-4 rounded-lg bg-muted p-4">
+              <p className="text-sm font-medium mb-1">Notes:</p>
+              <p className="text-sm text-muted-foreground">{match.notes}</p>
             </div>
           )}
         </CardContent>

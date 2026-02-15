@@ -24,11 +24,7 @@ export default function StraightShotStartPage() {
       const gameState = {
         playerName: playerName.trim(),
         notes: notes.trim() || undefined,
-        strokes: 0,
-        scratches: 0,
-        ballsMade: 0,
-        eightBallPocketed: false,
-        scratchOnBreak: false,
+        totalShots: 0,
       };
       sessionStorage.setItem('straightShotGame', JSON.stringify(gameState));
       navigate({ to: '/straight-shot/game' });
@@ -42,7 +38,11 @@ export default function StraightShotStartPage() {
     .slice(0, 10);
   
   const movingAverage = recentMatches.length > 0
-    ? recentMatches.reduce((sum, m) => sum + Number(m.totalScore || 0), 0) / recentMatches.length
+    ? recentMatches.reduce((sum, m) => {
+        // Prefer strokes[0], fallback to totalScore for backward compatibility
+        const shots = m.strokes?.[0] !== undefined ? Number(m.strokes[0]) : Number(m.totalScore || 0);
+        return sum + shots;
+      }, 0) / recentMatches.length
     : null;
 
   return (
@@ -60,7 +60,7 @@ export default function StraightShotStartPage() {
         <CardHeader>
           <CardTitle>Start Straight Shot Strokes Drill</CardTitle>
           <CardDescription>
-            Count your strokes to clear the table - win at 20 or under
+            Count your shots to clear the table - win at 20 or under
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -84,7 +84,7 @@ export default function StraightShotStartPage() {
                   <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
                     {movingAverage.toFixed(1)}
                   </p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300">strokes</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300">shots</p>
                 </div>
               </CardContent>
             </Card>

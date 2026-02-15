@@ -122,6 +122,8 @@ export default function AcceptingGiftsGamePage() {
         setsCompleted: gameState.setsCompleted,
         finalSetScorePlayer: gameState.playerSetScore,
         finalSetScoreGhost: gameState.ghostSetScore,
+        completionStatus: gameState.completed,
+        score: gameState.setsCompleted,
       });
 
       await saveMatch.mutateAsync({ matchId, matchRecord });

@@ -1,91 +1,34 @@
 {
   "kind": "build_request",
-  "title": "Fix Official APA Match Log save stuck on “Connecting…”",
-  "priority": "high",
+  "title": "Re-run deployment and verify app is live",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-107",
-      "text": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an authenticated user is trying to save a match. The form must allow saving as soon as a usable backend actor instance exists, even if the actor hook reports a background fetching/refetching state.",
-      "target": "frontend",
+      "id": "REQ-122",
+      "text": "Re-run the deployment of the current application build and verify that it completes successfully after the prior deployment error, with the app reachable and basic functionality intact.",
+      "target": "unknown",
       "source": {
         "messageIds": [
           "msg-3"
         ],
         "quotes": [
-          "so the save feature for logging an apa match now is stuck on \"connecting\" so i cant save after inputs on that screen"
+          "so deploy again?"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in and on the Official APA Match Log page, the primary action button does not remain stuck showing “Connecting...” indefinitely if an actor instance is available.",
-        "If the actor instance is available, the Save/Update button can be clicked (subject to existing validation and required-field rules) even when the actor hook reports isFetching=true.",
-        "The button label logic distinguishes between “No actor yet” (connecting) vs “Mutation in progress” (saving) vs normal ready state."
-      ]
-    },
-    {
-      "id": "REQ-108",
-      "text": "Add a clear, user-facing error path on the Official/Real APA Match Log form for the case where the backend actor never becomes available. If the actor is still unavailable after a reasonable wait, show an English inline message and provide a user-invokable retry action (e.g., a “Retry connection” button) without requiring a full page refresh.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3"
-        ],
-        "quotes": [
-          "stuck on \"connecting\" so i cant save"
-        ]
-      },
-      "acceptanceCriteria": [
-        "If the actor is null/unavailable, the UI presents an English message indicating the backend connection is not ready and offers a retry action.",
-        "Triggering retry attempts to re-establish the ability to save without losing already-entered form inputs.",
-        "User-facing text is in English."
-      ]
-    },
-    {
-      "id": "REQ-109",
-      "text": "Harden the Official/Real APA Match Log save/update submission flow so that if the save mutation call hangs or takes unusually long, the user receives feedback and can recover. Implement a client-side timeout for the save/update request that surfaces a clear English error message and re-enables the Save/Update button so the user can retry.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3"
-        ],
-        "quotes": [
-          "so i cant save after inputs on that screen"
-        ]
-      },
-      "acceptanceCriteria": [
-        "If the save/update request does not resolve within the configured timeout window, the user sees an English error message indicating the save is taking too long and to retry.",
-        "After a timeout error, the Save/Update button is re-enabled and the form remains populated with the user’s inputs.",
-        "Normal successful saves still navigate to the saved match details page as currently implemented in the form."
-      ]
-    },
-    {
-      "id": "REQ-110",
-      "text": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against the current backend schema and access-control behavior in public mode, and add any necessary backend fixes so the `saveMatch` call completes and does not trap or deadlock for authenticated users when invite-only mode is disabled.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-3"
-        ],
-        "quotes": [
-          "stuck on \"connecting\" so i cant save"
-        ]
-      },
-      "acceptanceCriteria": [
-        "With invite-only mode disabled, an authenticated user can save an Official/Real APA Match Log and then immediately see it in Match History and open Match Details.",
-        "If the backend rejects the save, the frontend receives a failing response and shows an error; it must not remain indefinitely in a “Connecting...” UI state.",
-        "No backend traps occur during save for the Official/Real APA Match Log happy path."
+        "A new deployment run is triggered using the current repository state.",
+        "The deployment run completes successfully (no build/deploy error status).",
+        "After deployment, the app loads to the Home page without a fatal error.",
+        "Basic navigation works (Home -> Match History -> Home)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (read-only Shadcn components).",
-    "Do not edit immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx.",
-    "Keep all user-facing text in English.",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if a state migration is required."
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not add new fields to the Official/Real APA Match Log data model as part of this fix unless required to resolve a save/list schema mismatch.",
-    "Do not redesign the Official APA Match Log form UI beyond what is necessary to fix the stuck “Connecting...” save experience.",
-    "Do not implement new authentication providers or non-Internet-Identity auth flows."
+    "Do not add new product features solely to address deployment.",
+    "Do not change the technology stack or introduce external infrastructure."
   ],
   "imageRequirements": {
     "required": [],

@@ -14,8 +14,8 @@ import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 
 // Data migration, always define migration module and use with clause, see documentation for details.
-import Migration "migration";
-(with migration = Migration.run)
+
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -1017,3 +1017,4 @@ actor {
     };
   };
 };
+

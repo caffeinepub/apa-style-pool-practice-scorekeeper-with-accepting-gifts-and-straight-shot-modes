@@ -1,89 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Official APA Match Log Save stuck on “Connecting…”",
+  "title": "Post-deploy smoke verification for core navigation",
   "requirements": [
     {
-      "id": "REQ-107",
-      "summary": "Enable Save/Update as soon as a backend actor instance exists (regardless of actor background fetching) and correct button label state handling.",
+      "id": "REQ-122",
+      "summary": "Add lightweight frontend smoke-check scaffolding and safer routing error handling to help verify the deployed app loads and core navigation works.",
       "acceptanceCriteria": [
-        "When logged in and on the Official APA Match Log page, the primary action button does not remain stuck showing “Connecting...” indefinitely if an actor instance is available.",
-        "If the actor instance is available, the Save/Update button can be clicked (subject to existing validation and required-field rules) even when the actor hook reports isFetching=true.",
-        "The button label logic distinguishes between “No actor yet” (connecting) vs “Mutation in progress” (saving) vs normal ready state."
+        "A new deployment run is triggered using the current repository state.",
+        "The deployment run completes successfully (no build/deploy error status).",
+        "After deployment, the app loads to the Home page without a fatal error.",
+        "Basic navigation works (Home -> Match History -> Home)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Update Save/Update button enablement and label logic to treat the actor as 'ready' when `actor` is non-null (do not gate on `actorFetching`). Ensure the button text distinguishes: (1) actor missing => “Connecting...”, (2) mutation pending => “Saving...”, (3) ready => “Save Match”/“Update Match”. Keep existing validation/required-field disabling behavior intact."
-        }
-      ]
-    },
-    {
-      "id": "REQ-108",
-      "summary": "Provide an inline error and retry flow when the backend actor never becomes available, without losing form inputs.",
-      "acceptanceCriteria": [
-        "If the actor is null/unavailable, the UI presents an English message indicating the backend connection is not ready and offers a retry action.",
-        "Triggering retry attempts to re-establish the ability to save without losing already-entered form inputs.",
-        "User-facing text is in English."
-      ],
-      "file_operations": [
+          "description": "Harden router initialization against runtime failures by adding a user-friendly route-level error screen (using existing UI primitives) so the deployed app does not present a blank/fatal crash on unexpected errors, and wire a dedicated SmokeCheckPage route for quick post-deploy verification."
+        },
         {
-          "path": "frontend/src/hooks/useActorRetry.ts",
+          "path": "frontend/src/pages/SmokeCheckPage.tsx",
           "operation": "create",
-          "description": "Add a small helper hook that uses React Query’s QueryClient to re-attempt actor creation by clearing/removing the cached 'actor' query and triggering a refetch. It should not require a page refresh and must not modify the existing immutable actor hook."
+          "description": "Create a minimal SmokeCheckPage that renders an English-only checklist view with prominent navigation controls to Home and Match History, plus optional inline guidance for verifying the key flows after deployment (no new product features beyond verification scaffolding)."
         },
         {
-          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
+          "path": "frontend/src/pages/HomePage.tsx",
           "operation": "modify",
-          "description": "Add a 'connection not ready' inline message area that appears after a reasonable wait (e.g., ~8–10s) when `identity` is present but `actor` is still null. Include a “Retry connection” button wired to the new `useActorRetry` hook; ensure retry does not reset local form state/inputs. All user-facing text must be English."
-        }
-      ]
-    },
-    {
-      "id": "REQ-109",
-      "summary": "Add a client-side timeout and recoverable error state for save/update so long-running/hung requests re-enable the button and allow retry.",
-      "acceptanceCriteria": [
-        "If the save/update request does not resolve within the configured timeout window, the user sees an English error message indicating the save is taking too long and to retry.",
-        "After a timeout error, the Save/Update button is re-enabled and the form remains populated with the user’s inputs.",
-        "Normal successful saves still navigate to the saved match details page as currently implemented in the form."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/withTimeout.ts",
-          "operation": "create",
-          "description": "Create a small utility to wrap a Promise with a timeout (via Promise.race) and throw an English timeout Error message when exceeded. Keep it generic for reuse."
+          "description": "Add stable QA selectors (e.g., data-testid attributes) to the primary Home call-to-action that navigates to Match History, and ensure navigation uses router-safe primitives so Home -> Match History works reliably after deployment."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
           "operation": "modify",
-          "description": "Harden `useSaveMatch` and `useUpdateMatch` mutationFns by wrapping the actor calls with the new timeout utility. On timeout, throw a clear English Error so the form can surface it and the mutation leaves the pending state, re-enabling the Save/Update button for retry."
-        },
-        {
-          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
-          "operation": "modify",
-          "description": "Ensure save/update errors (including timeout errors) surface clearly (English) and do not leave the primary action button in a disabled “Connecting...” state. Preserve existing successful navigation behavior."
-        }
-      ]
-    },
-    {
-      "id": "REQ-110",
-      "summary": "Ensure the Official/Real APA Match Log save flow fails fast and visibly (frontend) rather than appearing stuck, aligning with current backend behavior when invite-only mode is disabled.",
-      "acceptanceCriteria": [
-        "With invite-only mode disabled, an authenticated user can save an Official/Real APA Match Log and then immediately see it in Match History and open Match Details.",
-        "If the backend rejects the save, the frontend receives a failing response and shows an error; it must not remain indefinitely in a “Connecting...” UI state.",
-        "No backend traps occur during save for the Official/Real APA Match Log happy path."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Ensure mutation error handling consistently converts backend failures into thrown Errors (using existing error extraction) so the UI can display a failure state instead of appearing stuck. Confirm success paths still invalidate match history queries so newly saved logs appear in Match History."
-        },
-        {
-          "path": "frontend/src/components/apa/RealApaMatchForm.tsx",
-          "operation": "modify",
-          "description": "Confirm the form never ties the primary action disabled/label state to background actor fetching (only to actor presence + validation + in-flight mutation). Ensure backend rejections surface as English errors and leave the form usable for retry."
+          "description": "Add stable QA selectors (e.g., data-testid attributes) to the 'Back to Home' control and ensure it navigates reliably to '/', so Match History -> Home works reliably after deployment."
         }
       ]
     }
