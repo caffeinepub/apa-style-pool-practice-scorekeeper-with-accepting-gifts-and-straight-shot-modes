@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Play, User, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Play, User, AlertCircle, RotateCcw } from 'lucide-react';
 import { APA_SKILL_LEVELS, getPointsToWin, formatSkillLevel, isValidSkillLevel } from '../../lib/apa/apaEqualizer';
 import { useGetCallerUserProfile } from '../../hooks/useQueries';
 import { isSamePlayer } from '../../utils/playerName';
+import { SESSION_KEYS, hasInProgressSession, clearInProgressSession } from '@/lib/session/inProgressSessions';
+import EndMatchDialog from '../../components/matches/EndMatchDialog';
 import type { RackData } from '../../lib/apa/apaScoring';
 
 export default function PracticeStartPage() {
@@ -23,9 +25,12 @@ export default function PracticeStartPage() {
   const [notes, setNotes] = useState('');
   const [player1SLTouched, setPlayer1SLTouched] = useState(false);
   const [player2SLTouched, setPlayer2SLTouched] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const myName = userProfile?.name || '';
   const mySkillLevel = userProfile?.apaSkillLevel ? Number(userProfile.apaSkillLevel) : null;
+
+  const hasInProgress = hasInProgressSession(SESSION_KEYS.APA_PRACTICE);
 
   // Auto-load skill level when Player 1 name matches profile name
   useEffect(() => {
@@ -82,32 +87,53 @@ export default function PracticeStartPage() {
   // Check for duplicate names (ensure boolean type)
   const hasDuplicateNames = Boolean(player1.trim() && player2.trim() && isSamePlayer(player1, player2));
 
-  const handleStart = () => {
+  const handleStartClick = () => {
     // Defensive guard: prevent starting with duplicate names
     if (hasDuplicateNames) {
       return;
     }
 
     if (player1.trim() && player2.trim()) {
-      const gameState = {
-        player1: player1.trim(),
-        player2: player2.trim(),
-        player1SL,
-        player2SL,
-        player1Target: getPointsToWin(player1SL),
-        player2Target: getPointsToWin(player2SL),
-        notes: notes.trim() || undefined,
-        player1Points: 0,
-        player2Points: 0,
-        player1Innings: 0,
-        player2Innings: 0,
-        player1DefensiveShots: 0,
-        player2DefensiveShots: 0,
-        racks: [] as RackData[],
-      };
-      sessionStorage.setItem('apaPracticeGame', JSON.stringify(gameState));
-      navigate({ to: '/apa-practice/game' });
+      // Check if there's an in-progress game
+      if (hasInProgress) {
+        setShowConfirmDialog(true);
+      } else {
+        startNewGame();
+      }
     }
+  };
+
+  const startNewGame = () => {
+    const gameState = {
+      player1: player1.trim(),
+      player2: player2.trim(),
+      player1SL,
+      player2SL,
+      player1Target: getPointsToWin(player1SL),
+      player2Target: getPointsToWin(player2SL),
+      notes: notes.trim() || undefined,
+      player1Points: 0,
+      player2Points: 0,
+      player1Innings: 0,
+      player2Innings: 0,
+      player1DefensiveShots: 0,
+      player2DefensiveShots: 0,
+      racks: [] as RackData[],
+      activePlayer: 'A' as const,
+      sharedInnings: 0,
+    };
+    sessionStorage.setItem(SESSION_KEYS.APA_PRACTICE, JSON.stringify(gameState));
+    navigate({ to: '/apa-practice/game' });
+  };
+
+  const handleConfirmNewGame = () => {
+    clearInProgressSession(SESSION_KEYS.APA_PRACTICE);
+    setShowConfirmDialog(false);
+    startNewGame();
+  };
+
+  const handleResume = () => {
+    navigate({ to: '/apa-practice/game' });
   };
 
   return (
@@ -242,7 +268,7 @@ export default function PracticeStartPage() {
           </div>
 
           <Button
-            onClick={handleStart}
+            onClick={handleStartClick}
             disabled={!player1.trim() || !player2.trim() || hasDuplicateNames}
             className="w-full"
             size="lg"
@@ -250,8 +276,29 @@ export default function PracticeStartPage() {
             <Play className="mr-2 h-5 w-5" />
             Start Match
           </Button>
+
+          {hasInProgress && (
+            <Button
+              onClick={handleResume}
+              variant="outline"
+              className="w-full gap-2"
+              size="lg"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Resume Game
+            </Button>
+          )}
         </CardContent>
       </Card>
+
+      <EndMatchDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={handleConfirmNewGame}
+        title="End Current Game?"
+        description="You have a game in progress. Starting a new match will end your current game. Are you sure?"
+        confirmText="End Current & Start New"
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 93,
-  "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
+  "projectStateVersion": 109,
+  "summary": "Scope for the next release is narrowed to a single “stability + correctness” build implementing only the user-specified fix list (Accepting Gifts logic overhaul + status/summary correctness; chart fixes incl. Match Results + PPI trend + Straight Shot trend/histogram; Match History table view with specified columns and placeholders; new Straight Shot ball-level W/L table; Home page mode order fix; and addressing 5–10 minute login/connection delay). Explicitly exclude previously speculative/long-term items (e.g., invite-only access control) and make only surgical changes to preserve existing functionality.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
     "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
@@ -16,15 +16,15 @@
   ],
   "known_issues": [
     "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials.",
-    "Bug: entering the Primary Player name into Player 2 does not update the skill level on the match page; also possible to start a match with the Primary Player name in both Player 1 and Player 2 (should be blocked).",
-    "App can get stuck on the “Checking access…” loading screen during access-control checks; needs a fail-open/disable option or clear error/timeout so the app remains usable.",
-    "Regression: the score \"out of\" functionality (displaying each player’s score relative to the computed points-to-win target) was removed; it must be restored (e.g., \"Your Score (out of X)\" / \"Their Score (out of Y)\" based on selected skill levels).",
     "Regression/bug: Match History sort control (toggle Newest/Oldest by match date) is missing/not shown even when history list contains matches (user reports 3 matches visible but no sort option).",
     "APA Practice: match does not stop immediately when a player reaches their points-to-win target; scoring can continue into subsequent rack(s), causing final scores to exceed the target (e.g., 36).",
     "Official/Real APA Match Log: Save gets stuck on \"Connecting\" after entering inputs (cannot complete save). Likely save-mutation/network/actor readiness state deadlock.",
     "Bug: Edit Profile / \"Save changes\" button does not respond to clicks (profile changes cannot be saved).",
     "APA Practice: when the match is effectively over (player reached/exceeded points-to-win), the \"Complete Rack\" button becomes unclickable/disabled, preventing the user from finishing the rack and progressing past the scoring screen.",
-    "APA Practice: score can exceed the points-to-win target in the edge case where a player is 1 point away and then pockets the 9-ball (2 points), causing the total to update past the target; must clamp/stop correctly on match completion."
+    "APA Practice: score can exceed the points-to-win target in the edge case where a player is 1 point away and then pockets the 9-ball (2 points), causing the total to update past the target; must clamp/stop correctly on match completion.",
+    "Official/Real APA Match Log: aPPI is missing (not computed/stored/displayed) under PPI in Match Details and elsewhere Official APA appears.",
+    "Match History Table view: APA-derived columns (PPI/aPPI/rolling 10/20/APA 10/20/W-L/win%) render blank for APA matches even when underlying data exists.",
+    "Stats (Official APA): win% windowing appears to use last-10 (or other smaller window) instead of last-20 matches (ordered by match date)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -1139,6 +1139,366 @@
         "REQ-155"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-add-per-mode-resume-game-support-for-apa-9-ball-practice-accepting-gifts-and-straight-shot-using-the-existing-per-mode-sessionstorage-in-progress-state-keys-apa-sessionstorage-apapracticegame-accepting-gifts-sessionstorage-acceptinggiftsgame-straight-shot-sessionstorage-straightshotgame-each-mode-must-expose-a-resume-action-that-is-only-visible-when-that-specific-mode-has-an-in-progress-session-stored-and-clicking-resume-must-navigate-directly-to-that-mode-s-in-progress-game-page",
+      "title": "Add per-mode “Resume Game” support for APA 9-Ball Practice, Accepting Gifts, and Straight Shot using the existing per-mode sessionStorage in-progress state keys (APA: `sessionStorage['apaPracticeGame']`, Accepting Gifts: `sessionStorage['acceptingGiftsGame']`, Straight Shot: `sessionStorage['straightShotGame']`). Each mode must expose a Resume action that is only visible when that specific mode has an in-progress session stored, and clicking Resume must navigate directly to that mode’s in-progress game page.",
+      "reqIds": [
+        "REQ-156"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enforce-single-slot-per-mode-in-progress-sessions-and-add-a-confirmation-dialog-when-a-user-starts-a-new-game-in-a-mode-that-already-has-an-in-progress-session-for-that-same-mode-the-dialog-must-clearly-ask-whether-to-end-the-current-in-progress-game-and-start-a-new-one-confirming-must-clear-that-mode-s-sessionstorage-key-and-proceed-to-create-a-new-session-canceling-must-keep-the-existing-session-intact-and-not-navigate-into-a-new-session",
+      "title": "Enforce “single-slot per mode” in-progress sessions and add a confirmation dialog when a user starts a new game in a mode that already has an in-progress session for that same mode. The dialog must clearly ask whether to end the current in-progress game and start a new one; confirming must clear that mode’s sessionStorage key and proceed to create a new session; canceling must keep the existing session intact and not navigate into a new session.",
+      "reqIds": [
+        "REQ-157"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-home-mode-cards-and-or-each-mode-s-start-page-ui-so-that-the-user-can-clearly-perform-both-actions-when-applicable-1-resume-game-when-an-in-progress-session-exists-for-that-mode-and-2-start-new-game-always-available-but-may-trigger-the-confirmation-dialog-from-req-157-if-a-session-exists-implement-without-breaking-existing-navigation-paths-defined-in-frontend-src-pages-homepage-tsx-and-frontend-src-components-navigation-modecard-tsx",
+      "title": "Update the Home mode cards and/or each mode’s Start page UI so that the user can clearly perform both actions when applicable: (1) Resume Game (when an in-progress session exists for that mode) and (2) Start New Game (always available, but may trigger the confirmation dialog from REQ-157 if a session exists). Implement without breaking existing navigation paths defined in `frontend/src/pages/HomePage.tsx` and `frontend/src/components/navigation/ModeCard.tsx`.",
+      "reqIds": [
+        "REQ-158"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-9-ball-practice-post-rack-turn-over-bug-so-that-turn-over-is-not-clickable-once-the-rack-is-complete-and-the-user-is-expected-to-finalize-the-rack-i-e-when-the-rack-is-complete-and-complete-rack-can-be-pressed-implement-this-within-frontend-src-components-apa-aparackscoringpanel-tsx-by-disabling-turn-over-while-the-rack-is-in-a-complete-finalizable-state-while-preserving-existing-inning-tracking-behavior-and-all-other-rack-scoring-rules",
+      "title": "Fix the APA 9-Ball Practice “post-rack Turn Over” bug so that “Turn Over” is not clickable once the rack is complete and the user is expected to finalize the rack (i.e., when the rack is complete and “Complete Rack” can be pressed). Implement this within `frontend/src/components/apa/ApaRackScoringPanel.tsx` by disabling Turn Over while the rack is in a complete/finalizable state, while preserving existing inning tracking behavior and all other rack scoring rules.",
+      "reqIds": [
+        "REQ-159"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-mode-tile-ui-so-that-when-a-resume-action-is-available-it-is-rendered-below-the-start-new-game-button-not-above-it-without-changing-the-existing-resume-visibility-logic-or-navigation-behavior",
+      "title": "Update the mode tile UI so that when a Resume action is available it is rendered below the “Start New Game” button (not above it), without changing the existing resume visibility logic or navigation behavior.",
+      "reqIds": [
+        "REQ-161"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-a-clear-developer-facing-outline-of-exactly-what-will-change-in-this-build-to-ensure-version-48-behavior-remains-intact-aside-from-the-resume-button-placement-adjustment",
+      "title": "Provide a clear, developer-facing outline of exactly what will change in this build to ensure Version 48 behavior remains intact aside from the Resume button placement adjustment.",
+      "reqIds": [
+        "REQ-162"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-home-screen-official-apa-match-log-mode-tile-copy-and-cta-text-remove-the-text-coming-soon-from-the-description-under-official-apa-match-log-and-change-the-tile-s-primary-button-label-from-start-new-game-to-exactly-log-apa-match-english",
+      "title": "Update the Home screen Official APA Match Log mode tile copy and CTA text: remove the text \"(Coming Soon)\" from the description under \"Official APA Match Log\", and change the tile’s primary button label from \"Start New Game\" to exactly \"Log APA Match\" (English).",
+      "reqIds": [
+        "REQ-163"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-frontend-src-components-navigation-modecard-tsx-to-support-a-custom-primary-cta-label-defaults-to-the-existing-start-new-game-so-that-the-official-apa-match-log-card-can-display-log-apa-match-while-other-cards-keep-their-current-labels",
+      "title": "Extend `frontend/src/components/navigation/ModeCard.tsx` to support a custom primary CTA label (defaults to the existing \"Start New Game\") so that the Official APA Match Log card can display \"Log APA Match\" while other cards keep their current labels.",
+      "reqIds": [
+        "REQ-164"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-home-screen-mode-tile-start-button-styling-so-that-accepting-gifts-and-straight-shot-match-apa-s-behavior-the-primary-start-button-is-green-default-when-there-is-no-in-progress-session-for-that-mode-and-becomes-grey-outline-when-a-resume-session-exists-do-not-change-any-navigation-or-resume-visibility-logic",
+      "title": "Change Home-screen mode tile Start button styling so that Accepting Gifts and Straight Shot match APA’s behavior: the primary Start button is green/\"default\" when there is no in-progress session for that mode and becomes grey/\"outline\" when a Resume session exists. Do not change any navigation or Resume visibility logic.",
+      "reqIds": [
+        "REQ-165"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-each-mode-start-page-apa-practice-accepting-gifts-straight-shot-so-that-when-a-resume-session-exists-the-resume-action-appears-below-the-start-action-start-match-start-session-instead-of-in-an-alert-above-the-form-keep-all-existing-resume-visibility-logic-confirmation-dialog-behavior-for-starting-a-new-game-and-navigation-targets-unchanged",
+      "title": "Update each mode Start page (APA Practice, Accepting Gifts, Straight Shot) so that when a Resume session exists, the Resume action appears below the \"Start\" action (Start Match / Start Session) instead of in an alert above the form. Keep all existing resume visibility logic, confirmation-dialog behavior for starting a new game, and navigation targets unchanged.",
+      "reqIds": [
+        "REQ-166"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-end-session-without-saving-action-anywhere-the-app-currently-offers-only-an-end-and-save-flow-for-in-progress-sessions-covering-apa-practice-accepting-gifts-and-straight-shot-this-new-action-must-clear-the-relevant-per-mode-sessionstorage-in-progress-session-key-and-return-the-user-to-a-sensible-page-e-g-that-mode-s-start-page-or-home-without-calling-any-save-update-mutations",
+      "title": "Add an \"End Session Without Saving\" action anywhere the app currently offers only an end-and-save flow for in-progress sessions, covering: APA Practice, Accepting Gifts, and Straight Shot. This new action must clear the relevant per-mode sessionStorage in-progress session key and return the user to a sensible page (e.g., that mode’s Start page or Home), without calling any save/update mutations.",
+      "reqIds": [
+        "REQ-167"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-stats-entry-point-in-the-main-header-next-to-the-existing-profile-and-login-controls-and-implement-a-tabbed-stats-panel-page-that-reuses-existing-stats-computations-components-where-possible-the-panel-must-include-at-minimum-1-apa-per-player-aggregate-charts-existing-chart-module-and-2-a-clear-navigation-path-back-to-the-prior-page-all-user-facing-text-must-be-in-english",
+      "title": "Add a Stats entry point in the main header (next to the existing profile and login controls) and implement a tabbed Stats panel/page that reuses existing stats computations/components where possible. The panel must include at minimum: (1) APA per-player aggregate charts (existing chart module) and (2) a clear navigation path back to the prior page. All user-facing text must be in English.",
+      "reqIds": [
+        "REQ-169"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-existing-stats-hub-page-frontend-src-pages-stats-statspage-tsx-into-a-tabbed-stats-system-that-defaults-to-the-official-apa-tab-and-surfaces-the-key-stats-metrics-not-charts-only-for-official-apa-straight-shot-and-accepting-gifts-while-keeping-all-user-facing-text-in-english",
+      "title": "Update the existing Stats hub page (`frontend/src/pages/stats/StatsPage.tsx`) into a tabbed Stats system that defaults to the Official APA tab and surfaces the key stats/metrics (not charts only) for Official APA, Straight Shot, and Accepting Gifts, while keeping all user-facing text in English.",
+      "reqIds": [
+        "REQ-170"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-official-apa-tab-in-frontend-src-pages-stats-statspage-tsx-reuse-existing-apa-charting-computation-modules-where-possible-but-also-show-explicit-metric-summaries-derived-from-the-signed-in-user-s-match-history-e-g-win-rate-when-determinable-average-ppi-where-available-using-the-existing-official-apa-helpers-frontend-src-lib-apa-officialapappi-ts-frontend-src-lib-apa-officialapaoutcome-ts-and-existing-extractors-in-frontend-src-lib-apa-apaaggregatestats-ts",
+      "title": "On the Official APA tab in `frontend/src/pages/stats/StatsPage.tsx`, reuse existing APA charting/computation modules where possible, but also show explicit metric summaries derived from the signed-in user’s match history (e.g., win rate when determinable, average PPI where available), using the existing official APA helpers (`frontend/src/lib/apa/officialApaPpi.ts`, `frontend/src/lib/apa/officialApaOutcome.ts`) and existing extractors in `frontend/src/lib/apa/apaAggregateStats.ts`.",
+      "reqIds": [
+        "REQ-171"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-straight-shot-tab-on-the-stats-page-that-displays-the-straight-shot-rolling-average-for-the-signed-in-user-based-on-saved-match-history-and-present-it-as-a-clear-metric-and-optionally-a-simple-trend-chart-if-already-easy-to-reuse-the-computation-must-match-the-current-straight-shot-history-shape-used-elsewhere-e-g-use-strokes-0-when-present-falling-back-to-totalscore-only-for-older-records",
+      "title": "Add a Straight Shot tab on the Stats page that displays the Straight Shot rolling average for the signed-in user based on saved match history, and present it as a clear metric (and optionally a simple trend/chart if already easy to reuse). The computation must match the current Straight Shot history shape used elsewhere (e.g., use `strokes[0]` when present, falling back to `totalScore` only for older records).",
+      "reqIds": [
+        "REQ-172"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-accepting-gifts-tab-on-the-stats-page-that-shows-only-1-the-current-progression-state-current-object-ball-count-and-2-a-rolling-average-metric-if-available-from-saved-accepting-gifts-matches-do-not-implement-historical-per-set-charts",
+      "title": "Add an Accepting Gifts tab on the Stats page that shows only (1) the current progression state (current object-ball count) and (2) a rolling average metric if available from saved Accepting Gifts matches; do not implement historical per-set charts.",
+      "reqIds": [
+        "REQ-173"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-there-is-a-clear-discoverable-navigation-path-from-the-main-app-ui-to-the-stats-hub-and-that-it-works-for-authenticated-users-without-altering-or-replacing-the-existing-per-player-aggregate-stats-page-frontend-src-pages-players-playeraggregatestatspage-tsx",
+      "title": "Ensure there is a clear, discoverable navigation path from the main app UI to the Stats hub and that it works for authenticated users without altering or replacing the existing per-player Aggregate Stats page (`frontend/src/pages/players/PlayerAggregateStatsPage.tsx`).",
+      "reqIds": [
+        "REQ-174"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clear-header-level-loading-connecting-indicator-state-so-it-is-obvious-when-header-actions-especially-profile-settings-are-still-initializing-and-may-appear-later-than-the-stats-button-do-not-change-existing-authentication-or-navigation-behavior",
+      "title": "Add a clear header-level loading/connecting indicator state so it is obvious when header actions (especially Profile/Settings) are still initializing and may appear later than the Stats button; do not change existing authentication or navigation behavior.",
+      "reqIds": [
+        "REQ-175"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-stats-page-frontend-src-pages-stats-statspage-tsx-in-the-viewing-stats-for-section-add-a-view-match-history-button-directly-under-or-alongside-view-player-aggregate-stats-when-match-history-is-accessed-from-this-button-match-history-must-show-a-top-back-link-labeled-back-to-stats-that-navigates-to-stats",
+      "title": "On the Stats page (frontend/src/pages/stats/StatsPage.tsx), in the \"Viewing stats for\" section, add a \"View Match History\" button directly under (or alongside) \"View Player Aggregate Stats\"; when Match History is accessed from this button, Match History must show a top back link labeled \"Back to Stats\" that navigates to /stats.",
+      "reqIds": [
+        "REQ-176"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-match-history-header-back-link-context-aware-if-match-history-is-accessed-from-the-stats-page-it-must-display-back-to-stats-navigating-to-stats-if-accessed-from-the-home-page-it-must-display-back-to-home-navigating-to-preserve-all-existing-filtering-sorting-and-match-card-behavior",
+      "title": "Make Match History header back-link context-aware: if Match History is accessed from the Stats page it must display \"Back to Stats\" (navigating to /stats); if accessed from the Home page it must display \"Back to Home\" (navigating to /). Preserve all existing filtering, sorting, and match card behavior.",
+      "reqIds": [
+        "REQ-177"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-aggregate-stats-page-back-navigation-on-the-per-player-aggregate-stats-page-frontend-src-pages-players-playeraggregatestatspage-tsx-change-the-current-back-button-behavior-so-that-when-the-user-came-from-the-stats-page-the-back-button-navigates-back-to-stats-not-match-history-and-the-label-is-back-to-stats-do-not-remove-the-ability-to-reach-this-page-from-other-entry-points-e-g-match-details",
+      "title": "Fix the Aggregate Stats page back navigation: on the per-player Aggregate Stats page (frontend/src/pages/players/PlayerAggregateStatsPage.tsx), change the current back button behavior so that when the user came from the Stats page, the back button navigates back to /stats (not Match History) and the label is \"Back to Stats\". Do not remove the ability to reach this page from other entry points (e.g., Match Details).",
+      "reqIds": [
+        "REQ-178"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-aggregate-stats-computations-and-summary-display-to-match-the-confirmed-requirements-1-ppi-average-is-best-10-out-of-last-20-2-show-both-average-ppi-and-average-appi-3-remove-hide-total-innings-from-apa-aggregate-stats-displays-4-ensure-appi-uses-the-previously-discussed-rule-including-the-win-too-many-innings-fallback-behavior-and-5-show-two-predicted-estimated-skill-levels-one-derived-from-ppi-and-one-derived-from-appi-using-the-user-s-appi-to-skill-level-range-table-used-by-the-app-s-appi-logic",
+      "title": "Update APA Aggregate Stats computations and summary display to match the confirmed requirements: (1) PPI average is \"best 10 out of last 20\"; (2) show both Average PPI and Average aPPI; (3) remove/hide total innings from APA aggregate stats displays; (4) ensure aPPI uses the previously discussed rule (including the win 'too many innings' fallback behavior); and (5) show two predicted/estimated skill levels—one derived from PPI and one derived from aPPI—using the user’s aPPI-to-skill-level range table used by the app’s aPPI logic.",
+      "reqIds": [
+        "REQ-179"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-aggregate-charts-to-match-the-confirmed-chart-requirements-1-ppi-trend-chart-must-include-match-dates-and-match-the-intended-layout-style-time-based-trend-not-undated-points-only-2-match-results-chart-must-plot-two-lines-your-points-and-opponent-points-and-also-plot-defensive-shots-as-a-line-series-preserve-existing-charting-components-where-possible-frontend-src-components-players-apaaggregatecharts-tsx",
+      "title": "Update APA Aggregate charts to match the confirmed chart requirements: (1) PPI trend chart must include match dates and match the intended layout style (time-based trend, not undated points-only); (2) Match Results chart must plot two lines (your points and opponent points) and also plot defensive shots as a line series; preserve existing charting components where possible (frontend/src/components/players/ApaAggregateCharts.tsx).",
+      "reqIds": [
+        "REQ-180"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enhance-straight-shot-stats-on-the-stats-page-add-1-a-straight-shot-trend-graph-currently-missing-2-a-lowest-shot-count-metric-with-the-date-it-occurred-and-3-a-dropdown-to-switch-straight-shot-average-scope-between-last-20-sessions-and-lifetime-while-keeping-the-existing-rolling-average-behavior-available",
+      "title": "Enhance Straight Shot stats on the Stats page: add (1) a Straight Shot trend graph (currently missing), (2) a \"Lowest Shot Count\" metric with the date it occurred, and (3) a dropdown to switch Straight Shot average scope between \"Last 20 Sessions\" and \"Lifetime\" while keeping the existing rolling average behavior available.",
+      "reqIds": [
+        "REQ-181"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-two-explicit-save-actions-to-official-real-apa-match-log-saving-ui-save-log-another-match-and-save-exit-preserve-all-existing-match-log-validation-persistence-and-navigation-behavior-otherwise-ensure-each-action-performs-the-appropriate-post-save-navigation-log-another-returns-to-the-create-form-ready-for-a-new-entry-save-exit-returns-to-a-sensible-destination-consistent-with-current-ux",
+      "title": "Add two explicit save actions to Official/Real APA Match Log saving UI: \"Save & Log Another Match\" and \"Save & Exit\". Preserve all existing match-log validation, persistence, and navigation behavior otherwise; ensure each action performs the appropriate post-save navigation (log another returns to the create form ready for a new entry; save & exit returns to a sensible destination consistent with current UX).",
+      "reqIds": [
+        "REQ-182"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-accepting-gifts-gameplay-to-match-the-confirmed-rules-starting-ball-count-chosen-2-7-each-attempt-is-a-single-run-out-try-with-user-input-0-1-2-3-input-3-awards-1-point-to-the-player-input-0-2-awards-1-point-to-the-ghost-a-set-is-a-race-to-7-points-live-scoreboard-must-display-me-x-y-ghost-during-the-set-when-either-side-reaches-7-end-the-set-increment-sets-completed-by-1-and-adjust-the-current-object-ball-count-1-if-player-won-1-if-ghost-won-clamped-to-2-7-then-start-the-next-set-with-the-scoreboard-reset-to-0-0",
+      "title": "Fix Accepting Gifts gameplay to match the confirmed rules: starting ball count chosen 2–7; each attempt is a single run-out try with user input 0/1/2/3; input 3 awards 1 point to the player; input 0–2 awards 1 point to the ghost; a set is a race to 7 points; live scoreboard must display \"Me X – Y Ghost\" during the set; when either side reaches 7, end the set, increment Sets Completed by 1, and adjust the current object-ball count (+1 if player won, −1 if ghost won) clamped to 2–7; then start the next set with the scoreboard reset to 0–0.",
+      "reqIds": [
+        "REQ-183"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-accepting-gifts-session-lifecycle-and-save-gating-the-end-session-save-action-button-must-only-be-visible-enabled-after-the-current-set-has-completed-i-e-after-a-7-x-or-x-7-score-it-must-not-be-visible-during-an-in-progress-set",
+      "title": "Update Accepting Gifts session lifecycle and save gating: the \"End Session & Save\" action/button must only be visible/enabled after the current set has completed (i.e., after a 7–X or X–7 score). It must not be visible during an in-progress set.",
+      "reqIds": [
+        "REQ-184"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-accepting-gifts-saved-session-summary-and-completion-status-when-the-session-is-saved-the-saved-record-must-store-starting-ball-count-ending-ball-count-the-current-ball-count-at-session-end-total-attempts-sets-completed-final-set-score-me-vs-ghost-for-the-last-set-played-and-status-completed-match-history-and-match-details-must-display-completed-and-must-never-show-impossible-session-details-e-g-final-set-score-0-1-wildly-inflated-attempts-sets-or-starting-2-ending-7-when-progression-did-not-reach-7",
+      "title": "Fix Accepting Gifts saved session summary and completion status: when the session is saved, the saved record must store Starting ball count, Ending ball count (the current ball count at session end), Total attempts, Sets completed, Final set score (Me vs Ghost for the last set played), and Status=Completed; Match History and Match Details must display \"Completed\" and must never show impossible session details (e.g., \"Final Set Score 0–1\", wildly inflated attempts/sets, or \"Starting 2 → Ending 7\" when progression did not reach 7).",
+      "reqIds": [
+        "REQ-185"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-app-s-login-connection-delay-by-removing-avoidable-frontend-deadlocks-and-excessive-refetch-invalidation-related-to-actor-initialization-the-app-must-become-usable-promptly-after-login-not-5-10-minutes-and-background-actor-refetching-must-not-trigger-repeated-invalidation-refetch-of-all-queries-in-a-way-that-stalls-the-ui",
+      "title": "Fix the app’s login/connection delay by removing avoidable frontend deadlocks and excessive refetch/invalidation related to actor initialization: the app must become usable promptly after login (not 5–10 minutes), and background actor refetching must not trigger repeated invalidation/refetch of all queries in a way that stalls the UI.",
+      "reqIds": [
+        "REQ-186"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-match-results-chart-rendering-so-it-plots-three-series-as-lines-your-points-opponent-points-and-defensive-shots-legend-labels-and-symbols-must-match-the-plotted-series-no-missing-lines-and-no-mismatched-legend",
+      "title": "Fix APA Match Results chart rendering so it plots three series as lines: Your Points, Opponent Points, and Defensive Shots; legend labels and symbols must match the plotted series (no missing lines and no mismatched legend).",
+      "reqIds": [
+        "REQ-187"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-ppi-trend-chart-so-it-is-not-blank-and-plots-both-ppi-and-adjusted-ppi-appi-as-separate-lines-with-a-correct-legend",
+      "title": "Fix APA PPI Trend chart so it is not blank and plots both PPI and Adjusted PPI (aPPI) as separate lines with a correct legend.",
+      "reqIds": [
+        "REQ-188"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-apa-chart-x-axis-dates-match-results-and-ppi-trend-use-actual-match-dates-effective-match-dates-rather-than-record-timestamps-and-the-displayed-date-aligns-with-the-sorting-date-logic-used-elsewhere-in-the-app",
+      "title": "Ensure APA chart x-axis dates (Match Results and PPI Trend) use actual match dates (effective match dates) rather than record timestamps, and the displayed date aligns with the sorting/date logic used elsewhere in the app.",
+      "reqIds": [
+        "REQ-189"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-straight-shot-trend-visualization-on-the-stats-page-so-it-is-not-empty-and-uses-a-bar-chart-for-shot-count-with-a-line-overlay-trend-using-saved-straight-shot-session-data",
+      "title": "Implement Straight Shot Trend visualization on the Stats page so it is not empty and uses a bar chart for shot count with a line overlay trend, using saved Straight Shot session data.",
+      "reqIds": [
+        "REQ-190"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-straight-shot-histogram-visualization-shot-count-on-x-axis-frequency-on-y-axis-using-saved-straight-shot-sessions",
+      "title": "Add a Straight Shot histogram visualization (shot count on x-axis, frequency on y-axis) using saved Straight Shot sessions.",
+      "reqIds": [
+        "REQ-191"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-match-history-table-view-that-includes-all-match-types-apa-match-apa-practice-accepting-gifts-straight-shot-and-uses-the-required-column-order-date-first-match-results-ppi-adjusted-ppi-rolling-10-20-apa-10-20-wins-losses-win-apa-rows-must-include-your-points-opponent-points-defensive-shots-apa-match-vs-apa-practice-must-be-distinguished-via-a-drill-type-tag-label-drill-modes-must-display-for-non-applicable-columns",
+      "title": "Add a Match History table view that includes all match types (APA Match, APA Practice, Accepting Gifts, Straight Shot) and uses the required column order: Date (first) → Match Results → PPI → Adjusted PPI → Rolling 10/20 → APA 10/20 → Wins/Losses → Win %. APA rows must include Your points, Opponent points, Defensive shots; APA Match vs APA Practice must be distinguished via a Drill Type tag/label; drill modes must display “—” for non-applicable columns.",
+      "reqIds": [
+        "REQ-192"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-format-the-match-results-column-text-in-the-match-history-table-to-follow-the-specified-english-pattern-for-apa-rows-e-g-won-vs-jesse-total-innings-38-def-shots-0-opponent-37-46-you-31-31-ensure-the-opponent-a-b-and-you-c-d-formatting-uses-the-appropriate-out-of-targets-when-available-when-innings-defensive-shots-are-unknown-use-as-shown-in-the-example",
+      "title": "Format the Match Results column text in the Match History table to follow the specified English pattern for APA rows, e.g.: “Won vs Jesse | Total innings 38 | Def shots 0 | Opponent 37/46 | You 31/31”. Ensure the \"Opponent A/B\" and \"You C/D\" formatting uses the appropriate “out of” targets when available; when innings/defensive shots are unknown, use “?” as shown in the example.",
+      "reqIds": [
+        "REQ-193"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-new-straight-shot-summary-table-with-columns-balls-wins-losses-first-win-on-or-use-saved-straight-shot-history-to-compute-these-values-and-display-them-in-english",
+      "title": "Add a new Straight Shot summary table with columns: Balls | Wins | Losses | First Win On (or “—”). Use saved Straight Shot history to compute these values and display them in English.",
+      "reqIds": [
+        "REQ-194"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-home-page-mode-order-to-match-the-intended-correct-ordering-and-ensure-the-ordering-remains-stable-across-reloads-and-deployments",
+      "title": "Fix the Home page mode order to match the intended correct ordering and ensure the ordering remains stable across reloads and deployments.",
+      "reqIds": [
+        "REQ-195"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-bundle-general-ui-polish-and-layout-cleanup-for-the-changed-areas-in-this-build-accepting-gifts-gameplay-saved-details-stats-charts-sections-match-history-table-view-and-home-mode-grid-improving-spacing-alignment-and-readability-without-changing-core-workflows-beyond-the-requirements-above",
+      "title": "Bundle general UI polish and layout cleanup for the changed areas in this build (Accepting Gifts gameplay + saved details, Stats charts sections, Match History table view, and Home mode grid), improving spacing, alignment, and readability without changing core workflows beyond the requirements above.",
+      "reqIds": [
+        "REQ-196"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-stats-page-straight-shot-tab-aggregate-stats-view-remove-the-lifetime-last-20-dropdown-menu-entirely-no-menu-no-selection-ui-keep-showing-the-last-20-average-as-the-primary-large-value-and-add-a-secondary-line-directly-underneath-it-that-reads-exactly-lifetime-x-x-where-x-x-is-the-computed-lifetime-shot-average-the-lifetime-line-must-use-the-same-smaller-muted-font-styling-used-for-the-date-text-under-lowest-shot-count-as-in-the-uploaded-reference-this-change-must-apply-only-to-the-stats-page-straight-shot-tab-and-must-not-modify-straight-shot-gameplay-history-rendering-or-any-other-screens",
+      "title": "On the Stats page Straight Shot tab (aggregate/stats view), remove the Lifetime/Last-20 dropdown menu entirely (no menu, no selection UI). Keep showing the Last 20 Average as the primary large value, and add a secondary line directly underneath it that reads exactly: \"Lifetime: X.X\" (where X.X is the computed lifetime shot average). The \"Lifetime: …\" line must use the same smaller muted font styling used for the date text under \"Lowest Shot Count\" (as in the uploaded reference). This change must apply only to the Stats page Straight Shot tab (and must not modify Straight Shot gameplay, history rendering, or any other screens).",
+      "reqIds": [
+        "REQ-197"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-performance-by-ball-count-summary-concept-is-treated-as-an-accepting-gifts-only-summary-wins-losses-per-object-ball-level-2-7-derived-from-saved-completed-accepting-gifts-set-outcomes-and-is-not-shown-or-labeled-as-a-straight-shot-stat-update-any-existing-ui-copy-components-so-straight-shot-summary-content-remains-straight-shot-specific-and-accepting-gifts-summary-content-is-accepting-gifts-specific-with-all-user-facing-text-in-english",
+      "title": "Ensure the \"Performance by Ball Count\" summary concept is treated as an Accepting Gifts-only summary (wins/losses per object-ball level 2–7 derived from saved completed Accepting Gifts set outcomes), and is not shown or labeled as a Straight Shot stat. Update any existing UI copy/components so Straight Shot summary content remains Straight Shot-specific, and Accepting Gifts summary content is Accepting Gifts-specific, with all user-facing text in English.",
+      "reqIds": [
+        "REQ-198"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-an-official-apa-appi-adjusted-applied-ppi-value-and-ensure-it-is-available-wherever-official-apa-match-metrics-are-rendered-using-only-existing-lookup-table-logic-if-it-already-exists-in-the-current-codebase-otherwise-fall-back-to-appi-ppi-for-both-wins-and-losses-no-new-tables-no-hardcoded-values-no-placeholders",
+      "title": "Implement an Official APA aPPI (Adjusted/Applied PPI) value and ensure it is available wherever Official APA match metrics are rendered, using only existing lookup-table logic if it already exists in the current codebase; otherwise fall back to aPPI = PPI for both wins and losses (no new tables, no hardcoded values, no placeholders).",
+      "reqIds": [
+        "REQ-199"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-official-apa-match-details-rendering-to-show-an-appi-line-directly-under-the-existing-ppi-line-in-the-official-apa-section-english-label-exactly-appi-showing-a-numeric-value-when-computable-and-showing-when-not-available",
+      "title": "Update Official APA Match Details rendering to show an aPPI line directly under the existing PPI line in the Official APA section (English label exactly: \"aPPI:\"), showing a numeric value when computable and showing \"—\" when not available.",
+      "reqIds": [
+        "REQ-200"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-populate-match-history-table-derived-columns-for-apa-matches-at-minimum-for-official-apa-match-logs-so-that-ppi-appi-rolling-10-20-apa-10-20-wins-losses-and-win-are-not-rendered-as-when-sufficient-data-exists",
+      "title": "Populate Match History Table derived columns for APA matches (at minimum for Official APA match logs), so that PPI, aPPI, Rolling 10/20, APA 10/20, Wins/Losses, and Win % are not rendered as \"—\" when sufficient data exists.",
+      "reqIds": [
+        "REQ-201"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-official-apa-win-computation-to-use-the-last-20-official-apa-matches-or-fewer-if-20-exist-ordered-by-effective-match-date-not-a-smaller-window-e-g-not-last-10",
+      "title": "Fix Official APA win% computation to use the last 20 Official APA matches (or fewer if <20 exist), ordered by effective match date, not a smaller window (e.g., not last-10).",
+      "reqIds": [
+        "REQ-202"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1484,6 +1844,172 @@
       "reqIds": [
         "REQ-146"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-70",
+      "summary": "Add per-mode Resume Game support (APA Practice, Accepting Gifts, Straight Shot): show a Resume button only when that mode has an in-progress session; starting a new game in that mode prompts to end/replace the current in-progress session; single in-progress slot per mode.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-71",
+      "summary": "APA 9-ball Practice: disable/lock the Turn Over button once the rack is complete and the \"Complete Rack\" action/dialog is available, since turns cannot change between racks.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-72",
+      "summary": "Official/Real APA Match Log: add/display aPPI (Applied PPI) and compute it using last-20 win% lookup table; for wins use max(actual PPI, table value), for losses use actual PPI; requires capturing/using the table mapping and last-20 win% for the player.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-77",
+      "summary": "Implement APA aPPI (applied PPI) logic for APA Practice results/statistics using the user-provided win%→expected PPI lookup table and the “boosted-for-wins” rule: compute last-20 win% for the selected player, use the lookup table to get expected PPI, and compute aPPI such that for wins aPPI is the maximum of (actual PPI, expected PPI) and for losses aPPI is the actual PPI. Integrate this aPPI value anywhere the app currently presents APA Practice performance trends (including the APA aggregate charts), without changing match history persistence.",
+      "reqIds": [
+        "REQ-160"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-78",
+      "summary": "Add a new Stats button next to Settings/Edit Profile that opens a tabbed stats panel showing: current Official APA aPPI best-10-of-last-20 rolling average, Official APA PPI best-10-of-last-20 rolling average, Straight Shot rolling average of last 20, Accepting Gifts current/progression (and optionally its last-20 rolling average), plus tabbed line graphs (e.g., Official APA aPPI vs PPI with moving averages; Straight Shot with moving average; Accepting Gifts trend as desired). Best-10-of-last-20 logic applies only to Official APA matches; other modes use simple last-20 rolling averages.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-79",
+      "summary": "Change Resume Game button placement so that when it appears, it is shown below the Start New Game button (not above) on Home/mode start pages.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-80",
+      "summary": "Add an \"End Session Without Saving\" action under the existing \"End Session & Save\" control in APA Practice, Accepting Gifts, and Straight Shot end-of-session UIs.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-81",
+      "summary": "Update Start New Game button styling: use green when no in-progress session exists for that mode; use grey/outline when a Resume session exists. Apply on both Home mode tiles and each mode’s Start page.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-82",
+      "summary": "Ensure Resume Game appears below Start New Game everywhere (Home mode tiles and all mode Start pages), without changing resume visibility or navigation behavior.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-83",
+      "summary": "Official APA Match Log home tile UX copy cleanup: remove “(Coming Soon)” from the subtitle under the official log title, change the Home tile CTA text to “Log APA Match”, keep the page title/header unchanged, and remove any redundant self-linking start-page button so the Home tile is the only entry CTA.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-89",
+      "summary": "Implement the “single-actor fix” to prevent “Connecting…” stalls by ensuring the frontend uses a stable backend actor instance per identity and does not deadlock or permanently disable UI actions due to actor refetching. In particular, update `frontend/src/hooks/useActor.ts` and any dependent logic so: (a) a usable actor is not unnecessarily recreated; (b) background refetching does not force-save buttons into a disabled “connecting” state; and (c) dependent queries are not aggressively invalidated/refetched in a way that causes UI stalls.",
+      "reqIds": [
+        "REQ-168"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-90",
+      "summary": "Stats/Aggregate: update APA aggregate stats to use best-10-of-last-20 averaging for PPI metrics; show Average PPI + Average aPPI; hide/remove total innings from stats displays; ensure aPPI “boosted-for-wins / too-many-innings” rule works as previously specified; add predicted/estimated skill level derived from both PPI and aPPI using the user’s aPPI→SL table/ranges.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-91",
+      "summary": "Stats/Aggregate charts: add/adjust graphs so (a) PPI trend chart matches the user’s example and includes match dates, and (b) match-results chart shows two lines (your points vs opponent points) plus a defensive-shots line.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-92",
+      "summary": "Straight Shot stats: fix missing trend graph; add Lowest Shot Count with date; add a dropdown to switch rolling-average scope between Last 20 Sessions and Lifetime.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-93",
+      "summary": "Navigation fixes/enhancements: (1) Aggregate Stats page “Back” should navigate to Stats (not Match History). (2) In Stats ‘Viewing stats for’ section, add a View Match History button under View Player Aggregate Stats. (3) Make Match History header back-link context-aware: Back to Stats when entered from Stats; Back to Home when entered from Home.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-94",
+      "summary": "Header UX: add a small loading indicator/state so it’s clear when header actions (e.g., Profile) are still initializing/connecting and don’t appear delayed vs Stats.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-95",
+      "summary": "Accepting Gifts mode overhaul to match real gameplay: race-to-7 sets with live Me vs Ghost scoreboard; per-attempt 0–3 input (3=runout/player point, 0–2=ghost point); set-end progression (+1/-1 ball count clamped 2–7); accurate attempts/sets counters; Save only after set ends; saving marks session Completed and produces realistic summaries.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-96",
+      "summary": "Fix long login/connection time (5–10 minutes) and related actor initialization delays so the app becomes usable quickly; ensure no permanent Connecting states.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-97",
+      "summary": "Fix APA charting: Match Results chart must plot three line series (Your Points, Opponent Points, Defensive Shots) with correct legend symbols matching plotted series and using real match dates.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-98",
+      "summary": "Fix PPI Trend chart to plot both PPI and aPPI as two lines with a correct legend (per match, using match dates).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-99",
+      "summary": "Straight Shot stats visualization: implement session trend as bar chart with line overlay; add a histogram (shot count on x-axis, frequency on y-axis).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-100",
+      "summary": "Match History: add a table view (all modes) with columns in order: Date, Match Results, PPI, Adjusted PPI, Rolling 10/20, APA 10/20, Wins/Losses, Win%; APA rows populate metrics; drills fill non-applicable columns with “—”; include a visible type tag to distinguish APA Match vs APA Practice.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-101",
+      "summary": "Straight Shot new summary table by ball level: columns Balls, Wins, Losses, First Win On (or “—” if none).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-102",
+      "summary": "Home screen: restore/correct mode tile order as previously intended (undo unintended menu order change).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-103",
+      "summary": "Add export capability for match/history/stat tables: Export CSV, Export Excel (.xlsx), and allow choosing which table to export (match list, aggregates, or table view).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-104",
+      "summary": "Stats page (Straight Shot tab): remove the Last 20 vs Lifetime dropdown; instead show a non-interactive text line \"Lifetime: [Lifetime Shot Average]\" directly underneath the Last-20 average, styled like the small date text under \"Lowest Shot Count\". Applies specifically to the Straight Shot tab in the aggregate/stats view.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-105",
+      "summary": "Accepting Gifts stats: add a \"Performance by Ball Count\" summary showing Wins/Losses per ball level (2–7), derived from saved completed Accepting Gifts sets at each ball-count level (not a Straight Shot stat).",
+      "reqIds": [],
       "status": "pending"
     }
   ],

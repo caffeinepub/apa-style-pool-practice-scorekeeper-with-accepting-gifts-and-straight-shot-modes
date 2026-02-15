@@ -2,32 +2,32 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useSaveMatch, useCompleteSession } from '../../hooks/useQueries';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { useSaveMatch, useSetCurrentObjectBallCount } from '../../hooks/useQueries';
 import { buildAcceptingGiftsMatch } from '../../lib/matches/matchBuilders';
+import { applyAttemptResult, prepareNextSet } from '../../lib/accepting-gifts/acceptingGiftsSession';
 import EndMatchDialog from '../../components/matches/EndMatchDialog';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useActor } from '../../hooks/useActor';
 import { useActorRetry } from '../../hooks/useActorRetry';
 import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
-import AcceptingGiftsRulesPanel from './AcceptingGiftsRulesPanel';
+import { SESSION_KEYS } from '@/lib/session/inProgressSessions';
 
-interface SessionState {
+interface GameState {
   playerName: string;
   notes?: string;
   startingObjectBallCount: number;
   currentObjectBallCount: number;
-  currentSetScorePlayer: number;
-  currentSetScoreGhost: number;
+  playerSetScore: number;
+  ghostSetScore: number;
   totalAttempts: number;
   setsCompleted: number;
+  completed: boolean;
 }
 
-type AttemptResult = 'make' | 'miss';
+type GamePhase = 'playing' | 'setComplete';
 
 export default function AcceptingGiftsGamePage() {
   const navigate = useNavigate();
@@ -35,29 +35,39 @@ export default function AcceptingGiftsGamePage() {
   const { actor } = useActor();
   const { retryConnection } = useActorRetry();
   const saveMatch = useSaveMatch();
-  const completeSessionMutation = useCompleteSession();
-  const [sessionState, setSessionState] = useState<SessionState | null>(null);
-  const [rulesOpen, setRulesOpen] = useState(false);
+  const setCurrentObjectBallCount = useSetCurrentObjectBallCount();
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gamePhase, setGamePhase] = useState<GamePhase>('playing');
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showRetryConnection, setShowRetryConnection] = useState(false);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('acceptingGiftsGame');
+    const saved = sessionStorage.getItem(SESSION_KEYS.ACCEPTING_GIFTS);
     if (saved) {
-      const state = JSON.parse(saved);
-      setSessionState(state);
+      const parsed = JSON.parse(saved);
+      const migratedState: GameState = {
+        playerName: parsed.playerName,
+        notes: parsed.notes,
+        startingObjectBallCount: parsed.startingObjectBallCount,
+        currentObjectBallCount: parsed.currentObjectBallCount,
+        playerSetScore: parsed.playerSetScore ?? parsed.finalSetScorePlayer ?? 0,
+        ghostSetScore: parsed.ghostSetScore ?? parsed.finalSetScoreGhost ?? 0,
+        totalAttempts: parsed.totalAttempts ?? 0,
+        setsCompleted: parsed.setsCompleted ?? 0,
+        completed: parsed.completed ?? false,
+      };
+      setGameState(migratedState);
     } else {
       navigate({ to: '/accepting-gifts/start' });
     }
   }, [navigate]);
 
   useEffect(() => {
-    if (sessionState) {
-      sessionStorage.setItem('acceptingGiftsGame', JSON.stringify(sessionState));
+    if (gameState) {
+      sessionStorage.setItem(SESSION_KEYS.ACCEPTING_GIFTS, JSON.stringify(gameState));
     }
-  }, [sessionState]);
+  }, [gameState]);
 
-  // Show retry connection after 8 seconds if actor is not ready and end dialog is open
   useEffect(() => {
     if (showEndDialog && !actor) {
       const timer = setTimeout(() => {
@@ -69,7 +79,7 @@ export default function AcceptingGiftsGamePage() {
     }
   }, [showEndDialog, actor]);
 
-  if (!sessionState) {
+  if (!gameState) {
     return (
       <div className="container mx-auto max-w-4xl p-4">
         <Card>
@@ -81,39 +91,27 @@ export default function AcceptingGiftsGamePage() {
     );
   }
 
-  const handleAttemptResult = (result: AttemptResult) => {
-    setSessionState(prev => {
+  const handleAttemptInput = (ballsCleared: number) => {
+    setGameState(prev => {
       if (!prev) return prev;
+      const updated = applyAttemptResult(prev, ballsCleared);
       
-      const playerScored = result === 'make';
-      const newPlayerScore = playerScored ? prev.currentSetScorePlayer + 1 : prev.currentSetScorePlayer;
-      const newGhostScore = playerScored ? prev.currentSetScoreGhost : prev.currentSetScoreGhost + 1;
-      
-      // Check if set is complete (first to 3)
-      const setComplete = newPlayerScore === 3 || newGhostScore === 3;
-      
-      if (setComplete) {
-        const playerWonSet = newPlayerScore === 3;
-        const adjustment = playerWonSet ? 1 : -1;
-        const nextObjectBallCount = Math.max(2, Math.min(7, prev.currentObjectBallCount + adjustment));
-        
-        return {
-          ...prev,
-          totalAttempts: prev.totalAttempts + 1,
-          currentObjectBallCount: nextObjectBallCount,
-          currentSetScorePlayer: 0,
-          currentSetScoreGhost: 0,
-          setsCompleted: prev.setsCompleted + 1,
-        };
+      if (updated.playerSetScore === 7 || updated.ghostSetScore === 7) {
+        setGamePhase('setComplete');
       }
       
-      return {
-        ...prev,
-        totalAttempts: prev.totalAttempts + 1,
-        currentSetScorePlayer: newPlayerScore,
-        currentSetScoreGhost: newGhostScore,
-      };
+      return updated;
     });
+  };
+
+  const handleStartNextSet = () => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const playerWonSet = prev.playerSetScore === 7;
+      const nextSet = prepareNextSet(prev, playerWonSet);
+      return nextSet;
+    });
+    setGamePhase('playing');
   };
 
   const handleEndSession = async () => {
@@ -128,32 +126,35 @@ export default function AcceptingGiftsGamePage() {
     }
 
     try {
-      const completionStatus = sessionState.currentObjectBallCount === 7;
-      const score = sessionState.setsCompleted;
-
       const { matchId, matchRecord } = buildAcceptingGiftsMatch({
-        playerName: sessionState.playerName,
-        startingObjectBallCount: sessionState.startingObjectBallCount,
-        endingObjectBallCount: sessionState.currentObjectBallCount,
-        totalAttempts: sessionState.totalAttempts,
-        setsCompleted: sessionState.setsCompleted,
-        finalSetScorePlayer: sessionState.currentSetScorePlayer,
-        finalSetScoreGhost: sessionState.currentSetScoreGhost,
-        notes: sessionState.notes,
+        playerName: gameState.playerName,
+        notes: gameState.notes,
+        startingObjectBallCount: gameState.startingObjectBallCount,
+        endingObjectBallCount: gameState.currentObjectBallCount,
+        totalAttempts: gameState.totalAttempts,
+        setsCompleted: gameState.setsCompleted,
+        finalSetScorePlayer: gameState.playerSetScore,
+        finalSetScoreGhost: gameState.ghostSetScore,
+        completionStatus: true,
+        score: gameState.setsCompleted,
         identity,
-        completionStatus,
-        score,
       });
 
       await saveMatch.mutateAsync({ matchId, matchRecord });
-      await completeSessionMutation.mutateAsync(BigInt(sessionState.currentObjectBallCount));
+      await setCurrentObjectBallCount.mutateAsync(BigInt(gameState.currentObjectBallCount));
       toast.success('Session saved successfully!');
-      sessionStorage.removeItem('acceptingGiftsGame');
+      sessionStorage.removeItem(SESSION_KEYS.ACCEPTING_GIFTS);
       navigate({ to: '/history' });
     } catch (error) {
       const errorMessage = extractErrorText(error);
       toast.error(`Failed to save session: ${errorMessage}`);
     }
+  };
+
+  const handleEndWithoutSaving = () => {
+    sessionStorage.removeItem(SESSION_KEYS.ACCEPTING_GIFTS);
+    toast.info('Session ended without saving');
+    navigate({ to: '/accepting-gifts/start' });
   };
 
   const handleRetryConnection = async () => {
@@ -166,10 +167,10 @@ export default function AcceptingGiftsGamePage() {
   };
 
   const isAuthenticated = !!identity;
+  const setIsComplete = gameState.playerSetScore === 7 || gameState.ghostSetScore === 7;
 
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -179,7 +180,6 @@ export default function AcceptingGiftsGamePage() {
         <div className="w-24" />
       </div>
 
-      {/* Session Progress */}
       <Card>
         <CardHeader>
           <CardTitle>Session Progress</CardTitle>
@@ -188,97 +188,129 @@ export default function AcceptingGiftsGamePage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-sm text-muted-foreground">Player</div>
-              <div className="text-lg font-semibold">{sessionState.playerName}</div>
+              <div className="text-lg font-semibold">{gameState.playerName}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Object Balls</div>
-              <div className="text-lg font-semibold">{sessionState.currentObjectBallCount}</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <div className="text-sm text-muted-foreground">Sets Completed</div>
-              <div className="text-2xl font-bold">{sessionState.setsCompleted}</div>
+              <div className="text-lg font-semibold">{gameState.currentObjectBallCount}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Total Attempts</div>
-              <div className="text-2xl font-bold">{sessionState.totalAttempts}</div>
+              <div className="text-lg font-semibold">{gameState.totalAttempts}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Current Set</div>
-              <div className="text-lg font-semibold">
-                {sessionState.currentSetScorePlayer} - {sessionState.currentSetScoreGhost}
-              </div>
+              <div className="text-sm text-muted-foreground">Sets Completed</div>
+              <div className="text-lg font-semibold">{gameState.setsCompleted}</div>
             </div>
           </div>
-          {sessionState.currentObjectBallCount === 7 && (
-            <Alert>
-              <AlertDescription className="font-semibold text-primary">
-                🎉 Congratulations! You've reached 7 object balls!
-              </AlertDescription>
-            </Alert>
-          )}
         </CardContent>
       </Card>
 
-      {/* Current Set Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Current Set</CardTitle>
+          <CardTitle>Current Set (Race to 7)</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <span className="font-medium">Score:</span>
-            <div className="flex items-center gap-4">
-              <Badge variant="default" className="text-lg">
-                You: {sessionState.currentSetScorePlayer}
-              </Badge>
-              <Badge variant="secondary" className="text-lg">
-                Ghost: {sessionState.currentSetScoreGhost}
-              </Badge>
+        <CardContent>
+          <div className="flex items-center justify-around">
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Me</div>
+              <div className="text-4xl font-bold">{gameState.playerSetScore}</div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              onClick={() => handleAttemptResult('make')}
-              size="lg"
-              className="h-20 text-lg"
-            >
-              Make
-            </Button>
-            <Button
-              onClick={() => handleAttemptResult('miss')}
-              variant="outline"
-              size="lg"
-              className="h-20 text-lg"
-            >
-              Miss
-            </Button>
+            <div className="text-2xl text-muted-foreground">–</div>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Ghost</div>
+              <div className="text-4xl font-bold">{gameState.ghostSetScore}</div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Rules Panel */}
-      <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
+      {gamePhase === 'playing' && !setIsComplete && (
         <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50">
-              <div className="flex items-center justify-between">
-                <CardTitle>Rules & Objective</CardTitle>
-                <ChevronDown className={`h-5 w-5 transition-transform ${rulesOpen ? 'rotate-180' : ''}`} />
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent>
-              <AcceptingGiftsRulesPanel />
-            </CardContent>
-          </CollapsibleContent>
+          <CardHeader>
+            <CardTitle>Record Attempt</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground mb-4">
+              How many balls did you clear before missing? (3 = runout)
+            </p>
+            <div className="grid grid-cols-4 gap-3">
+              <Button
+                onClick={() => handleAttemptInput(0)}
+                className="w-full"
+                size="lg"
+                variant="outline"
+              >
+                0
+              </Button>
+              <Button
+                onClick={() => handleAttemptInput(1)}
+                className="w-full"
+                size="lg"
+                variant="outline"
+              >
+                1
+              </Button>
+              <Button
+                onClick={() => handleAttemptInput(2)}
+                className="w-full"
+                size="lg"
+                variant="outline"
+              >
+                2
+              </Button>
+              <Button
+                onClick={() => handleAttemptInput(3)}
+                className="w-full"
+                size="lg"
+                variant="default"
+              >
+                3
+              </Button>
+            </div>
+          </CardContent>
         </Card>
-      </Collapsible>
+      )}
 
-      {/* Connection Warning */}
+      {setIsComplete && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle>Set Complete!</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-center text-lg">
+              {gameState.playerSetScore === 7 ? (
+                <span className="font-semibold text-green-600">You won this set! 🎉</span>
+              ) : (
+                <span className="font-semibold text-orange-600">Ghost won this set</span>
+              )}
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              {gameState.playerSetScore === 7
+                ? `Next set will use ${Math.min(gameState.currentObjectBallCount + 1, 7)} balls`
+                : `Next set will use ${Math.max(gameState.currentObjectBallCount - 1, 2)} balls`}
+            </p>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleStartNextSet}
+                className="flex-1"
+                size="lg"
+              >
+                Start Next Set
+              </Button>
+              <Button
+                onClick={() => setShowEndDialog(true)}
+                variant="outline"
+                className="flex-1"
+                size="lg"
+              >
+                End & Save Session
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {showRetryConnection && !actor && (
         <Alert>
           <AlertDescription className="flex items-center justify-between">
@@ -291,24 +323,27 @@ export default function AcceptingGiftsGamePage() {
         </Alert>
       )}
 
-      {/* End Session Button */}
-      <Button
-        onClick={() => setShowEndDialog(true)}
-        className="w-full"
-        size="lg"
-      >
-        End Session & Save
-      </Button>
+      {!setIsComplete && (
+        <div className="space-y-2">
+          <Button
+            onClick={handleEndWithoutSaving}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            End Session Without Saving
+          </Button>
+        </div>
+      )}
 
-      {/* End Session Dialog */}
       <EndMatchDialog
         open={showEndDialog}
         onOpenChange={setShowEndDialog}
         onConfirm={handleEndSession}
         title="End Accepting Gifts Session?"
-        description="Your session will be saved to history and your progress will be recorded."
+        description="Your session will be saved to history and your progress will be preserved."
         confirmText="Save Session"
-        isPending={saveMatch.isPending || completeSessionMutation.isPending}
+        isPending={saveMatch.isPending}
         disabled={!isAuthenticated}
       />
     </div>

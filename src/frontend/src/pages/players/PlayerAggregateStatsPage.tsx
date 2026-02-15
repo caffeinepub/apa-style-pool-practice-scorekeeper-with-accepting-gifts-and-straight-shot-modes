@@ -1,20 +1,28 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useGetAllMatches } from '../../hooks/useQueries';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, TrendingUp, Target, Activity, Trophy } from 'lucide-react';
+import { ArrowLeft, TrendingUp } from 'lucide-react';
+import { useGetAllMatches } from '../../hooks/useQueries';
+import { extractPlayerApaMatches, computeBest10Of20Average } from '../../lib/apa/apaAggregateStats';
 import ApaAggregateCharts from '../../components/players/ApaAggregateCharts';
-import { extractPlayerApaMatches, extractOfficialApaWinRate } from '../../lib/apa/apaAggregateStats';
+import { getNavigationOrigin, clearNavigationOrigin } from '../../utils/urlParams';
+import { getApaPpiSkillLevel, getApaAppiSkillLevel } from '../../lib/apa/apaSkillLevelPrediction';
 
 export default function PlayerAggregateStatsPage() {
   const navigate = useNavigate();
   const { playerName } = useParams({ from: '/players/$playerName' });
-  const { data: matches = [], isLoading } = useGetAllMatches();
+  const { data: allMatches, isLoading } = useGetAllMatches();
 
   const decodedPlayerName = decodeURIComponent(playerName);
-  const apaMatches = extractPlayerApaMatches(matches, decodedPlayerName);
-  const officialApaWinRate = extractOfficialApaWinRate(matches);
+
+  const navOrigin = getNavigationOrigin();
+  const backLabel = navOrigin === 'stats' ? 'Back to Stats' : 'Back to History';
+  const backPath = navOrigin === 'stats' ? '/stats' : '/history';
+
+  const handleBack = () => {
+    clearNavigationOrigin();
+    navigate({ to: backPath });
+  };
 
   if (isLoading) {
     return (
@@ -24,126 +32,225 @@ export default function PlayerAggregateStatsPage() {
     );
   }
 
-  // Separate APA Practice and Official APA matches for counting
-  const apaPracticeMatches = apaMatches.filter(m => m.playerName !== 'You');
-  const officialApaMatches = apaMatches.filter(m => m.playerName === 'You');
-  
-  const totalApaPracticeMatches = apaPracticeMatches.length;
-  const apaPracticeWins = apaPracticeMatches.filter(m => m.isWinner).length;
-  
-  // Combined win rate: APA Practice wins + Official APA wins / total matches with known outcomes
-  const totalWins = apaPracticeWins + officialApaWinRate.wins;
-  const totalMatchesWithOutcome = totalApaPracticeMatches + officialApaWinRate.totalKnown;
-  const winRate = totalMatchesWithOutcome > 0 ? (totalWins / totalMatchesWithOutcome) * 100 : 0;
+  if (!allMatches) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">No match data available</p>
+        <Button onClick={handleBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {backLabel}
+        </Button>
+      </div>
+    );
+  }
 
-  // Compute average PPI across all APA matches (Practice + Official)
-  const avgPpi = apaMatches.length > 0
-    ? apaMatches.reduce((sum, m) => sum + m.ppi, 0) / apaMatches.length
-    : 0;
-  const totalInnings = apaMatches.reduce((sum, m) => sum + m.innings, 0);
-  const totalDefensiveShots = apaMatches.reduce((sum, m) => sum + m.defensiveShots, 0);
+  const playerDataPoints = extractPlayerApaMatches(allMatches, decodedPlayerName);
+
+  if (playerDataPoints.length === 0) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={handleBack}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Button>
+          <h1 className="text-2xl font-bold">{decodedPlayerName}</h1>
+          <div className="w-24" />
+        </div>
+
+        <Card>
+          <CardContent className="py-12 text-center">
+            <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-lg font-medium mb-2">No APA Match Data</p>
+            <p className="text-muted-foreground">
+              No APA matches found for {decodedPlayerName}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const totalMatches = playerDataPoints.length;
+  const wins = playerDataPoints.filter(dp => dp.didWin === true).length;
+  const winRate = totalMatches > 0 ? (wins / totalMatches) * 100 : null;
+
+  const best10Of20Ppi = computeBest10Of20Average(playerDataPoints.map(dp => dp.ppi));
+  const best10Of20Appi = computeBest10Of20Average(playerDataPoints.map(dp => dp.appi));
+
+  const predictedSkillLevelPpi = best10Of20Ppi !== null ? getApaPpiSkillLevel(best10Of20Ppi) : null;
+  const predictedSkillLevelAppi = best10Of20Appi !== null ? getApaAppiSkillLevel(best10Of20Appi) : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Button variant="ghost" onClick={() => navigate({ to: '/history' })} className="gap-2">
-        <ArrowLeft className="h-4 w-4" />
-        Back to History
-      </Button>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {backLabel}
+        </Button>
+        <h1 className="text-2xl font-bold">{decodedPlayerName}</h1>
+        <div className="w-24" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Matches
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalMatches}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              APA matches played
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Win Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {winRate !== null ? (
+              <>
+                <div className="text-3xl font-bold">{winRate.toFixed(1)}%</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {wins} wins of {totalMatches}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-bold text-muted-foreground">—</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  No data
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average PPI
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {best10Of20Ppi !== null ? (
+              <>
+                <div className="text-3xl font-bold">{best10Of20Ppi.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Best 10 of last 20
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-bold text-muted-foreground">—</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Not enough data
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average aPPI
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {best10Of20Appi !== null ? (
+              <>
+                <div className="text-3xl font-bold">{best10Of20Appi.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Best 10 of last 20
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-bold text-muted-foreground">—</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Not enough data
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Predicted Skill Level (PPI)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {predictedSkillLevelPpi !== null ? (
+              <>
+                <div className="text-3xl font-bold">SL {predictedSkillLevelPpi}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on PPI average
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-bold text-muted-foreground">—</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Not enough data
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Predicted Skill Level (aPPI)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {predictedSkillLevelAppi !== null ? (
+              <>
+                <div className="text-3xl font-bold">SL {predictedSkillLevelAppi}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on aPPI average
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-bold text-muted-foreground">—</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Not enough data
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                {decodedPlayerName} - Aggregate Stats
-              </CardTitle>
-              <CardDescription>
-                Performance statistics across all APA 9-Ball matches
-              </CardDescription>
-            </div>
-            <Badge variant="secondary">{apaMatches.length} Total Matches</Badge>
-          </div>
+          <CardTitle>Performance Charts</CardTitle>
         </CardHeader>
         <CardContent>
-          {apaMatches.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-muted-foreground">
-                No APA match history found for {decodedPlayerName}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Matches Won</p>
-                      <p className="text-2xl font-bold">{totalWins}</p>
-                    </div>
-                    <Trophy className="h-8 w-8 text-emerald-500" />
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {winRate.toFixed(1)}% win rate
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {totalMatchesWithOutcome} total matches
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Average PPI</p>
-                      <p className="text-2xl font-bold">{avgPpi.toFixed(2)}</p>
-                    </div>
-                    <Target className="h-8 w-8 text-teal-500" />
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Points per inning
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Innings</p>
-                      <p className="text-2xl font-bold">{totalInnings}</p>
-                    </div>
-                    <Activity className="h-8 w-8 text-cyan-500" />
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Across all matches
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Defensive Shots</p>
-                      <p className="text-2xl font-bold">{totalDefensiveShots}</p>
-                    </div>
-                    <Activity className="h-8 w-8 text-amber-500" />
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Total across matches
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          <ApaAggregateCharts dataPoints={playerDataPoints} playerName={decodedPlayerName} />
         </CardContent>
       </Card>
-
-      {apaMatches.length > 0 && (
-        <ApaAggregateCharts dataPoints={apaMatches} playerName={decodedPlayerName} />
-      )}
     </div>
   );
 }

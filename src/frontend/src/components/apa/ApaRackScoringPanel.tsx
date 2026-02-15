@@ -255,6 +255,7 @@ export default function ApaRackScoringPanel({
 
   const handleTurnOver = () => {
     if (matchContext?.matchComplete) return;
+    if (isRackComplete) return; // Disable Turn Over when rack is complete
     inningFlow.turnOver();
   };
 
@@ -427,7 +428,7 @@ export default function ApaRackScoringPanel({
             onClick={handleTurnOver}
             variant="outline"
             className="flex-1"
-            disabled={matchContext?.matchComplete}
+            disabled={matchContext?.matchComplete || isRackComplete}
           >
             Turn Over
           </Button>

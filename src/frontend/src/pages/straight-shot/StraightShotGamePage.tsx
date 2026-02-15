@@ -17,6 +17,7 @@ import { useActorRetry } from '../../hooks/useActorRetry';
 import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
 import StraightShotRulesPanel from './StraightShotRulesPanel';
+import { SESSION_KEYS } from '@/lib/session/inProgressSessions';
 
 interface GameState {
   playerName: string;
@@ -36,7 +37,7 @@ export default function StraightShotGamePage() {
   const [showRetryConnection, setShowRetryConnection] = useState(false);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('straightShotGame');
+    const saved = sessionStorage.getItem(SESSION_KEYS.STRAIGHT_SHOT);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -58,7 +59,7 @@ export default function StraightShotGamePage() {
 
   useEffect(() => {
     if (gameState) {
-      sessionStorage.setItem('straightShotGame', JSON.stringify(gameState));
+      sessionStorage.setItem(SESSION_KEYS.STRAIGHT_SHOT, JSON.stringify(gameState));
     }
   }, [gameState]);
 
@@ -120,12 +121,18 @@ export default function StraightShotGamePage() {
 
       await saveMatch.mutateAsync({ matchId, matchRecord });
       toast.success('Session saved successfully!');
-      sessionStorage.removeItem('straightShotGame');
+      sessionStorage.removeItem(SESSION_KEYS.STRAIGHT_SHOT);
       navigate({ to: '/history' });
     } catch (error) {
       const errorMessage = extractErrorText(error);
       toast.error(`Failed to save session: ${errorMessage}`);
     }
+  };
+
+  const handleEndWithoutSaving = () => {
+    sessionStorage.removeItem(SESSION_KEYS.STRAIGHT_SHOT);
+    toast.info('Session ended without saving');
+    navigate({ to: '/straight-shot/start' });
   };
 
   const handleRetryConnection = async () => {
@@ -232,15 +239,25 @@ export default function StraightShotGamePage() {
         </Alert>
       )}
 
-      {/* End Session Button */}
-      <Button
-        onClick={() => setShowEndDialog(true)}
-        disabled={gameState.totalShots === 0}
-        className="w-full"
-        size="lg"
-      >
-        End Session & Save
-      </Button>
+      {/* End Session Buttons */}
+      <div className="space-y-2">
+        <Button
+          onClick={() => setShowEndDialog(true)}
+          disabled={gameState.totalShots === 0}
+          className="w-full"
+          size="lg"
+        >
+          End Session & Save
+        </Button>
+        <Button
+          onClick={handleEndWithoutSaving}
+          variant="outline"
+          className="w-full"
+          size="lg"
+        >
+          End Session Without Saving
+        </Button>
+      </div>
 
       {/* End Session Dialog */}
       <EndMatchDialog

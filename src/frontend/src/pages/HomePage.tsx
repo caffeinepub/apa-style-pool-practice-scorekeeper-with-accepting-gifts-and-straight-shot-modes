@@ -1,60 +1,80 @@
-import ModeCard from '../components/navigation/ModeCard';
-import { Target, Gift, Zap, History, Trophy } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
+import { FileText, Gift, Target, TrendingUp } from 'lucide-react';
+import ModeCard from '../components/navigation/ModeCard';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { SESSION_KEYS } from '../lib/session/inProgressSessions';
+import { setNavigationOrigin } from '../utils/urlParams';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
+
+  const handleNavigateToHistory = () => {
+    setNavigationOrigin('home');
+    navigate({ to: '/history' });
+  };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      <div className="text-center">
-        <h1 className="mb-2 text-4xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
+    <div className="mx-auto max-w-6xl space-y-8">
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
         <p className="text-lg text-muted-foreground">
-          Track your APA 9-ball practice games with Equalizer scoring and improve your skills
+          Track your practice, log official matches, and improve your game
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <ModeCard
-          title="APA 9-Ball Practice"
-          description="Track APA 9-ball matches with Equalizer scoring, PPI, and match-point conversion"
-          icon={<Target className="h-6 w-6" />}
-          path="/apa-practice/start"
-          variant="accent"
-        />
-        <ModeCard
-          title="Accepting Gifts"
-          description="Practice the Accepting Gifts drill and track your progress"
-          icon={<Gift className="h-6 w-6" />}
-          path="/accepting-gifts/start"
-        />
-        <ModeCard
-          title="Straight Shot (Strokes Drill)"
-          description="Count your strokes to clear the table - win at 20 or under"
-          icon={<Zap className="h-6 w-6" />}
-          path="/straight-shot/start"
-        />
-        <ModeCard
+          icon={<FileText className="h-8 w-8" />}
           title="Official APA Match Log"
-          description="Log your real APA league matches (Coming Soon)"
-          icon={<Trophy className="h-6 w-6" />}
+          description="Log your official APA league match results"
           path="/real-apa-match"
+          primaryCtaText="Log APA Match"
+        />
+
+        <ModeCard
+          icon={<TrendingUp className="h-8 w-8" />}
+          title="APA 9-Ball Practice"
+          description="Practice match with full rack-by-rack scoring"
+          path="/apa-practice/start"
+          sessionKey={SESSION_KEYS.APA_PRACTICE}
+          resumePath="/apa-practice/game"
+          primaryCtaText="Start New Game"
+        />
+
+        <ModeCard
+          icon={<Gift className="h-8 w-8" />}
+          title="Accepting Gifts"
+          description="Progressive drill from 2 to 7 balls"
+          path="/accepting-gifts/start"
+          sessionKey={SESSION_KEYS.ACCEPTING_GIFTS}
+          resumePath="/accepting-gifts/game"
+          primaryCtaText="Start New Game"
+        />
+
+        <ModeCard
+          icon={<Target className="h-8 w-8" />}
+          title="Straight Shot"
+          description="Clear all balls in 20 shots or under"
+          path="/straight-shot/start"
+          sessionKey={SESSION_KEYS.STRAIGHT_SHOT}
+          resumePath="/straight-shot/game"
+          primaryCtaText="Start New Game"
         />
       </div>
 
-      <div className="flex justify-center pt-4">
-        <Button
-          onClick={() => navigate({ to: '/history' })}
-          variant="outline"
-          size="lg"
-          className="gap-2"
-          data-testid="home-view-history-button"
-        >
-          <History className="h-5 w-5" />
-          View Match History
-        </Button>
-      </div>
+      {isAuthenticated && (
+        <div className="flex justify-center pt-4">
+          <button
+            onClick={handleNavigateToHistory}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+          >
+            View Match History
+          </button>
+        </div>
+      )}
     </div>
   );
 }

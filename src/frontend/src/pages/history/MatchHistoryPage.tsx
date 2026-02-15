@@ -1,113 +1,153 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useGetAllMatches } from '../../hooks/useQueries';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, History, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, Table as TableIcon, LayoutGrid } from 'lucide-react';
+import { useGetAllMatches } from '../../hooks/useQueries';
 import MatchSummaryCard from '../../components/matches/MatchSummaryCard';
+import MatchHistoryTable from '../../components/history/MatchHistoryTable';
 import { MatchMode } from '../../backend';
+import { getNavigationOrigin, clearNavigationOrigin } from '../../utils/urlParams';
 import { getEffectiveMatchTimestamp } from '../../lib/matches/effectiveMatchDate';
-
-type SortOrder = 'newest' | 'oldest';
 
 export default function MatchHistoryPage() {
   const navigate = useNavigate();
   const { data: matches, isLoading } = useGetAllMatches();
-  const [activeTab, setActiveTab] = useState<'all' | MatchMode>('all');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+
+  const navOrigin = getNavigationOrigin();
+  const backLabel = navOrigin === 'stats' ? 'Back to Stats' : 'Back to Home';
+  const backPath = navOrigin === 'stats' ? '/stats' : '/';
+
+  const handleBack = () => {
+    clearNavigationOrigin();
+    navigate({ to: backPath });
+  };
 
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest');
   };
 
-  const filteredMatches = matches?.filter(match => 
-    activeTab === 'all' || match.mode === activeTab
-  ) || [];
+  const sortedMatches = matches ? [...matches].sort((a, b) => {
+    const aTime = getEffectiveMatchTimestamp(a);
+    const bTime = getEffectiveMatchTimestamp(b);
+    const comparison = aTime - bTime;
+    return sortOrder === 'newest' ? -comparison : comparison;
+  }) : [];
 
-  const sortedMatches = [...filteredMatches].sort((a, b) => {
-    const timestampA = getEffectiveMatchTimestamp(a);
-    const timestampB = getEffectiveMatchTimestamp(b);
-    
-    return sortOrder === 'newest' 
-      ? timestampB - timestampA 
-      : timestampA - timestampB;
-  });
+  const apaMatches = sortedMatches.filter(m => 
+    m.mode === MatchMode.apaPractice || m.officialApaMatchLogData
+  );
+  const giftsMatches = sortedMatches.filter(m => m.mode === MatchMode.acceptingGifts);
+  const straightMatches = sortedMatches.filter(m => m.mode === MatchMode.straightShot);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-muted-foreground">Loading match history...</p>
+      </div>
+    );
+  }
+
+  const renderMatchList = (matchList: typeof sortedMatches) => {
+    if (matchList.length === 0) {
+      return (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">No matches found</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (viewMode === 'table') {
+      return <MatchHistoryTable matches={matchList} />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {matchList.map((match) => (
+          <MatchSummaryCard key={match.matchId} match={match} />
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate({ to: '/' })}
-        className="gap-2"
-        data-testid="history-back-to-home-button"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Home
-      </Button>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="gap-2"
+          data-testid="back-to-home-button"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {backLabel}
+        </Button>
+        <h1 className="text-2xl font-bold">Match History</h1>
+        <div className="w-24" />
+      </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-              <History className="h-6 w-6" />
-            </div>
-            <div>
-              <CardTitle>Match History</CardTitle>
-              <CardDescription>View and manage your past games</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
-              <TabsList className="grid w-full grid-cols-4 sm:max-w-md">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value={MatchMode.apaPractice}>APA</TabsTrigger>
-                <TabsTrigger value={MatchMode.acceptingGifts}>Gifts</TabsTrigger>
-                <TabsTrigger value={MatchMode.straightShot}>Straight</TabsTrigger>
-              </TabsList>
-              
-              {sortedMatches.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSortOrder}
-                  className="gap-2 whitespace-nowrap w-full sm:w-auto"
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                  {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
-                </Button>
-              )}
-            </div>
-
-            <TabsContent value={activeTab} className="mt-6">
-              {isLoading ? (
-                <div className="py-12 text-center text-muted-foreground">
-                  Loading matches...
-                </div>
-              ) : sortedMatches.length === 0 ? (
-                <div className="py-12 text-center">
-                  <p className="text-muted-foreground">No matches found</p>
-                  <Button
-                    onClick={() => navigate({ to: '/' })}
-                    variant="outline"
-                    className="mt-4"
-                  >
-                    Start a New Game
-                  </Button>
-                </div>
+      <Tabs defaultValue="all" className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="apa">APA</TabsTrigger>
+            <TabsTrigger value="gifts">Gifts</TabsTrigger>
+            <TabsTrigger value="straight">Straight</TabsTrigger>
+          </TabsList>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode(prev => prev === 'cards' ? 'table' : 'cards')}
+              className="gap-2"
+            >
+              {viewMode === 'cards' ? (
+                <>
+                  <TableIcon className="h-4 w-4" />
+                  Table View
+                </>
               ) : (
-                <div className="space-y-4">
-                  {sortedMatches.map(match => (
-                    <MatchSummaryCard key={match.matchId} match={match} />
-                  ))}
-                </div>
+                <>
+                  <LayoutGrid className="h-4 w-4" />
+                  Card View
+                </>
               )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </Button>
+            {sortedMatches.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleSortOrder}
+                className="gap-2"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <TabsContent value="all">
+          {renderMatchList(sortedMatches)}
+        </TabsContent>
+
+        <TabsContent value="apa">
+          {renderMatchList(apaMatches)}
+        </TabsContent>
+
+        <TabsContent value="gifts">
+          {renderMatchList(giftsMatches)}
+        </TabsContent>
+
+        <TabsContent value="straight">
+          {renderMatchList(straightMatches)}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

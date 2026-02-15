@@ -18,6 +18,7 @@ import type { RackData } from '../../lib/apa/apaScoring';
 import { calculatePPI, formatPPI } from '../../lib/apa/apaScoring';
 import { formatSkillLevel } from '../../lib/apa/apaEqualizer';
 import { computeApaPracticeMatchOutcome } from '../../lib/apa/apaPracticeMatchOutcome';
+import { SESSION_KEYS } from '@/lib/session/inProgressSessions';
 
 interface GameState {
   player1: string;
@@ -50,7 +51,7 @@ export default function PracticeGamePage() {
   const [showRetryConnection, setShowRetryConnection] = useState(false);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('apaPracticeGame');
+    const saved = sessionStorage.getItem(SESSION_KEYS.APA_PRACTICE);
     if (saved) {
       const state = JSON.parse(saved);
       // Ensure activePlayer and sharedInnings exist (backward compatibility)
@@ -77,7 +78,7 @@ export default function PracticeGamePage() {
 
   useEffect(() => {
     if (gameState) {
-      sessionStorage.setItem('apaPracticeGame', JSON.stringify(gameState));
+      sessionStorage.setItem(SESSION_KEYS.APA_PRACTICE, JSON.stringify(gameState));
     }
   }, [gameState]);
 
@@ -220,7 +221,7 @@ export default function PracticeGamePage() {
 
       await saveMatch.mutateAsync({ matchId, matchRecord });
       toast.success('Match saved successfully!');
-      sessionStorage.removeItem('apaPracticeGame');
+      sessionStorage.removeItem(SESSION_KEYS.APA_PRACTICE);
       navigate({ to: '/history' });
     } catch (error) {
       const errorMessage = extractErrorText(error);
@@ -228,8 +229,9 @@ export default function PracticeGamePage() {
     }
   };
 
-  const handleNewMatch = () => {
-    sessionStorage.removeItem('apaPracticeGame');
+  const handleEndWithoutSaving = () => {
+    sessionStorage.removeItem(SESSION_KEYS.APA_PRACTICE);
+    toast.info('Session ended without saving');
     navigate({ to: '/apa-practice/start' });
   };
 
@@ -242,15 +244,10 @@ export default function PracticeGamePage() {
     }
   };
 
-  // Calculate live totals (capped at targets)
-  const livePlayer1Total = Math.min(
-    gameState.player1Points + liveRackPoints.player1Points,
-    gameState.player1Target
-  );
-  const livePlayer2Total = Math.min(
-    gameState.player2Points + liveRackPoints.player2Points,
-    gameState.player2Target
-  );
+  const player1PPI = calculatePPI(gameState.player1Points, gameState.player1Innings);
+  const player2PPI = calculatePPI(gameState.player2Points, gameState.player2Innings);
+
+  const isAuthenticated = !!identity;
 
   // Compute match outcome for display
   const matchOutcome = computeApaPracticeMatchOutcome({
@@ -261,9 +258,6 @@ export default function PracticeGamePage() {
     player1Target: gameState.player1Target,
     player2Target: gameState.player2Target,
   });
-
-  // Determine if user is authenticated
-  const isAuthenticated = !!identity;
 
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4">
@@ -277,141 +271,115 @@ export default function PracticeGamePage() {
         <div className="w-24" />
       </div>
 
-      {/* Live Score Display */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Match Score</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{gameState.player1}</span>
-                <Badge variant="outline">{formatSkillLevel(gameState.player1SL)}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-2xl font-bold">
-                <span>
-                  {livePlayer1Total} / {gameState.player1Target}
-                </span>
-                {livePlayer1Total >= gameState.player1Target && (
-                  <Trophy className="h-6 w-6 text-yellow-500" />
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                PPI: {formatPPI(calculatePPI(gameState.player1Points, gameState.player1Innings))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{gameState.player2}</span>
-                <Badge variant="outline">{formatSkillLevel(gameState.player2SL)}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-2xl font-bold">
-                <span>
-                  {livePlayer2Total} / {gameState.player2Target}
-                </span>
-                {livePlayer2Total >= gameState.player2Target && (
-                  <Trophy className="h-6 w-6 text-yellow-500" />
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                PPI: {formatPPI(calculatePPI(gameState.player2Points, gameState.player2Innings))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="text-center">
-              <div className="text-sm text-muted-foreground">Innings</div>
-              <div className="text-lg font-semibold">{gameState.sharedInnings}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-muted-foreground">Racks Played</div>
-              <div className="text-lg font-semibold">{gameState.racks.length}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-muted-foreground">Dead Balls</div>
-              <div className="text-lg font-semibold">
-                {gameState.racks.reduce((sum, rack) => sum + rack.deadBalls, 0)}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Match Complete Summary */}
-      {matchComplete && (
-        <Card className="border-primary">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              Match Complete!
-            </CardTitle>
+      {/* Score Display */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">{gameState.player1}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Skill Level {formatSkillLevel(gameState.player1SL)} • Race to {gameState.player1Target}
+            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <ApaResultsSummary
-              player1={{
-                name: gameState.player1,
-                skillLevel: gameState.player1SL,
-                pointsNeeded: gameState.player1Target,
-                pointsEarned: gameState.player1Points,
-                defensiveShots: gameState.player1DefensiveShots,
-                innings: gameState.player1Innings,
-                ppi: calculatePPI(gameState.player1Points, gameState.player1Innings),
-                isWinner: matchOutcome.player1Won,
-              }}
-              player2={{
-                name: gameState.player2,
-                skillLevel: gameState.player2SL,
-                pointsNeeded: gameState.player2Target,
-                pointsEarned: gameState.player2Points,
-                defensiveShots: gameState.player2DefensiveShots,
-                innings: gameState.player2Innings,
-                ppi: calculatePPI(gameState.player2Points, gameState.player2Innings),
-                isWinner: !matchOutcome.player1Won,
-              }}
-              matchPointOutcome={matchOutcome.outcome}
-            />
-
-            {!isAuthenticated && (
-              <Alert>
-                <AlertDescription>
-                  You must log in to save matches.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {isAuthenticated && showRetryConnection && !actor && (
-              <Alert>
-                <AlertDescription className="flex items-center justify-between">
-                  <span>Still connecting to backend. Retry to save your match.</span>
-                  <Button size="sm" variant="outline" onClick={handleRetryConnection}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Retry Connection
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSaveMatch}
-                disabled={!isAuthenticated || saveMatch.isPending}
-                className="flex-1"
-              >
-                {saveMatch.isPending ? 'Saving...' : 'Save Match'}
-              </Button>
-              <Button onClick={handleNewMatch} variant="outline" className="flex-1">
-                New Match
-              </Button>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-bold">
+                  {gameState.player1Points + liveRackPoints.player1Points}
+                </span>
+                <Badge variant={gameState.player1Points >= gameState.player1Target ? 'default' : 'secondary'}>
+                  {gameState.player1Points >= gameState.player1Target ? 'Winner' : 'In Progress'}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Innings:</span> {gameState.player1Innings}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">PPI:</span> {formatPPI(player1PPI)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Defensive:</span> {gameState.player1DefensiveShots}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">{gameState.player2}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Skill Level {formatSkillLevel(gameState.player2SL)} • Race to {gameState.player2Target}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-bold">
+                  {gameState.player2Points + liveRackPoints.player2Points}
+                </span>
+                <Badge variant={gameState.player2Points >= gameState.player2Target ? 'default' : 'secondary'}>
+                  {gameState.player2Points >= gameState.player2Target ? 'Winner' : 'In Progress'}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Innings:</span> {gameState.player2Innings}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">PPI:</span> {formatPPI(player2PPI)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Defensive:</span> {gameState.player2DefensiveShots}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Match Complete Summary */}
+      {matchComplete && (
+        <ApaResultsSummary
+          player1={{
+            name: gameState.player1,
+            skillLevel: gameState.player1SL,
+            pointsNeeded: gameState.player1Target,
+            pointsEarned: gameState.player1Points,
+            defensiveShots: gameState.player1DefensiveShots,
+            innings: gameState.player1Innings,
+            ppi: player1PPI,
+            isWinner: matchOutcome.player1Won,
+          }}
+          player2={{
+            name: gameState.player2,
+            skillLevel: gameState.player2SL,
+            pointsNeeded: gameState.player2Target,
+            pointsEarned: gameState.player2Points,
+            defensiveShots: gameState.player2DefensiveShots,
+            innings: gameState.player2Innings,
+            ppi: player2PPI,
+            isWinner: !matchOutcome.player1Won,
+          }}
+          matchPointOutcome={matchOutcome.outcome}
+        />
       )}
 
-      {/* Rack Scoring Panel */}
-      {!matchComplete && (
+      {/* Connection Warning */}
+      {showRetryConnection && !actor && (
+        <Alert>
+          <AlertDescription className="flex items-center justify-between">
+            <span>Still connecting to backend. Retry to save your match.</span>
+            <Button size="sm" variant="outline" onClick={handleRetryConnection}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry Connection
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Rack Scoring or Save Actions */}
+      {!matchComplete ? (
         <ApaRackScoringPanel
           rackNumber={gameState.racks.length + 1}
           player1Name={gameState.player1}
@@ -423,11 +391,37 @@ export default function PracticeGamePage() {
             player2CurrentPoints: gameState.player2Points,
             player1Target: gameState.player1Target,
             player2Target: gameState.player2Target,
-            matchComplete,
+            matchComplete: false,
             activePlayer: gameState.activePlayer,
             sharedInnings: gameState.sharedInnings,
           }}
         />
+      ) : (
+        <div className="space-y-2">
+          <Button
+            onClick={handleSaveMatch}
+            disabled={!isAuthenticated || saveMatch.isPending}
+            className="w-full gap-2"
+            size="lg"
+          >
+            {saveMatch.isPending ? (
+              <>Saving...</>
+            ) : (
+              <>
+                <Trophy className="h-5 w-5" />
+                End Session & Save
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleEndWithoutSaving}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            End Session Without Saving
+          </Button>
+        </div>
       )}
     </div>
   );

@@ -14,7 +14,8 @@ export function clampObjectBallCount(count: number): number {
   return Math.max(2, Math.min(7, count));
 }
 
-export function applyAttemptResult(state: GameState, playerScored: boolean): GameState {
+export function applyAttemptResult(state: GameState, ballsCleared: number): GameState {
+  const playerScored = ballsCleared === 3;
   return {
     ...state,
     totalAttempts: state.totalAttempts + 1,

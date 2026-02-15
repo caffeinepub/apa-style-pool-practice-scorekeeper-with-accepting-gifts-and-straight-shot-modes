@@ -1,47 +1,61 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T05:23:01.995Z",
+  "generatedAt": "2026-02-15T23:13:44.871Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-153",
-        "summary": "Fix APA 9-Ball Practice so that when either player reaches/exceeds their points-to-win target during live rack entry, the current rack can be completed immediately without requiring the 9-ball to be pocketed (i.e., do not force the user to score the 9-ball just to enable “Complete Rack”).",
+        "id": "REQ-199",
+        "summary": "Implement an Official APA aPPI (Adjusted/Applied PPI) value and ensure it is available wherever Official APA match metrics are rendered, using only existing lookup-table logic if it already exists in the current codebase; otherwise fall back to aPPI = PPI for both wins and losses (no new tables, no hardcoded values, no placeholders).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx"
+          "frontend/src/lib/apa/officialApaPpi.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+          "frontend/src/lib/apa/officialApaPpi.ts"
         ]
       },
       {
-        "id": "REQ-154",
-        "summary": "Update the APA rack-scoring UI messaging/feedback to accurately describe the above behavior in English when match completion is reached mid-rack and the rack can be finalized without the 9-ball.",
+        "id": "REQ-200",
+        "summary": "Update Official APA Match Details rendering to show an aPPI line directly under the existing PPI line in the Official APA section (English label exactly: \"aPPI:\"), showing a numeric value when computable and showing \"—\" when not available.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+          "frontend/src/pages/history/MatchDetailsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+          "frontend/src/pages/history/MatchDetailsPage.tsx"
         ]
       },
       {
-        "id": "REQ-155",
-        "summary": "Ensure the Straight Shot (20-shot game) codepath is not modified as part of this change (no logic, UI, persistence, or copy changes).",
+        "id": "REQ-201",
+        "summary": "Populate Match History Table derived columns for APA matches (at minimum for Official APA match logs), so that PPI, aPPI, Rolling 10/20, APA 10/20, Wins/Losses, and Win % are not rendered as \"—\" when sufficient data exists.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/dev/straight-shot-spot-check.md"
+          "frontend/src/components/history/MatchHistoryTable.tsx",
+          "frontend/src/lib/apa/apaAggregateStats.ts"
         ],
         "matchedFiles": [
-          "frontend/src/dev/straight-shot-spot-check.md"
+          "frontend/src/components/history/MatchHistoryTable.tsx",
+          "frontend/src/lib/apa/apaAggregateStats.ts"
+        ]
+      },
+      {
+        "id": "REQ-202",
+        "summary": "Fix Official APA win% computation to use the last 20 Official APA matches (or fewer if <20 exist), ordered by effective match date, not a smaller window (e.g., not last-10).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/apa/apaAggregateStats.ts",
+          "frontend/src/lib/stats/officialApaStats.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/apa/apaAggregateStats.ts",
+          "frontend/src/lib/stats/officialApaStats.ts"
         ]
       }
     ]
@@ -51,8 +65,12 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-    "frontend/src/dev/straight-shot-spot-check.md",
+    "frontend/src/components/history/MatchHistoryTable.tsx",
+    "frontend/src/lib/apa/apaAggregateStats.ts",
+    "frontend/src/lib/apa/officialApaPpi.ts",
+    "frontend/src/lib/stats/officialApaStats.ts",
+    "frontend/src/pages/history/MatchDetailsPage.tsx",
+    "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

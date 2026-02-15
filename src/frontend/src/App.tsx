@@ -16,6 +16,7 @@ import OwnerApprovalsPage from './pages/owner/OwnerApprovalsPage';
 import RealApaMatchPlaceholderPage from './pages/apa/RealApaMatchPlaceholderPage';
 import RealApaMatchEditPage from './pages/apa/RealApaMatchEditPage';
 import SmokeCheckPage from './pages/SmokeCheckPage';
+import StatsPage from './pages/stats/StatsPage';
 import AuthGate from './components/auth/AuthGate';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,17 +38,12 @@ function RouteErrorFallback({ error, reset }: { error: Error; reset: () => void 
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {error.message || 'An unknown error occurred while loading this page.'}
-          </p>
-          <div className="flex gap-2">
-            <Button onClick={reset} variant="default">
-              Try Again
-            </Button>
-            <Button onClick={() => window.location.href = '/'} variant="outline">
-              Go Home
-            </Button>
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-sm font-mono text-muted-foreground">{error.message}</p>
           </div>
+          <Button onClick={reset} className="w-full">
+            Try again
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -56,12 +52,9 @@ function RouteErrorFallback({ error, reset }: { error: Error; reset: () => void 
 
 const rootRoute = createRootRoute({
   component: () => (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AuthGate>
-        <AppLayout />
-      </AuthGate>
-      <Toaster />
-    </ThemeProvider>
+    <AuthGate>
+      <AppLayout />
+    </AuthGate>
   ),
   errorComponent: RouteErrorFallback,
 });
@@ -73,14 +66,14 @@ const indexRoute = createRoute({
   errorComponent: RouteErrorFallback,
 });
 
-const practiceStartRoute = createRoute({
+const apaPracticeStartRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/apa-practice/start',
   component: PracticeStartPage,
   errorComponent: RouteErrorFallback,
 });
 
-const practiceGameRoute = createRoute({
+const apaPracticeGameRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/apa-practice/game',
   component: PracticeGamePage,
@@ -164,10 +157,17 @@ const smokeCheckRoute = createRoute({
   errorComponent: RouteErrorFallback,
 });
 
+const statsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/stats',
+  component: StatsPage,
+  errorComponent: RouteErrorFallback,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  practiceStartRoute,
-  practiceGameRoute,
+  apaPracticeStartRoute,
+  apaPracticeGameRoute,
   acceptingGiftsStartRoute,
   acceptingGiftsGameRoute,
   straightShotStartRoute,
@@ -179,6 +179,7 @@ const routeTree = rootRoute.addChildren([
   realApaMatchRoute,
   realApaMatchEditRoute,
   smokeCheckRoute,
+  statsRoute,
 ]);
 
 const router = createRouter({ routeTree });
@@ -190,5 +191,10 @@ declare module '@tanstack/react-router' {
 }
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <RouterProvider router={router} />
+      <Toaster />
+    </ThemeProvider>
+  );
 }

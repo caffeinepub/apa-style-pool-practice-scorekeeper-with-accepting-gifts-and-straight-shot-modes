@@ -1,106 +1,132 @@
 import type { ApiMatch } from '../../backend';
 import { MatchMode } from '../../backend';
-import { isSamePlayer } from '../../utils/playerName';
+import { getPointsToWin } from './apaEqualizer';
+import { computeOfficialApaPpi, computeOfficialApaAppi } from './officialApaPpi';
 import { getOfficialApaOutcome } from './officialApaOutcome';
-import { computeOfficialApaPpi } from './officialApaPpi';
+import { normalizePlayerName } from '../../utils/playerName';
+import { getEffectiveMatchTimestamp } from '../matches/effectiveMatchDate';
 
 export interface ApaMatchDataPoint {
-  matchId: string;
   dateTime: bigint;
-  playerName: string;
-  skillLevel: number;
-  pointsEarned: number;
-  defensiveShots: number;
-  innings: number;
   ppi: number;
-  isWinner: boolean;
+  appi: number;
+  yourPoints: number;
+  opponentPoints: number;
+  defensiveShots: number;
+  didWin?: boolean;
+  officialApaMatchLogData?: {
+    date: string;
+  };
 }
 
-/**
- * Extract APA match data points for a specific player from match history
- * Now includes both APA Practice matches and Official APA Match Logs with valid PPI
- */
-export function extractPlayerApaMatches(
-  matches: ApiMatch[],
-  playerName: string
-): ApaMatchDataPoint[] {
+export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string): ApaMatchDataPoint[] {
+  const normalizedPlayerName = normalizePlayerName(playerName);
   const dataPoints: ApaMatchDataPoint[] = [];
 
   for (const match of matches) {
-    // Handle APA Practice matches
     if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
-      const playerIndex = match.players.findIndex(p => isSamePlayer(p.name, playerName));
-      if (playerIndex === -1) continue;
+      const player1 = match.players[0];
+      const player2 = match.players[1];
+      
+      if (!player1 || !player2) continue;
 
-      const playerStats = match.apaMatchInfo.players[playerIndex];
-      if (!playerStats) continue;
+      const normalizedP1 = normalizePlayerName(player1.name);
+      const normalizedP2 = normalizePlayerName(player2.name);
+
+      if (normalizedP1 !== normalizedPlayerName && normalizedP2 !== normalizedPlayerName) {
+        continue;
+      }
+
+      const isPlayer1 = normalizedP1 === normalizedPlayerName;
+      const playerStats = match.apaMatchInfo.players[isPlayer1 ? 0 : 1];
+      const opponentStats = match.apaMatchInfo.players[isPlayer1 ? 1 : 0];
+
+      if (!playerStats || !opponentStats) continue;
+
+      const ppi = playerStats.ppi;
+      const innings = Number(playerStats.innings);
+      const defensiveShots = Number(playerStats.defensiveShots);
+      const yourPoints = Number(playerStats.totalScore);
+      const opponentPoints = Number(opponentStats.totalScore);
+
+      const adjustedInnings = Math.max(1, innings - defensiveShots);
+      const appi = yourPoints / adjustedInnings;
 
       dataPoints.push({
-        matchId: match.matchId,
         dateTime: match.dateTime,
-        playerName: match.players[playerIndex].name,
-        skillLevel: Number(playerStats.skillLevel),
-        pointsEarned: Number(playerStats.pointsEarnedRunningTotal),
-        defensiveShots: Number(playerStats.defensiveShots),
-        innings: Number(playerStats.innings),
-        ppi: playerStats.ppi,
-        isWinner: playerStats.isPlayerOfMatch,
+        ppi,
+        appi,
+        yourPoints,
+        opponentPoints,
+        defensiveShots,
       });
     }
 
-    // Handle Official APA Match Logs (player1 = "you")
     if (match.officialApaMatchLogData) {
       const data = match.officialApaMatchLogData;
-      
-      // Compute PPI using the new formula
       const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
+      const appiResult = computeOfficialApaAppi(data.myScore, data.innings, data.defensiveShots);
       
-      // Only include if PPI is valid
-      if (ppiResult.isValid && ppiResult.ppi !== null) {
-        const outcome = getOfficialApaOutcome(
-          data.didWin,
-          data.playerOneSkillLevel,
-          data.playerTwoSkillLevel,
-          data.myScore,
-          data.theirScore
-        );
-
-        // Parse myScore for pointsEarned
-        const myScoreNum = parseInt(data.myScore) || 0;
-        const inningsNum = parseInt(data.innings) || 0;
-        const defensiveShotsNum = parseInt(data.defensiveShots) || 0;
+      if (ppiResult.isValid && ppiResult.ppi !== null && appiResult.isValid && appiResult.appi !== null) {
+        const myScore = parseInt(data.myScore, 10) || 0;
+        const theirScore = parseInt(data.theirScore, 10) || 0;
+        const defensiveShots = parseInt(data.defensiveShots, 10) || 0;
 
         dataPoints.push({
-          matchId: match.matchId,
           dateTime: match.dateTime,
-          playerName: 'You', // Official logs are always for the current user
-          skillLevel: data.playerOneSkillLevel ? Number(data.playerOneSkillLevel) : 0,
-          pointsEarned: myScoreNum,
-          defensiveShots: defensiveShotsNum,
-          innings: inningsNum,
           ppi: ppiResult.ppi,
-          isWinner: outcome === 'win',
+          appi: appiResult.appi,
+          yourPoints: myScore,
+          opponentPoints: theirScore,
+          defensiveShots,
+          didWin: data.didWin,
+          officialApaMatchLogData: {
+            date: data.date,
+          },
         });
       }
     }
   }
 
-  // Sort by date ascending
-  return dataPoints.sort((a, b) => Number(a.dateTime - b.dateTime));
+  return dataPoints;
+}
+
+export function computeBest10Of20Average(values: number[]): number | null {
+  if (values.length === 0) return null;
+  
+  const last20 = values.slice(-20);
+  const sorted = [...last20].sort((a, b) => b - a);
+  const best10 = sorted.slice(0, Math.min(10, sorted.length));
+  
+  if (best10.length === 0) return null;
+  
+  return best10.reduce((sum, val) => sum + val, 0) / best10.length;
 }
 
 /**
- * Extract Official APA match outcomes for the caller (player1 = "you")
- * Returns counts of known official matches and wins
+ * Extract Official APA win rate using last 20 matches by effective match date
+ * Excludes matches with unknown outcome from the denominator
  */
-export function extractOfficialApaWinRate(matches: ApiMatch[]): { totalKnown: number; wins: number } {
-  let totalKnown = 0;
+export function extractOfficialApaWinRate(matches: ApiMatch[]): { wins: number; total: number; winRate: number | null } {
+  const officialMatches = matches.filter(m => m.officialApaMatchLogData);
+  
+  // Sort by effective match date (newest first)
+  const sortedMatches = [...officialMatches].sort((a, b) => {
+    const timeA = getEffectiveMatchTimestamp(a);
+    const timeB = getEffectiveMatchTimestamp(b);
+    return timeB - timeA;
+  });
+
+  // Take last 20 (or fewer if less than 20 exist)
+  const last20Matches = sortedMatches.slice(0, 20);
+
   let wins = 0;
+  let total = 0;
 
-  for (const match of matches) {
-    if (!match.officialApaMatchLogData) continue;
-
+  for (const match of last20Matches) {
     const data = match.officialApaMatchLogData;
+    if (!data) continue;
+
     const outcome = getOfficialApaOutcome(
       data.didWin,
       data.playerOneSkillLevel,
@@ -109,67 +135,15 @@ export function extractOfficialApaWinRate(matches: ApiMatch[]): { totalKnown: nu
       data.theirScore
     );
 
-    // Only count matches with known outcome
-    if (outcome === 'win') {
-      totalKnown++;
-      wins++;
-    } else if (outcome === 'loss') {
-      totalKnown++;
-    }
-    // 'unknown' outcomes are excluded from both counts
-  }
-
-  return { totalKnown, wins };
-}
-
-/**
- * Compute PPI series for charting
- */
-export function computePpiSeries(dataPoints: ApaMatchDataPoint[]): number[] {
-  return dataPoints.map(dp => dp.ppi);
-}
-
-/**
- * Compute match result series (points earned per match)
- */
-export function computeMatchResultSeries(dataPoints: ApaMatchDataPoint[]): number[] {
-  return dataPoints.map(dp => dp.pointsEarned);
-}
-
-/**
- * Compute rolling "best 10 of last 20" average
- * For each index i:
- * - Take up to 20 matches ending at i
- * - If count >= 10, average the best (highest) 10 values
- * - If count < 10, average all available values
- */
-export function computeRollingBest10Of20(values: number[]): number[] {
-  const result: number[] = [];
-
-  for (let i = 0; i < values.length; i++) {
-    const start = Math.max(0, i - 19);
-    const window = values.slice(start, i + 1);
-
-    if (window.length >= 10) {
-      // Take best 10
-      const sorted = [...window].sort((a, b) => b - a);
-      const best10 = sorted.slice(0, 10);
-      const avg = best10.reduce((sum, v) => sum + v, 0) / 10;
-      result.push(avg);
-    } else {
-      // Average all
-      const avg = window.reduce((sum, v) => sum + v, 0) / window.length;
-      result.push(avg);
+    if (outcome === 'win' || outcome === 'loss') {
+      total++;
+      if (outcome === 'win') {
+        wins++;
+      }
     }
   }
 
-  return result;
-}
+  const winRate = total > 0 ? (wins / total) * 100 : null;
 
-/**
- * Format date labels for charts
- */
-export function formatChartDate(timestamp: bigint): string {
-  const date = new Date(Number(timestamp) / 1_000_000);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return { wins, total, winRate };
 }

@@ -13,14 +13,15 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 
-// Data migration, always define migration module and use with clause, see documentation for details.
 
+// Data migration, always define migration module and use with clause, see documentation for details.
 
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   let approvalState = UserApproval.initState(accessControlState);
+
 
   var inviteOnlyMode : Bool = false;
 

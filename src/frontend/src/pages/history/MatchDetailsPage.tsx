@@ -8,7 +8,8 @@ import { MatchMode } from '../../backend';
 import DeleteMatchButton from '../../components/matches/DeleteMatchButton';
 import { getPointsToWin } from '../../lib/apa/apaEqualizer';
 import { getOfficialApaOutcome } from '../../lib/apa/officialApaOutcome';
-import { computeOfficialApaPpi, formatOfficialPpi } from '../../lib/apa/officialApaPpi';
+import { computeOfficialApaPpi, formatOfficialPpi, computeOfficialApaAppi, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
+import { setNavigationOrigin } from '../../utils/urlParams';
 
 export default function MatchDetailsPage() {
   const navigate = useNavigate();
@@ -41,6 +42,11 @@ export default function MatchDetailsPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleNavigateToPlayerAggregate = (playerName: string) => {
+    setNavigationOrigin('history');
+    navigate({ to: `/players/${encodeURIComponent(playerName)}/aggregate` });
   };
 
   const renderModeSpecificDetails = () => {
@@ -202,6 +208,7 @@ export default function MatchDetailsPage() {
       const theirPointsToWin = data.playerTwoSkillLevel ? getPointsToWin(Number(data.playerTwoSkillLevel)) : null;
 
       const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
+      const appiResult = computeOfficialApaAppi(data.myScore, data.innings, data.defensiveShots);
 
       return (
         <div className="space-y-4">
@@ -236,15 +243,22 @@ export default function MatchDetailsPage() {
                   <span className="text-muted-foreground">PPI:</span>
                   <span className="font-semibold">{formatOfficialPpi(ppiResult)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">aPPI:</span>
+                  <span className="font-semibold">{formatOfficialAppi(appiResult)}</span>
+                </div>
                 {outcome === 'win' && (
                   <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
+                )}
+                {outcome === 'loss' && (
+                  <Badge className="mt-2 w-full justify-center" variant="destructive">Loser</Badge>
                 )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{data.opponentName}</CardTitle>
+                <CardTitle className="text-lg">{data.opponentName || 'Opponent'}</CardTitle>
                 {data.playerTwoSkillLevel !== undefined && (
                   <CardDescription>
                     Skill Level {data.playerTwoSkillLevel.toString()}
@@ -263,27 +277,23 @@ export default function MatchDetailsPage() {
                 {outcome === 'loss' && (
                   <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
                 )}
+                {outcome === 'win' && (
+                  <Badge className="mt-2 w-full justify-center" variant="destructive">Loser</Badge>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Match Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Match Date:</span>
-                <span className="font-semibold">{data.date || '—'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Outcome:</span>
-                <Badge variant={outcome === 'win' ? 'default' : outcome === 'loss' ? 'destructive' : 'secondary'}>
-                  {outcome === 'win' ? 'Win' : outcome === 'loss' ? 'Loss' : 'Unknown'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          {data.notes && data.notes.trim() !== '' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{data.notes}</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       );
     }
@@ -291,39 +301,39 @@ export default function MatchDetailsPage() {
     return null;
   };
 
-  const getModeLabel = (mode: MatchMode) => {
-    switch (mode) {
-      case MatchMode.apaPractice:
-        return match.officialApaMatchLogData ? 'Official APA Match Log' : 'APA 9-Ball Practice';
-      case MatchMode.acceptingGifts:
-        return 'Accepting Gifts';
-      case MatchMode.straightShot:
-        return 'Straight Shot';
-      default:
-        return 'Unknown';
+  const getMatchTitle = () => {
+    if (match.officialApaMatchLogData) {
+      return 'Official APA Match Log';
     }
+    if (match.mode === MatchMode.apaPractice) {
+      return 'APA 9-Ball Practice';
+    }
+    if (match.mode === MatchMode.acceptingGifts) {
+      return 'Accepting Gifts';
+    }
+    if (match.mode === MatchMode.straightShot) {
+      return 'Straight Shot';
+    }
+    return 'Match Details';
   };
 
+  const canEdit = match.officialApaMatchLogData !== undefined;
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="container mx-auto max-w-4xl space-y-6 p-4">
       <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => navigate({ to: '/history' })}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" onClick={() => navigate({ to: '/history' })}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to History
         </Button>
         <div className="flex gap-2">
-          {match.officialApaMatchLogData && (
+          {canEdit && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate({ to: `/real-apa-match/${match.matchId}/edit` })}
-              className="gap-2"
+              onClick={() => navigate({ to: `/real-apa-match/${matchId}/edit` })}
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
           )}
@@ -333,30 +343,43 @@ export default function MatchDetailsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-2xl">{getModeLabel(match.mode)}</CardTitle>
-              <CardDescription className="mt-2 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {formatDate(match.dateTime)}
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className="text-sm">
-              {getModeLabel(match.mode)}
-            </Badge>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl">{getMatchTitle()}</CardTitle>
+            <Badge variant="outline">{match.officialApaMatchLogData ? 'Official APA Match Log' : getMatchTitle()}</Badge>
           </div>
+          <CardDescription className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {match.notes && (
-            <div className="mb-4 rounded-lg bg-muted p-4">
-              <p className="text-sm font-medium mb-1">Notes:</p>
-              <p className="text-sm text-muted-foreground">{match.notes}</p>
-            </div>
-          )}
-        </CardContent>
       </Card>
 
       {renderModeSpecificDetails()}
+
+      {match.mode === MatchMode.apaPractice && match.players.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Players</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {match.players.map((player, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleNavigateToPlayerAggregate(player.name)}
+                  className="flex w-full items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-accent"
+                >
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{player.name}</span>
+                  {player.skillLevel !== undefined && (
+                    <Badge variant="secondary">Level {player.skillLevel.toString()}</Badge>
+                  )}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

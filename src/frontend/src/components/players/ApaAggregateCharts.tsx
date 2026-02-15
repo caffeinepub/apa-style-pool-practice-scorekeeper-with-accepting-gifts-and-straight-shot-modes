@@ -1,13 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { ApaMatchDataPoint } from '../../lib/apa/apaAggregateStats';
-import {
-  computePpiSeries,
-  computeMatchResultSeries,
-  computeRollingBest10Of20,
-  formatChartDate,
-} from '../../lib/apa/apaAggregateStats';
+import { computeBest10Of20Average } from '../../lib/apa/apaAggregateStats';
+import { getEffectiveMatchTimestamp } from '../../lib/matches/effectiveMatchDate';
 
 interface ApaAggregateChartsProps {
   dataPoints: ApaMatchDataPoint[];
@@ -17,146 +11,90 @@ interface ApaAggregateChartsProps {
 export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggregateChartsProps) {
   if (dataPoints.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground">No APA match data available for {playerName}</p>
-        </CardContent>
-      </Card>
+      <div className="py-12 text-center">
+        <p className="text-muted-foreground">No data available for charts</p>
+      </div>
     );
   }
 
-  const ppiSeries = computePpiSeries(dataPoints);
-  const matchResultSeries = computeMatchResultSeries(dataPoints);
-  const ppiRollingAvg = computeRollingBest10Of20(ppiSeries);
-  const matchResultRollingAvg = computeRollingBest10Of20(matchResultSeries);
+  const sortedDataPoints = [...dataPoints].sort((a, b) => {
+    const aTime = getEffectiveMatchTimestamp({ dateTime: a.dateTime, officialApaMatchLogData: a.officialApaMatchLogData } as any);
+    const bTime = getEffectiveMatchTimestamp({ dateTime: b.dateTime, officialApaMatchLogData: b.officialApaMatchLogData } as any);
+    return aTime - bTime;
+  });
 
-  // Prepare chart data - filter out any invalid PPI values
-  const ppiChartData = dataPoints
-    .map((dp, idx) => ({
-      date: formatChartDate(dp.dateTime),
-      ppi: ppiSeries[idx],
-      rollingAvg: ppiRollingAvg[idx],
-    }))
-    .filter(d => !isNaN(d.ppi) && isFinite(d.ppi));
+  const ppiTrendData = sortedDataPoints
+    .map((dp, index) => {
+      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
+      const date = new Date(timestamp);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      return {
+        index: index + 1,
+        date: dateStr,
+        ppi: dp.ppi,
+        appi: dp.appi,
+      };
+    });
 
-  const matchResultChartData = dataPoints
-    .map((dp, idx) => ({
-      date: formatChartDate(dp.dateTime),
-      points: matchResultSeries[idx],
-      rollingAvg: matchResultRollingAvg[idx],
-    }))
-    .filter(d => !isNaN(d.points) && isFinite(d.points));
+  const matchResultsData = sortedDataPoints
+    .map((dp, index) => {
+      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
+      const date = new Date(timestamp);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      return {
+        index: index + 1,
+        date: dateStr,
+        yourPoints: dp.yourPoints,
+        opponentPoints: dp.opponentPoints,
+        defensiveShots: dp.defensiveShots,
+      };
+    });
 
-  const chartConfig = {
-    ppi: {
-      label: 'PPI',
-      color: 'hsl(var(--chart-1))',
-    },
-    points: {
-      label: 'Points Earned',
-      color: 'hsl(var(--chart-2))',
-    },
-    rollingAvg: {
-      label: 'Best 10 of Last 20',
-      color: 'hsl(var(--chart-3))',
-    },
-  };
+  const best10PpiValues = sortedDataPoints.map(dp => dp.ppi);
+  const best10Ppi = computeBest10Of20Average(best10PpiValues);
+
+  const best10AppiValues = sortedDataPoints.map(dp => dp.appi);
+  const best10Appi = computeBest10Of20Average(best10AppiValues);
 
   return (
-    <div className="space-y-6">
-      {ppiChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>PPI Trend</CardTitle>
-            <CardDescription>
-              Points per inning over time with rolling best-10-of-20 average
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={ppiChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="ppi"
-                    stroke="var(--color-ppi)"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="PPI"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rollingAvg"
-                    stroke="var(--color-rollingAvg)"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="Best 10 of Last 20"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      )}
+    <div className="space-y-8">
+      <div>
+        <h3 className="mb-4 text-lg font-semibold">PPI Trend</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={ppiTrendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={[0, 'auto']} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="ppi" stroke="hsl(var(--primary))" name="PPI" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="appi" stroke="hsl(var(--chart-2))" name="aPPI" strokeWidth={2} dot={{ r: 4 }} />
+          </LineChart>
+        </ResponsiveContainer>
+        {best10Ppi !== null && best10Appi !== null && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Best 10 of last 20: PPI {best10Ppi.toFixed(2)} | aPPI {best10Appi.toFixed(2)}
+          </p>
+        )}
+      </div>
 
-      {matchResultChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Match Results</CardTitle>
-            <CardDescription>
-              Points earned per match with rolling best-10-of-20 average
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={matchResultChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="points"
-                    stroke="var(--color-points)"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="Points Earned"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rollingAvg"
-                    stroke="var(--color-rollingAvg)"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="Best 10 of Last 20"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      )}
+      <div>
+        <h3 className="mb-4 text-lg font-semibold">Match Results</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={matchResultsData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={[0, 'auto']} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="yourPoints" stroke="hsl(var(--primary))" name="Your Points" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="opponentPoints" stroke="hsl(var(--chart-2))" name="Opponent Points" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="defensiveShots" stroke="hsl(var(--chart-3))" name="Defensive Shots" strokeWidth={2} dot={{ r: 4 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

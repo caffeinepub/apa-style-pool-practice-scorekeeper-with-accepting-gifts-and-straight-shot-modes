@@ -6,7 +6,6 @@ import { Principal } from '@dfinity/principal';
 import { extractErrorText } from '../utils/errorText';
 import { withTimeout } from '../utils/withTimeout';
 
-// Timeout for save/update operations (30 seconds)
 const MUTATION_TIMEOUT_MS = 30000;
 
 export function useGetAllMatches() {
@@ -19,6 +18,7 @@ export function useGetAllMatches() {
       return actor.getAllMatches();
     },
     enabled: !!actor,
+    staleTime: 5000,
   });
 }
 
@@ -120,6 +120,7 @@ export function useGetCallerUserProfile() {
     },
     enabled: !!actor,
     retry: false,
+    staleTime: 10000,
   });
 
   return {

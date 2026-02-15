@@ -1,58 +1,83 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "APA 9-Ball Practice: allow rack completion once points-to-win reached mid-rack (without forcing 9-ball), leaving Straight Shot untouched",
+  "title": "Build 1: Official APA aPPI + History table derived APA fields + Official APA Win% last-20",
   "requirements": [
     {
-      "id": "REQ-153",
-      "summary": "Enable “Complete Rack” in APA Practice as soon as either player reaches/exceeds their points-to-win target mid-rack, without requiring the 9-ball to be pocketed, while keeping rack accounting clean and blocking scoring after completion.",
+      "id": "REQ-199",
+      "summary": "Implement Official APA aPPI computation (reuse existing lookup logic if present; otherwise fall back to aPPI = PPI) and make it available for Official APA metric rendering.",
       "acceptanceCriteria": [
-        "In APA Practice, if Player 1 or Player 2 reaches/exceeds their target based on (match current points + current rack live points), the UI provides a path to immediately finish the rack and proceed to match completion without pocketing the 9-ball.",
-        "The “Complete Rack” action becomes enabled in the above scenario even when ball 9 remains unscored, and the user can proceed to the match completion screen.",
-        "Any remaining unaccounted rack points are treated as dead for rack accounting so the rack finalizes cleanly (10 points accounted), without putting the 9-ball into a user-visible 'Dead Ball' state.",
-        "After the match is complete, further rack scoring interactions are blocked as they are today (no additional points/innings can be added after completion)."
+        "If the codebase contains an existing expected-PPI/aPPI lookup table or helper logic, Official APA aPPI uses that exact existing table/logic (no duplicated table definitions).",
+        "If no such lookup exists, Official APA aPPI equals the computed Official APA PPI for all Official APA matches (regardless of win/loss).",
+        "No win%→aPPI lookup values are newly introduced or hardcoded as part of Build 1.",
+        "Build 1 does not introduce new UI elements beyond rendering the required aPPI value in existing Official APA metric sections (see REQ-200/REQ-201)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/lib/apa/officialApaPpi.ts",
           "operation": "modify",
-          "description": "Adjust APA Practice rack completion gating so that when match completion is imminent mid-rack, the rack can be finalized immediately without scoring ball 9: (1) treat any remaining unaccounted rack points as implicit dead points for rack accounting (reaching 10 points) without setting ball 9 to a visible 'dead' state, (2) ensure \"Complete Rack\" becomes enabled under this condition, and (3) ensure the rack-finalization callback uses the same accounting so it finalizes cleanly. Verify the component's usage instructions before implementing."
+          "description": "Add a companion Official APA aPPI computation helper that first attempts to reuse any existing in-repo aPPI/expected-PPI lookup helper (if one already exists), otherwise falls back to aPPI = PPI using the existing computeOfficialApaPpi validation rules; also add a formatter that mirrors existing PPI formatting behavior (number with 2 decimals, otherwise \"—\")."
+        }
+      ]
+    },
+    {
+      "id": "REQ-200",
+      "summary": "Show an Official APA aPPI line directly under the existing PPI line in Match Details (label exactly \"aPPI:\").",
+      "acceptanceCriteria": [
+        "On `frontend/src/pages/history/MatchDetailsPage.tsx`, for `match.officialApaMatchLogData`, the \"You\" card shows both lines:\n- \"PPI: X.XX\" (existing)\n- \"aPPI: Y.YY\" directly underneath it (new)",
+        "If Official APA PPI is invalid/unavailable (see `computeOfficialApaPpi`), the UI displays \"PPI: —\" and also displays \"aPPI: —\" (not missing).",
+        "All user-facing text added/changed in this requirement is in English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/history/MatchDetailsPage.tsx",
+          "operation": "modify",
+          "description": "In the Official APA section (match.officialApaMatchLogData), compute Official APA aPPI via the shared helper and render a new row directly beneath the existing PPI row on the \"You\" card with the exact label \"aPPI:\"; show a formatted numeric value when computable and \"—\" when not available (including when PPI is invalid)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-201",
+      "summary": "Populate Match History Table derived APA columns (PPI, aPPI, rolling and APA 10/20, wins/losses, win%) for APA matches when sufficient data exists; keep non-APA modes as \"—\".",
+      "acceptanceCriteria": [
+        "`frontend/src/components/history/MatchHistoryTable.tsx` no longer renders a fixed \"—\" for the derived metric columns for APA rows when the inputs required for those values exist.",
+        "For an Official APA match row with valid PPI inputs (myScore, innings, defensiveShots), the PPI column shows a formatted numeric value (e.g. 0.79) instead of \"—\".",
+        "For the same row, the Adjusted PPI (aPPI) column shows a formatted numeric value (or \"—\" only if aPPI truly cannot be computed under REQ-199/REQ-200 rules).",
+        "Win % and Wins/Losses in the table reflect the same Official APA last-20-by-match-date window used on Stats (REQ-202) for the signed-in user context where that table is shown.",
+        "Non-APA drill modes (Accepting Gifts, Straight Shot) continue to display \"—\" for APA-only derived columns."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/history/MatchHistoryTable.tsx",
+          "operation": "modify",
+          "description": "Replace the fixed \"—\" placeholders in derived metric columns with computed values for APA rows: (1) for Official APA log rows compute and format PPI/aPPI from officialApaMatchLogData, (2) for APA Practice rows use available stats from apaMatchInfo for PPI/aPPI, (3) compute and display Wins/Losses and Win % using the shared Official APA last-20-by-effective-date window logic (REQ-202) so the table matches Stats; keep non-APA rows rendering \"—\" in APA-only derived columns."
         },
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "path": "frontend/src/lib/apa/apaAggregateStats.ts",
           "operation": "modify",
-          "description": "Confirm APA Practice match-completion flow still blocks further scoring interactions after match completion (rack panel hidden/disabled) and that live totals + rack finalization correctly transition into the existing match completion UI after the updated rack-completion behavior. Verify the component's usage instructions before implementing."
+          "description": "Expose/reuse a single Official APA last-20 win-rate helper (wins/total/winRate) that MatchHistoryTable can call to ensure the table’s Wins/Losses and Win % match Stats; ensure it uses effective match date ordering (via the existing effective match date utility) and limits the window to the 20 most recent Official APA matches."
         }
       ]
     },
     {
-      "id": "REQ-154",
-      "summary": "Update APA rack-scoring UI messaging to clearly explain mid-rack match completion and that the rack can be completed without pocketing the 9-ball, with remaining points treated as dead for rack accounting.",
+      "id": "REQ-202",
+      "summary": "Fix Official APA win% computation to use the last 20 Official APA matches by effective match date (excluding unknown outcomes).",
       "acceptanceCriteria": [
-        "When match completion is reached mid-rack, the UI shows clear English guidance that the rack can be completed now and any remaining balls/points will be treated as dead for rack accounting.",
-        "The messaging does not instruct the user that they must pocket the 9-ball to proceed in the match-completion-imminent scenario."
+        "`frontend/src/lib/stats/officialApaStats.ts` computes win rate using at most the 20 most-recent Official APA matches by effective match date.",
+        "The window includes fewer than 20 matches if fewer than 20 Official APA matches exist.",
+        "Win rate excludes matches with unknown outcome from the denominator (preserve existing known-outcome behavior).",
+        "No chart behavior is changed as part of this requirement (this is a computation/windowing change only)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "path": "frontend/src/lib/apa/apaAggregateStats.ts",
           "operation": "modify",
-          "description": "Update the match-completion-imminent alert/copy to clearly state in English that the rack can be completed immediately and remaining points will be treated as dead for rack accounting, and ensure no copy implies the 9-ball must be pocketed to proceed in this scenario. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-155",
-      "summary": "Ensure Straight Shot (20-shot game) is not modified as part of this change.",
-      "acceptanceCriteria": [
-        "No files under `frontend/src/pages/straight-shot/` are changed.",
-        "No Straight Shot match-building, saving, history rendering, rules copy, or stats code is changed.",
-        "Straight Shot behavior remains identical after deployment (spot-check: start a session, enter total shots, save, view in history)."
-      ],
-      "file_operations": [
+          "description": "Update Official APA win-rate extraction to (a) sort Official APA matches by effective match date, (b) take only the last 20 (or fewer), and (c) compute wins/total excluding unknown outcomes from the denominator, preserving existing outcome derivation behavior."
+        },
         {
-          "path": "frontend/src/dev/straight-shot-spot-check.md",
-          "operation": "create",
-          "description": "Add a lightweight manual QA checklist documenting the required Straight Shot spot-check steps (start a session, enter total shots, save, view in history) to help ensure the Straight Shot codepath remains untouched while implementing APA Practice changes."
+          "path": "frontend/src/lib/stats/officialApaStats.ts",
+          "operation": "modify",
+          "description": "Ensure computeOfficialApaStats uses the updated last-20-by-effective-date win-rate extraction for winRate/totalKnownOutcome/wins while keeping other stat calculations and all chart-related behavior unchanged."
         }
       ]
     }

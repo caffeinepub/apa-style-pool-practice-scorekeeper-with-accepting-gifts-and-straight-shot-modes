@@ -1,16 +1,22 @@
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
+import { Shield, BarChart3, Loader2 } from 'lucide-react';
 import LoginButton from '../auth/LoginButton';
 import ProfileSetupDialog from '../auth/ProfileSetupDialog';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { useIsCallerAdmin } from '../../hooks/useQueries';
+import { useIsCallerAdmin, useGetCallerUserProfile } from '../../hooks/useQueries';
+import { useActor } from '../../hooks/useActor';
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const { data: isAdmin } = useIsCallerAdmin();
+  const { actor, isFetching: actorFetching } = useActor();
+  const { isLoading: profileLoading } = useGetCallerUserProfile();
   const isAuthenticated = !!identity;
+
+  // Show connecting indicator when authenticated but actor/profile not ready
+  const isConnecting = isAuthenticated && (actorFetching || (!actor && !profileLoading));
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,6 +29,22 @@ export default function AppLayout() {
             <h1 className="text-xl font-bold tracking-tight">APA 9-Ball Scorekeeper</h1>
           </div>
           <div className="flex items-center gap-2">
+            {isConnecting && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Connecting...</span>
+              </div>
+            )}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate({ to: '/stats' })}
+                title="My Stats"
+              >
+                <BarChart3 className="h-5 w-5" />
+              </Button>
+            )}
             {isAuthenticated && isAdmin && (
               <Button
                 variant="ghost"

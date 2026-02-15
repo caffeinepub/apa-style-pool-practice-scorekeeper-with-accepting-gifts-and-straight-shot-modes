@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Save, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Save, RefreshCw, Plus } from 'lucide-react';
 import { useSaveMatch, useUpdateMatch } from '../../hooks/useQueries';
 import { buildOfficialApaMatchLog } from '../../lib/matches/matchBuilders';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
@@ -184,7 +184,24 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
     toast.info('Retrying connection...');
   };
 
-  const handleSubmit = async () => {
+  const resetForm = () => {
+    setMatchDate('');
+    setOpponentName('');
+    setYourSkillLevel('');
+    setOpponentSkillLevel('');
+    setYourScore('');
+    setTheirScore('');
+    setInnings('');
+    setDefensiveShots('');
+    setNotes('');
+    setInningsUnknown(false);
+    setYourScoreError('');
+    setTheirScoreError('');
+    setInningsError('');
+    setDefensiveShotsError('');
+  };
+
+  const handleSubmit = async (action: 'save' | 'saveAndLogAnother') => {
     if (!identity) {
       toast.error('You must be logged in to save a match');
       return;
@@ -230,7 +247,12 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
 
         await saveMatchMutation.mutateAsync({ matchId: newMatchId, matchRecord });
         toast.success('Match saved');
-        navigate({ to: `/history/${newMatchId}` });
+
+        if (action === 'saveAndLogAnother') {
+          resetForm();
+        } else {
+          navigate({ to: `/history/${newMatchId}` });
+        }
       } else {
         // Edit mode
         if (!matchId) {
@@ -490,14 +512,36 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
           <ArrowLeft className="h-4 w-4" />
           Cancel
         </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitDisabled}
-          className="flex-1 gap-2"
-        >
-          <Save className="h-4 w-4" />
-          {isSubmitting ? 'Saving...' : mode === 'create' ? 'Save Match' : 'Update Match'}
-        </Button>
+        {mode === 'create' ? (
+          <>
+            <Button
+              onClick={() => handleSubmit('saveAndLogAnother')}
+              disabled={isSubmitDisabled}
+              variant="outline"
+              className="flex-1 gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {isSubmitting ? 'Saving...' : 'Save & Log Another Match'}
+            </Button>
+            <Button
+              onClick={() => handleSubmit('save')}
+              disabled={isSubmitDisabled}
+              className="flex-1 gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isSubmitting ? 'Saving...' : 'Save & Exit'}
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={() => handleSubmit('save')}
+            disabled={isSubmitDisabled}
+            className="flex-1 gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {isSubmitting ? 'Saving...' : 'Update Match'}
+          </Button>
+        )}
       </div>
     </div>
   );

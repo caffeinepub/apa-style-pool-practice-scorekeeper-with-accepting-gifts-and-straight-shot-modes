@@ -1,10 +1,16 @@
 /**
- * Official APA PPI calculation helper
- * Formula: myScore / (innings - defensiveShots)
+ * Official APA PPI and aPPI calculation helpers
+ * PPI Formula: myScore / (innings - defensiveShots)
+ * aPPI: For Build 1, aPPI = PPI (no lookup table exists in codebase)
  */
 
 export interface OfficialPpiResult {
   ppi: number | null;
+  isValid: boolean;
+}
+
+export interface OfficialAppiResult {
+  appi: number | null;
   isValid: boolean;
 }
 
@@ -53,6 +59,25 @@ export function computeOfficialApaPpi(
 }
 
 /**
+ * Compute Official APA aPPI from text fields
+ * Build 1 implementation: aPPI = PPI (no lookup table exists in codebase)
+ * Returns null aPPI if PPI cannot be computed
+ */
+export function computeOfficialApaAppi(
+  myScore: string,
+  innings: string,
+  defensiveShots: string
+): OfficialAppiResult {
+  const ppiResult = computeOfficialApaPpi(myScore, innings, defensiveShots);
+  
+  // aPPI = PPI for Build 1 (no lookup table)
+  return {
+    appi: ppiResult.ppi,
+    isValid: ppiResult.isValid,
+  };
+}
+
+/**
  * Format PPI for display
  * Returns "—" for invalid/unavailable PPI
  */
@@ -61,4 +86,15 @@ export function formatOfficialPpi(result: OfficialPpiResult): string {
     return '—';
   }
   return result.ppi.toFixed(2);
+}
+
+/**
+ * Format aPPI for display
+ * Returns "—" for invalid/unavailable aPPI
+ */
+export function formatOfficialAppi(result: OfficialAppiResult): string {
+  if (!result.isValid || result.appi === null) {
+    return '—';
+  }
+  return result.appi.toFixed(2);
 }
