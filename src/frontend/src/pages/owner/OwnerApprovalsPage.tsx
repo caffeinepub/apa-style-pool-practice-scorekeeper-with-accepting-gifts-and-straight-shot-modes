@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useListApprovals, useSetApproval, useRejectAllPending, useGetInviteOnlyMode, useSetInviteOnlyMode, useIsCallerAdmin } from '../../hooks/useQueries';
+import { useListApprovals, useSetApproval, useGetInviteOnlyMode, useSetInviteOnlyMode, useIsCallerAdmin } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -18,9 +18,9 @@ export default function OwnerApprovalsPage() {
   const { data: approvals = [], isLoading: approvalsLoading } = useListApprovals();
   const { data: inviteOnlyMode = true, isLoading: modeLoading } = useGetInviteOnlyMode();
   const setApproval = useSetApproval();
-  const rejectAllPending = useRejectAllPending();
   const setInviteOnlyMode = useSetInviteOnlyMode();
   const [processingPrincipal, setProcessingPrincipal] = useState<string | null>(null);
+  const [isRejectingAll, setIsRejectingAll] = useState(false);
 
   // Redirect if not admin
   if (!adminLoading && !isAdmin) {
@@ -63,12 +63,20 @@ export default function OwnerApprovalsPage() {
   };
 
   const handleRejectAll = async () => {
+    setIsRejectingAll(true);
     try {
-      const pendingPrincipals = pendingApprovals.map(a => a.principal);
-      await rejectAllPending.mutateAsync(pendingPrincipals);
+      // Reject all pending approvals sequentially
+      for (const approval of pendingApprovals) {
+        await setApproval.mutateAsync({
+          user: approval.principal,
+          status: ApprovalStatus.rejected,
+        });
+      }
       toast.success(`Rejected ${pendingApprovals.length} pending request(s)`);
     } catch (error: any) {
       toast.error('Failed to reject all pending requests');
+    } finally {
+      setIsRejectingAll(false);
     }
   };
 
@@ -175,8 +183,8 @@ export default function OwnerApprovalsPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRejectAll} disabled={rejectAllPending.isPending}>
-                          {rejectAllPending.isPending ? 'Rejecting...' : 'Reject All'}
+                        <AlertDialogAction onClick={handleRejectAll} disabled={isRejectingAll}>
+                          {isRejectingAll ? 'Rejecting...' : 'Reject All'}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -212,7 +220,7 @@ export default function OwnerApprovalsPage() {
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleApprove(principalText)}
-                                disabled={isProcessing || setApproval.isPending}
+                                disabled={isProcessing || setApproval.isPending || isRejectingAll}
                               >
                                 <CheckCircle className="mr-1 h-4 w-4" />
                                 Approve
@@ -221,7 +229,7 @@ export default function OwnerApprovalsPage() {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => handleReject(principalText)}
-                                disabled={isProcessing || setApproval.isPending}
+                                disabled={isProcessing || setApproval.isPending || isRejectingAll}
                               >
                                 <XCircle className="mr-1 h-4 w-4" />
                                 Reject

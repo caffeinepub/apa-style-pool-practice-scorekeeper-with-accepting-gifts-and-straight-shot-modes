@@ -1,83 +1,61 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T23:37:38.302Z",
-  "summary": "Diff adds frontend error extraction + hardened save mutations and some per-mode save flow checks; backend access gating updated to allow any authenticated user when inviteOnlyMode is false. However, the diff summary does not provide clear evidence of the specific backend save/list regression root-cause fix (saveMatch/updateMatch not shown) nor a definitive official APA schema alignment in Motoko. Several additional UI/features appear added beyond the stated non-goals (e.g., edit route, baseline persistence, profile skill level).",
+  "generatedAt": "2026-02-15T00:52:25.631Z",
+  "summary": "The diff implements a retry mechanism for actor initialization and adds client-side timeouts to save/update mutations, but the core Save/Update button-state/label logic for the Official/Real APA Match Log form is not fully evidenced in the provided truncated diff. Backend changes add invite-only/public access toggling and a migration scaffold, but there isn’t sufficient evidence that `saveMatch` trapping/deadlock issues (if any) were specifically addressed for REQ-110.",
   "missing_requirements": [
     {
-      "id": "REQ-99",
-      "requirement": "Investigate and fix the regression where the user can no longer save a match across all saving modes, ensuring saveMatch/updateMatch do not trap and successful saves appear in Match History.",
-      "reason": "Frontend hardening and error messaging were added, but the diff excerpt of backend/main.mo is truncated before any evidence of changes to saveMatch/updateMatch implementations or match persistence/listing logic. Without those sections, it's not possible to confirm the actual regression (backend trap/type mismatch/persistence failure) was fixed end-to-end for all modes.",
+      "id": "REQ-107",
+      "requirement": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an actor instance is available, even if the actor hook reports isFetching=true; button labels must distinguish “No actor yet” vs “Mutation in progress” vs ready.",
+      "reason": "RealApaMatchForm.tsx is truncated before any primary action button render/disabled/label logic is shown. The diff shows actor/identity checks and a delayed warning timer, but does not provide evidence that the Save/Update button is enabled when `actor` exists regardless of `isFetching`, nor that the label distinguishes connecting vs saving vs ready states.",
       "evidence": [
-        "backend/main.mo (truncated; shows access-control helpers but not saveMatch/updateMatch implementations)",
-        "frontend/src/hooks/useQueries.ts (adds error wrapping, but does not prove backend traps are resolved)"
+        "frontend/src/components/apa/RealApaMatchForm.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (mutations don’t reference isFetching, but form button behavior is not shown)"
       ]
     },
     {
-      "id": "REQ-100",
-      "requirement": "Fix frontend-backend schema/type mismatches for Official/Real APA Match Logs; align Motoko ApiMatch.officialApaMatchLogData with stored APADetailedOfficial and frontend buildOfficialApaMatchLog; remove stale fields (e.g., points) if no longer sent.",
-      "reason": "Frontend components were updated to reference officialApaMatchLogData fields (e.g., playerOneSkillLevel/playerTwoSkillLevel) but the diff summary does not show any Motoko type or convertToApiMatch changes for #officialApaMatchLog, nor any removal of stale fields in backend types. The backend schema alignment requirement cannot be verified from the provided truncated backend diff.",
+      "id": "REQ-110",
+      "requirement": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against current backend schema and access-control behavior in public mode; add necessary backend fixes so `saveMatch` completes and does not trap/deadlock for authenticated users when invite-only mode is disabled.",
+      "reason": "backend/main.mo is truncated before any `saveMatch` implementation; while access control/public mode toggling is present, there is no direct evidence that `saveMatch` was fixed to avoid traps/deadlocks, nor that match history/detail visibility after save was ensured.",
       "evidence": [
-        "backend/main.mo (truncated; no visible ApiMatch/convertToApiMatch/#officialApaMatchLog projection changes)",
-        "frontend/src/components/matches/MatchSummaryCard.tsx (uses officialApaMatchLogData fields, but does not demonstrate backend schema alignment)"
+        "backend/main.mo (truncated; shows inviteOnlyMode/hasAccess changes but not saveMatch)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added persistence of Accepting Gifts baseline/current object ball count to backend for cross-session resume (new baseline operations and UI).",
-      "reason": "Not requested for fixing save regression; falls under adding/expanding features outside the stated scope.",
+      "description": "Added a backend migration scaffold (migration module + actor (with migration = ...)) without evidence that a state migration is required for this bugfix.",
+      "reason": "BuildRequest allows backend/migration.mo only if a state migration is required; diff adds backend/migration.mo that appears to be a placeholder and wires it into backend/main.mo.",
       "evidence": [
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx (\"Persist current count to backend for cross-session resume\")",
-        "frontend-file-summaries.txt (AcceptingGiftsStartPage: loads persisted baseline from backend; rules mention progress saved across sessions)"
+        "backend/migration.mo",
+        "backend/main.mo (import Migration and `(with migration = Migration.run)` )"
       ]
     },
     {
-      "description": "Added Official/Real APA Match Log edit route/page and edit form flow.",
-      "reason": "REQs focus on restoring saving/listing; adding an edit route is a new match feature beyond restoring saving existing ones (explicit non-goal).",
+      "description": "Implemented/modified admin approvals and invite-only mode owner UI flows (e.g., OwnerApprovalsPage behavior changes).",
+      "reason": "Not requested by REQ-107..REQ-110, which focus on the Official/Real APA Match Log save UX and ensuring saveMatch completes in public mode; owner approvals UI changes appear out of scope.",
       "evidence": [
-        "frontend/src/pages/apa/RealApaMatchEditPage.tsx",
-        "frontend-file-summaries.txt (App.tsx: new /real-apa-match/$matchId/edit route)"
+        "frontend/src/pages/owner/OwnerApprovalsPage.tsx"
       ]
     },
     {
-      "description": "Profile setup dialog now includes APA 9-ball skill level selector persisted in backend profile.",
-      "reason": "Not part of save regression fix; introduces new profile field/UI.",
+      "description": "Various other frontend feature changes described in frontend-file-summaries.txt (new routes, profile APA skill selector, match summary skill level mapping changes, multiple mode page changes).",
+      "reason": "These changes are not requested by the BuildRequest and are only mentioned via the summaries file; they appear unrelated to fixing the Official APA Match Log save ‘Connecting…’ issue.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/auth/ProfileSetupDialog.tsx: adds optional APA 9-Ball skill level selector)",
-        "backend/main.mo (UserProfile includes apaSkillLevel; may be new/expanded beyond requested scope)"
-      ]
-    },
-    {
-      "description": "Home page updated to include a new Official APA Match Log tile/placeholder and layout changes.",
-      "reason": "UI/navigation changes unrelated to the save regression were listed as non-goals.",
-      "evidence": [
-        "frontend-file-summaries.txt (HomePage: updated grid layout with four mode tiles including Official APA Match Log placeholder tile)"
-      ]
-    },
-    {
-      "description": "Extended APA aggregate stats extraction to include Official APA Match Logs and compute PPI/win rate from official logs.",
-      "reason": "Not required to fix saving/listing regression; adds analytics behavior.",
-      "evidence": [
-        "frontend/src/lib/apa/apaAggregateStats.ts (adds handling for match.officialApaMatchLogData and PPI computation/win rate)"
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.56,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/apa/RealApaMatchForm.tsx",
-    "frontend/src/components/matches/EndMatchDialog.tsx",
-    "frontend/src/components/matches/MatchSummaryCard.tsx",
+    "frontend/src/hooks/useActorRetry.ts",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/apa/apaAggregateStats.ts",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-    "frontend/src/pages/apa/PracticeGamePage.tsx",
-    "frontend/src/pages/apa/RealApaMatchEditPage.tsx",
-    "frontend/src/pages/history/MatchDetailsPage.tsx",
-    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-    "frontend/src/utils/errorText.ts",
+    "frontend/src/pages/owner/OwnerApprovalsPage.tsx",
+    "frontend/src/utils/withTimeout.ts",
     "project_state.json"
   ]
 }

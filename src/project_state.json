@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 57,
+  "projectStateVersion": 63,
   "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -22,7 +22,9 @@
     "Official/Real APA Match Log: Save is blocked with validation message \"Unable to determine match winner\" (winner/outcome computation/validation logic may be incorrectly rejecting valid entries or requiring fields unexpectedly).",
     "Official/Real APA Match Log: Save action fails with \"Failed to save match\" when saving from Match History / match log flow (save payload or backend validation mismatch/regression).",
     "Regression/bug: Match History sort control (toggle Newest/Oldest by match date) is missing/not shown even when history list contains matches (user reports 3 matches visible but no sort option).",
-    "New regression: user reports they can’t save a match anymore (save action no longer works). Needs investigation to determine which mode(s) and whether it’s validation vs backend save failure."
+    "APA Practice: match does not stop immediately when a player reaches their points-to-win target; scoring can continue into subsequent rack(s), causing final scores to exceed the target (e.g., 36).",
+    "APA Practice: innings auto-increment logic is incorrect—innings only increment after the 2nd player’s turn/turnover, resulting in too-few innings counted for the match.",
+    "Official/Real APA Match Log: Save gets stuck on \"Connecting\" after entering inputs (cannot complete save). Likely save-mutation/network/actor readiness state deadlock."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -719,6 +721,70 @@
       "title": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
       "reqIds": [
         "REQ-101"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-practice-mode-so-the-match-stops-as-soon-as-a-player-reaches-or-exceeds-their-points-to-win-target-preventing-final-saved-displayed-scores-from-exceeding-the-target-e-g-showing-36-when-the-target-was-lower",
+      "title": "Fix APA Practice mode so the match stops as soon as a player reaches (or exceeds) their points-to-win target, preventing final saved/displayed scores from exceeding the target (e.g., showing 36 when the target was lower).",
+      "reqIds": [
+        "REQ-103"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-practice-mode-innings-tracking-so-innings-increment-correctly-per-player-turn-not-only-after-the-second-player-s-turn-resulting-in-separate-accurate-inning-counts-for-player-1-and-player-2-across-the-match",
+      "title": "Fix APA Practice mode innings tracking so innings increment correctly per player turn (not only after the second player’s turn), resulting in separate, accurate inning counts for Player 1 and Player 2 across the match.",
+      "reqIds": [
+        "REQ-104"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-practice-rack-scoring-completion-behavior-so-that-when-the-match-becomes-complete-in-the-middle-of-play-the-scoring-ui-is-safely-prevented-from-continuing-to-add-points-innings-beyond-match-completion-and-the-user-can-proceed-to-saving-the-match-without-inconsistent-state",
+      "title": "Update APA Practice rack-scoring completion behavior so that when the match becomes complete in the middle of play, the scoring UI is safely prevented from continuing to add points/innings beyond match completion, and the user can proceed to saving the match without inconsistent state.",
+      "reqIds": [
+        "REQ-105"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-official-real-apa-match-log-date-parsing-formatting-so-the-date-displayed-on-match-history-summary-cards-matches-the-exact-match-date-the-user-entered-no-off-by-one-day-shift-due-to-timezone-parsing-update-frontend-src-lib-matches-effectivematchdate-ts-so-geteffectivematchtimestamp-and-formateffectivematchdate-treat-date-only-strings-notably-the-html-input-type-date-format-yyyy-mm-dd-as-a-local-calendar-date-rather-than-a-utc-timestamp-that-can-render-as-the-previous-day-in-some-timezones",
+      "title": "Fix the Official/Real APA match log date parsing/formatting so the date displayed on Match History summary cards matches the exact match date the user entered (no off-by-one-day shift due to timezone parsing). Update `frontend/src/lib/matches/effectiveMatchDate.ts` so `getEffectiveMatchTimestamp(...)` and `formatEffectiveMatchDate(...)` treat date-only strings (notably the HTML `<input type=\"date\">` format `YYYY-MM-DD`) as a local calendar date rather than a UTC timestamp that can render as the previous day in some timezones.",
+      "reqIds": [
+        "REQ-106"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-official-real-apa-match-log-create-edit-form-so-the-save-update-button-is-not-permanently-disabled-showing-connecting-when-an-authenticated-user-is-trying-to-save-a-match-the-form-must-allow-saving-as-soon-as-a-usable-backend-actor-instance-exists-even-if-the-actor-hook-reports-a-background-fetching-refetching-state",
+      "title": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an authenticated user is trying to save a match. The form must allow saving as soon as a usable backend actor instance exists, even if the actor hook reports a background fetching/refetching state.",
+      "reqIds": [
+        "REQ-107"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clear-user-facing-error-path-on-the-official-real-apa-match-log-form-for-the-case-where-the-backend-actor-never-becomes-available-if-the-actor-is-still-unavailable-after-a-reasonable-wait-show-an-english-inline-message-and-provide-a-user-invokable-retry-action-e-g-a-retry-connection-button-without-requiring-a-full-page-refresh",
+      "title": "Add a clear, user-facing error path on the Official/Real APA Match Log form for the case where the backend actor never becomes available. If the actor is still unavailable after a reasonable wait, show an English inline message and provide a user-invokable retry action (e.g., a “Retry connection” button) without requiring a full page refresh.",
+      "reqIds": [
+        "REQ-108"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-harden-the-official-real-apa-match-log-save-update-submission-flow-so-that-if-the-save-mutation-call-hangs-or-takes-unusually-long-the-user-receives-feedback-and-can-recover-implement-a-client-side-timeout-for-the-save-update-request-that-surfaces-a-clear-english-error-message-and-re-enables-the-save-update-button-so-the-user-can-retry",
+      "title": "Harden the Official/Real APA Match Log save/update submission flow so that if the save mutation call hangs or takes unusually long, the user receives feedback and can recover. Implement a client-side timeout for the save/update request that surfaces a clear English error message and re-enables the Save/Update button so the user can retry.",
+      "reqIds": [
+        "REQ-109"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-verify-end-to-end-saving-of-official-real-apa-match-logs-succeeds-against-the-current-backend-schema-and-access-control-behavior-in-public-mode-and-add-any-necessary-backend-fixes-so-the-savematch-call-completes-and-does-not-trap-or-deadlock-for-authenticated-users-when-invite-only-mode-is-disabled",
+      "title": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against the current backend schema and access-control behavior in public mode, and add any necessary backend fixes so the `saveMatch` call completes and does not trap or deadlock for authenticated users when invite-only mode is disabled.",
+      "reqIds": [
+        "REQ-110"
       ],
       "version": 1
     }

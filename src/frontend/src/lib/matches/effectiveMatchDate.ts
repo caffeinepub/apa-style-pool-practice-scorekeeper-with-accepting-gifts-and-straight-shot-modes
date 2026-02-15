@@ -1,7 +1,8 @@
 import type { ApiMatch } from '../../backend';
 
 /**
- * Parse a date string (MM/DD/YYYY or similar) into a timestamp (ms since epoch).
+ * Parse a date string (YYYY-MM-DD from HTML date input or other formats) into a timestamp (ms since epoch).
+ * For YYYY-MM-DD format, treats it as a local calendar date to avoid timezone off-by-one issues.
  * Returns null if the date string is empty, invalid, or unparseable.
  */
 function parseOfficialDateString(dateStr: string): number | null {
@@ -11,7 +12,31 @@ function parseOfficialDateString(dateStr: string): number | null {
 
   const trimmed = dateStr.trim();
   
-  // Try parsing as MM/DD/YYYY or similar formats
+  // Check if it's in YYYY-MM-DD format (from HTML date input)
+  const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const match = trimmed.match(dateOnlyPattern);
+  
+  if (match) {
+    // Parse as local date to avoid timezone offset issues
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+    const day = parseInt(match[3], 10);
+    
+    const localDate = new Date(year, month, day);
+    
+    // Validate that the date is valid
+    if (
+      localDate.getFullYear() === year &&
+      localDate.getMonth() === month &&
+      localDate.getDate() === day
+    ) {
+      return localDate.getTime();
+    }
+    
+    return null;
+  }
+  
+  // Try parsing other formats (fallback)
   const parsed = new Date(trimmed);
   
   if (isNaN(parsed.getTime())) {

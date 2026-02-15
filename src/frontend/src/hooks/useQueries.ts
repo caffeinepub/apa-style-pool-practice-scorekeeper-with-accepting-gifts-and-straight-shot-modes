@@ -4,6 +4,10 @@ import type { ApiMatch, UserProfile, MatchLogRecord, UserApprovalInfo, UserRole 
 import { ApprovalStatus } from '../backend';
 import { Principal } from '@dfinity/principal';
 import { extractErrorText } from '../utils/errorText';
+import { withTimeout } from '../utils/withTimeout';
+
+// Timeout for save/update operations (30 seconds)
+const MUTATION_TIMEOUT_MS = 30000;
 
 export function useGetAllMatches() {
   const { actor, isFetching } = useActor();
@@ -41,7 +45,11 @@ export function useSaveMatch() {
         throw new Error('Backend connection not ready. Please wait and try again.');
       }
       try {
-        return await actor.saveMatch(matchId, matchRecord);
+        return await withTimeout(
+          actor.saveMatch(matchId, matchRecord),
+          MUTATION_TIMEOUT_MS,
+          'Save operation is taking too long. Please try again.'
+        );
       } catch (error) {
         const errorText = extractErrorText(error);
         throw new Error(`Failed to save match: ${errorText}`);
@@ -63,15 +71,18 @@ export function useUpdateMatch() {
         throw new Error('Backend connection not ready. Please wait and try again.');
       }
       try {
-        return await actor.updateMatch(matchId, matchRecord);
+        return await withTimeout(
+          actor.updateMatch(matchId, matchRecord),
+          MUTATION_TIMEOUT_MS,
+          'Update operation is taking too long. Please try again.'
+        );
       } catch (error) {
         const errorText = extractErrorText(error);
         throw new Error(`Failed to update match: ${errorText}`);
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
-      queryClient.invalidateQueries({ queryKey: ['match', variables.matchId] });
     },
   });
 }
@@ -82,8 +93,15 @@ export function useDeleteMatch() {
 
   return useMutation({
     mutationFn: async (matchId: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteMatch(matchId);
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.deleteMatch(matchId);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to delete match: ${errorText}`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
@@ -117,83 +135,19 @@ export function useSaveCallerUserProfile() {
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.saveCallerUserProfile(profile);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to save profile: ${errorText}`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
     },
-  });
-}
-
-export function useGetCurrentObjectBallCount() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<bigint>({
-    queryKey: ['currentObjectBallCount'],
-    queryFn: async () => {
-      if (!actor) return BigInt(2);
-      return actor.getCurrentObjectBallCount();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useSetCurrentObjectBallCount() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (newCount: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.setCurrentObjectBallCount(newCount);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
-    },
-  });
-}
-
-export function useCompleteSession() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (finalCount: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.completeSession(finalCount);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
-    },
-  });
-}
-
-export function useIsCallerApproved() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['isCallerApproved'],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerApproved();
-    },
-    enabled: !!actor && !isFetching,
-    retry: false,
-  });
-}
-
-export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['isCallerAdmin'],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
-    },
-    enabled: !!actor && !isFetching,
-    retry: false,
   });
 }
 
@@ -207,7 +161,41 @@ export function useGetInviteOnlyMode() {
       return actor.getInviteOnlyMode();
     },
     enabled: !!actor && !isFetching,
-    retry: false,
+  });
+}
+
+export function useSetInviteOnlyMode() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.setInviteOnlyMode(enabled);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to update invite-only mode: ${errorText}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inviteOnlyMode'] });
+    },
+  });
+}
+
+export function useIsCallerApproved() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isApproved'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerApproved();
+    },
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -217,11 +205,19 @@ export function useRequestApproval() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.requestApproval();
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.requestApproval();
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to request approval: ${errorText}`);
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
+      queryClient.invalidateQueries({ queryKey: ['isApproved'] });
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
     },
   });
 }
@@ -245,8 +241,15 @@ export function useSetApproval() {
 
   return useMutation({
     mutationFn: async ({ user, status }: { user: Principal; status: ApprovalStatus }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.setApproval(user, status);
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.setApproval(user, status);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to set approval: ${errorText}`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
@@ -254,34 +257,108 @@ export function useSetApproval() {
   });
 }
 
-export function useRejectAllPending() {
+export function useIsCallerAdmin() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetCallerUserRole() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<UserRole>({
+    queryKey: ['userRole'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getCallerUserRole();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAssignCallerUserRole() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pendingUsers: Principal[]) => {
-      if (!actor) throw new Error('Actor not available');
-      await Promise.all(
-        pendingUsers.map((user) => actor.setApproval(user, ApprovalStatus.rejected))
-      );
+    mutationFn: async ({ user, role }: { user: Principal; role: UserRole }) => {
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.assignCallerUserRole(user, role);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to assign role: ${errorText}`);
+      }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userRole'] });
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
     },
   });
 }
 
-export function useSetInviteOnlyMode() {
+export function useGetCurrentObjectBallCount() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint>({
+    queryKey: ['currentObjectBallCount'],
+    queryFn: async () => {
+      if (!actor) return BigInt(2);
+      return actor.getCurrentObjectBallCount();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSetCurrentObjectBallCount() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (enabled: boolean) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.setInviteOnlyMode(enabled);
+    mutationFn: async (newCount: bigint) => {
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.setCurrentObjectBallCount(newCount);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to set ball count: ${errorText}`);
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inviteOnlyMode'] });
+      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
+    },
+  });
+}
+
+export function useCompleteSession() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (finalCount: bigint) => {
+      if (!actor) {
+        throw new Error('Backend connection not ready. Please wait and try again.');
+      }
+      try {
+        return await actor.completeSession(finalCount);
+      } catch (error) {
+        const errorText = extractErrorText(error);
+        throw new Error(`Failed to complete session: ${errorText}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
     },
   });
 }

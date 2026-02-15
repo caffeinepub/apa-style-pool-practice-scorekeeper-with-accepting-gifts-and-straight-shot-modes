@@ -2,15 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-investigate-and-fix-the-regression-where-the-user-can-no-longer-save-a-match-reproduce-the-failure-for-each-mode-that-supports-saving-apa-practice-straight-shot-accepting-gifts-and-official-real-apa-match-log-and-identify-whether-the-failure-is-caused-by-frontend-validation-disabled-actions-backend-traps-or-frontend-backend-type-mismatches",
-      "featureTitle": "Investigate and fix the regression where the user can no longer save a match. Reproduce the failure for each mode that supports saving (APA Practice, Straight Shot, Accepting Gifts, and Official/Real APA Match Log) and identify whether the failure is caused by frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.",
+      "featureId": "feature-fix-the-official-real-apa-match-log-create-edit-form-so-the-save-update-button-is-not-permanently-disabled-showing-connecting-when-an-authenticated-user-is-trying-to-save-a-match-the-form-must-allow-saving-as-soon-as-a-usable-backend-actor-instance-exists-even-if-the-actor-hook-reports-a-background-fetching-refetching-state",
+      "featureTitle": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an authenticated user is trying to save a match. The form must allow saving as soon as a usable backend actor instance exists, even if the actor hook reports a background fetching/refetching state.",
       "files": [
-        "frontend/src/components/apa/RealApaMatchForm.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-        "frontend/src/utils/errorText.ts"
+        "frontend/src/components/apa/RealApaMatchForm.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,17 +17,16 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-99"
+        "REQ-107"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-any-frontend-backend-schema-type-mismatches-that-can-prevent-saving-or-listing-matches-especially-for-official-real-apa-match-logs-ensure-the-motoko-apimatch-officialapamatchlogdata-shape-matches-the-data-actually-stored-in-apadetailedofficial-and-what-the-frontend-sends-via-buildofficialapamatchlog-including-removal-of-any-stale-fields-such-as-points-if-they-are-no-longer-collected-sent",
-      "featureTitle": "Fix any frontend-backend schema/type mismatches that can prevent saving or listing matches, especially for Official/Real APA Match Logs. Ensure the Motoko `ApiMatch.officialApaMatchLogData` shape matches the data actually stored in `APADetailedOfficial` and what the frontend sends via `buildOfficialApaMatchLog` (including removal of any stale fields such as `points` if they are no longer collected/sent).",
+      "featureId": "feature-add-a-clear-user-facing-error-path-on-the-official-real-apa-match-log-form-for-the-case-where-the-backend-actor-never-becomes-available-if-the-actor-is-still-unavailable-after-a-reasonable-wait-show-an-english-inline-message-and-provide-a-user-invokable-retry-action-e-g-a-retry-connection-button-without-requiring-a-full-page-refresh",
+      "featureTitle": "Add a clear, user-facing error path on the Official/Real APA Match Log form for the case where the backend actor never becomes available. If the actor is still unavailable after a reasonable wait, show an English inline message and provide a user-invokable retry action (e.g., a “Retry connection” button) without requiring a full page refresh.",
       "files": [
         "frontend/src/components/apa/RealApaMatchForm.tsx",
-        "frontend/src/components/matches/MatchSummaryCard.tsx",
-        "frontend/src/pages/history/MatchDetailsPage.tsx"
+        "frontend/src/hooks/useActorRetry.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -44,20 +38,17 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-100"
+        "REQ-108"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-harden-the-save-flows-so-that-the-user-is-not-blocked-from-saving-due-to-avoidable-client-side-state-issues-specifically-ensure-save-buttons-are-not-permanently-disabled-due-to-stale-actorfetching-isfetching-state-and-ensure-save-actions-fail-fast-with-a-clear-english-message-when-the-backend-actor-identity-is-not-ready",
-      "featureTitle": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
+      "featureId": "feature-harden-the-official-real-apa-match-log-save-update-submission-flow-so-that-if-the-save-mutation-call-hangs-or-takes-unusually-long-the-user-receives-feedback-and-can-recover-implement-a-client-side-timeout-for-the-save-update-request-that-surfaces-a-clear-english-error-message-and-re-enables-the-save-update-button-so-the-user-can-retry",
+      "featureTitle": "Harden the Official/Real APA Match Log save/update submission flow so that if the save mutation call hangs or takes unusually long, the user receives feedback and can recover. Implement a client-side timeout for the save/update request that surfaces a clear English error message and re-enables the Save/Update button so the user can retry.",
       "files": [
         "frontend/src/components/apa/RealApaMatchForm.tsx",
-        "frontend/src/components/matches/EndMatchDialog.tsx",
         "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-        "frontend/src/pages/apa/PracticeGamePage.tsx",
-        "frontend/src/pages/straight-shot/StraightShotGamePage.tsx"
+        "frontend/src/utils/withTimeout.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -69,7 +60,28 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-101"
+        "REQ-109"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-verify-end-to-end-saving-of-official-real-apa-match-logs-succeeds-against-the-current-backend-schema-and-access-control-behavior-in-public-mode-and-add-any-necessary-backend-fixes-so-the-savematch-call-completes-and-does-not-trap-or-deadlock-for-authenticated-users-when-invite-only-mode-is-disabled",
+      "featureTitle": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against the current backend schema and access-control behavior in public mode, and add any necessary backend fixes so the `saveMatch` call completes and does not trap or deadlock for authenticated users when invite-only mode is disabled.",
+      "files": [
+        "frontend/src/components/apa/RealApaMatchForm.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-110"
       ],
       "confidence": "high"
     }

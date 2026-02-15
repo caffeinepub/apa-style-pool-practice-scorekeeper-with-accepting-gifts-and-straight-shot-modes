@@ -13,6 +13,9 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 
+// Data migration, always define migration module and use with clause, see documentation for details.
+import Migration "migration";
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -979,10 +982,7 @@ actor {
     };
   };
 
-  public shared ({ caller }) func setCurrentObjectBallCount(newCount : Nat) : async Nat {
-    if (not hasAccess(caller)) {
-      Runtime.trap("Unauthorized: Only approved users can modify state");
-    };
+  func internalSetCurrentObjectBallCount(caller : Principal, newCount : Nat) : Nat {
     if (newCount < 2 or newCount > 7) {
       Runtime.trap("Invalid value. Only the range 2–7 is allowed");
     };
@@ -993,8 +993,18 @@ actor {
     newCount;
   };
 
+  public shared ({ caller }) func setCurrentObjectBallCount(newCount : Nat) : async Nat {
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can modify state");
+    };
+    internalSetCurrentObjectBallCount(caller, newCount);
+  };
+
   public shared ({ caller }) func completeSession(finalCount : Nat) : async Nat {
-    await setCurrentObjectBallCount(finalCount);
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can modify state");
+    };
+    internalSetCurrentObjectBallCount(caller, finalCount);
   };
 
   public query ({ caller }) func getCurrentObjectBallCount() : async Nat {

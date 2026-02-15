@@ -72,7 +72,7 @@ export default function PracticeGamePage() {
     player1DefensiveShots: number;
     player2DefensiveShots: number;
   }) => {
-    if (!gameState) return;
+    if (!gameState || matchComplete) return;
 
     const newRack: RackData = {
       rackNumber: gameState.racks.length + 1,
@@ -89,10 +89,18 @@ export default function PracticeGamePage() {
       deadBalls: data.deadBalls,
     };
 
+    // Calculate new totals
+    const newPlayer1Points = gameState.player1Points + data.player1Points;
+    const newPlayer2Points = gameState.player2Points + data.player2Points;
+
+    // Cap points at target
+    const cappedPlayer1Points = Math.min(newPlayer1Points, gameState.player1Target);
+    const cappedPlayer2Points = Math.min(newPlayer2Points, gameState.player2Target);
+
     const newState = {
       ...gameState,
-      player1Points: gameState.player1Points + data.player1Points,
-      player2Points: gameState.player2Points + data.player2Points,
+      player1Points: cappedPlayer1Points,
+      player2Points: cappedPlayer2Points,
       player1Innings: gameState.player1Innings + data.player1Innings,
       player2Innings: gameState.player2Innings + data.player2Innings,
       player1DefensiveShots: gameState.player1DefensiveShots + data.player1DefensiveShots,
@@ -102,8 +110,8 @@ export default function PracticeGamePage() {
 
     setGameState(newState);
 
-    // Check if match is complete
-    if (newState.player1Points >= newState.player1Target || newState.player2Points >= newState.player2Target) {
+    // Check if match is complete (either player reached their target)
+    if (cappedPlayer1Points >= gameState.player1Target || cappedPlayer2Points >= gameState.player2Target) {
       setMatchComplete(true);
       toast.success('Match Complete!');
     }
@@ -309,6 +317,13 @@ export default function PracticeGamePage() {
         player1Name={gameState.player1}
         player2Name={gameState.player2}
         onRackComplete={handleRackComplete}
+        matchContext={{
+          player1CurrentPoints: gameState.player1Points,
+          player2CurrentPoints: gameState.player2Points,
+          player1Target: gameState.player1Target,
+          player2Target: gameState.player2Target,
+          matchComplete: matchComplete,
+        }}
       />
 
       {gameState.racks.length > 0 && (

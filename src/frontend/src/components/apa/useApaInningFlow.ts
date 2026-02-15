@@ -29,14 +29,14 @@ export function useApaInningFlow(startingPlayer: Player = 'A') {
 
   const turnOver = () => {
     setState(prev => {
-      const newInnings = prev.currentInningHasBalls
-        ? (prev.activePlayer === 'A' ? prev.playerAInnings + 1 : prev.playerBInnings + 1)
-        : (prev.activePlayer === 'A' ? prev.playerAInnings : prev.playerBInnings);
+      // Always increment innings for the player ending their turn, regardless of whether they scored
+      const newPlayerAInnings = prev.activePlayer === 'A' ? prev.playerAInnings + 1 : prev.playerAInnings;
+      const newPlayerBInnings = prev.activePlayer === 'B' ? prev.playerBInnings + 1 : prev.playerBInnings;
 
       return {
         activePlayer: prev.activePlayer === 'A' ? 'B' : 'A',
-        playerAInnings: prev.activePlayer === 'A' ? newInnings : prev.playerAInnings,
-        playerBInnings: prev.activePlayer === 'B' ? newInnings : prev.playerBInnings,
+        playerAInnings: newPlayerAInnings,
+        playerBInnings: newPlayerBInnings,
         currentInningHasBalls: false,
       };
     });

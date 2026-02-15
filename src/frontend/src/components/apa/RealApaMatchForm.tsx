@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,14 +6,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, RefreshCw } from 'lucide-react';
 import { useSaveMatch, useUpdateMatch } from '../../hooks/useQueries';
 import { buildOfficialApaMatchLog } from '../../lib/matches/matchBuilders';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useActor } from '../../hooks/useActor';
+import { useActorRetry } from '../../hooks/useActorRetry';
 import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
 import { getPointsToWin } from '../../lib/apa/apaEqualizer';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface RealApaMatchFormProps {
   mode: 'create' | 'edit';
@@ -34,7 +36,8 @@ interface RealApaMatchFormProps {
 export default function RealApaMatchForm({ mode, matchId, initialData }: RealApaMatchFormProps) {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor } = useActor();
+  const { retryConnection } = useActorRetry();
   const saveMatchMutation = useSaveMatch();
   const updateMatchMutation = useUpdateMatch();
 
@@ -50,11 +53,26 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [inningsUnknown, setInningsUnknown] = useState(initialData?.innings === '' || false);
 
+  // Connection retry state
+  const [showConnectionWarning, setShowConnectionWarning] = useState(false);
+
   // Validation errors
   const [yourScoreError, setYourScoreError] = useState('');
   const [theirScoreError, setTheirScoreError] = useState('');
   const [inningsError, setInningsError] = useState('');
   const [defensiveShotsError, setDefensiveShotsError] = useState('');
+
+  // Show connection warning after 8 seconds if actor is still not available
+  useEffect(() => {
+    if (!actor && identity) {
+      const timer = setTimeout(() => {
+        setShowConnectionWarning(true);
+      }, 8000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowConnectionWarning(false);
+    }
+  }, [actor, identity]);
 
   // Compute points-to-win targets
   const yourPointsToWin = yourSkillLevel ? getPointsToWin(parseInt(yourSkillLevel)) : null;
@@ -161,6 +179,11 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
     );
   };
 
+  const handleRetryConnection = () => {
+    retryConnection();
+    toast.info('Retrying connection...');
+  };
+
   const handleSubmit = async () => {
     if (!identity) {
       toast.error('You must be logged in to save a match');
@@ -241,11 +264,35 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
   };
 
   const isSubmitting = saveMatchMutation.isPending || updateMatchMutation.isPending;
-  const isActorReady = !!actor && !actorFetching;
-  const isSubmitDisabled = !isActorReady || isSubmitting || hasValidationErrors() || !hasRequiredFields();
+  const isSubmitDisabled = !actor || isSubmitting || hasValidationErrors() || !hasRequiredFields();
+
+  // Determine button text based on state
+  const getButtonText = () => {
+    if (!actor) return 'Connecting...';
+    if (isSubmitting) return 'Saving...';
+    return mode === 'create' ? 'Save Match' : 'Update Match';
+  };
 
   return (
     <div className="space-y-6">
+      {/* Connection Warning */}
+      {showConnectionWarning && !actor && (
+        <Alert>
+          <AlertDescription className="flex items-center justify-between">
+            <span>Backend connection is taking longer than expected.</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryConnection}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry connection
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-4">
         {/* Match Date */}
         <div className="space-y-2">
@@ -456,7 +503,7 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
           className="flex-1 gap-2"
         >
           <Save className="h-4 w-4" />
-          {!isActorReady ? 'Connecting...' : isSubmitting ? 'Saving...' : mode === 'create' ? 'Save Match' : 'Update Match'}
+          {getButtonText()}
         </Button>
       </div>
     </div>

@@ -1,92 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Fix regression: matches can no longer be saved",
+  "title": "Fix Official APA Match Log save stuck on “Connecting…”",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-99",
-      "text": "Investigate and fix the regression where the user can no longer save a match. Reproduce the failure for each mode that supports saving (APA Practice, Straight Shot, Accepting Gifts, and Official/Real APA Match Log) and identify whether the failure is caused by frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "now i cant save a match anymore"
-        ]
-      },
-      "acceptanceCriteria": [
-        "From each mode’s normal end-of-session flow, saving succeeds and the new match appears in Match History without errors.",
-        "If saving fails for any reason, the UI displays a clear English error message that includes the underlying error text when available (not only a generic failure).",
-        "No backend call involved in saving (saveMatch/updateMatch) traps during normal usage for an authenticated user with access."
-      ]
-    },
-    {
-      "id": "REQ-100",
-      "text": "Fix any frontend-backend schema/type mismatches that can prevent saving or listing matches, especially for Official/Real APA Match Logs. Ensure the Motoko `ApiMatch.officialApaMatchLogData` shape matches the data actually stored in `APADetailedOfficial` and what the frontend sends via `buildOfficialApaMatchLog` (including removal of any stale fields such as `points` if they are no longer collected/sent).",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "now i cant save a match anymore"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Saving an Official/Real APA Match Log via the form succeeds and navigates to the saved match details page.",
-        "Match History list rendering and Match Details rendering work for newly saved Official/Real APA Match Logs and for previously saved ones.",
-        "The backend `convertToApiMatch` projection for `#officialApaMatchLog` returns a consistent `officialApaMatchLogData` object with only the supported fields, and does not require any removed fields to exist.",
-        "The frontend generated types/IDL bindings compile cleanly after the schema alignment."
-      ]
-    },
-    {
-      "id": "REQ-101",
-      "text": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
+      "id": "REQ-107",
+      "text": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an authenticated user is trying to save a match. The form must allow saving as soon as a usable backend actor instance exists, even if the actor hook reports a background fetching/refetching state.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-3"
         ],
         "quotes": [
-          "now i cant save a match anymore"
+          "so the save feature for logging an apa match now is stuck on \"connecting\" so i cant save after inputs on that screen"
         ]
       },
       "acceptanceCriteria": [
-        "When the backend connection is not ready, the user sees an English message like \"Backend connection not ready. Please wait and try again.\" and can successfully save after the actor becomes ready.",
-        "Save buttons re-enable appropriately after transient failures (e.g., a failed attempt does not leave the UI stuck disabled).",
-        "No mode’s save button is disabled solely because of unrelated loading states once the actor is ready."
+        "When logged in and on the Official APA Match Log page, the primary action button does not remain stuck showing “Connecting...” indefinitely if an actor instance is available.",
+        "If the actor instance is available, the Save/Update button can be clicked (subject to existing validation and required-field rules) even when the actor hook reports isFetching=true.",
+        "The button label logic distinguishes between “No actor yet” (connecting) vs “Mutation in progress” (saving) vs normal ready state."
       ]
     },
     {
-      "id": "REQ-102",
-      "text": "Ensure backend access control does not unexpectedly block saving matches in public mode. When `inviteOnlyMode` is disabled, an authenticated (non-anonymous) caller must be able to save and list matches without being rejected as \"must be approved\".",
-      "target": "backend",
+      "id": "REQ-108",
+      "text": "Add a clear, user-facing error path on the Official/Real APA Match Log form for the case where the backend actor never becomes available. If the actor is still unavailable after a reasonable wait, show an English inline message and provide a user-invokable retry action (e.g., a “Retry connection” button) without requiring a full page refresh.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-3"
         ],
         "quotes": [
-          "now i cant save a match anymore"
+          "stuck on \"connecting\" so i cant save"
         ]
       },
       "acceptanceCriteria": [
-        "With `inviteOnlyMode = false`, a logged-in user can save a match successfully even if they are not on an approval allowlist.",
-        "Backend error messages related to access/approval do not occur during normal save/list operations in public mode.",
-        "With `inviteOnlyMode = true`, existing approval rules still apply as designed (no regression)."
+        "If the actor is null/unavailable, the UI presents an English message indicating the backend connection is not ready and offers a retry action.",
+        "Triggering retry attempts to re-establish the ability to save without losing already-entered form inputs.",
+        "User-facing text is in English."
+      ]
+    },
+    {
+      "id": "REQ-109",
+      "text": "Harden the Official/Real APA Match Log save/update submission flow so that if the save mutation call hangs or takes unusually long, the user receives feedback and can recover. Implement a client-side timeout for the save/update request that surfaces a clear English error message and re-enables the Save/Update button so the user can retry.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "so i cant save after inputs on that screen"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If the save/update request does not resolve within the configured timeout window, the user sees an English error message indicating the save is taking too long and to retry.",
+        "After a timeout error, the Save/Update button is re-enabled and the form remains populated with the user’s inputs.",
+        "Normal successful saves still navigate to the saved match details page as currently implemented in the form."
+      ]
+    },
+    {
+      "id": "REQ-110",
+      "text": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against the current backend schema and access-control behavior in public mode, and add any necessary backend fixes so the `saveMatch` call completes and does not trap or deadlock for authenticated users when invite-only mode is disabled.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "stuck on \"connecting\" so i cant save"
+        ]
+      },
+      "acceptanceCriteria": [
+        "With invite-only mode disabled, an authenticated user can save an Official/Real APA Match Log and then immediately see it in Match History and open Match Details.",
+        "If the backend rejects the save, the frontend receives a failing response and shows an error; it must not remain indefinitely in a “Connecting...” UI state.",
+        "No backend traps occur during save for the Official/Real APA Match Log happy path."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain single-actor; all Motoko logic stays in backend/main.mo.",
-    "Only create backend/migration.mo changes if required by a stable type/state upgrade (conditional migration policy).",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead).",
-    "All user-facing text must be in English."
+    "Do not edit files under frontend/src/components/ui (read-only Shadcn components).",
+    "Do not edit immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx.",
+    "Keep all user-facing text in English.",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if a state migration is required."
   ],
   "nonGoals": [
-    "Adding new match features or new match types beyond restoring the ability to save existing ones.",
-    "Changing the app’s overall UI theme or navigation unrelated to the save regression.",
-    "Introducing external databases or third-party services."
+    "Do not add new fields to the Official/Real APA Match Log data model as part of this fix unless required to resolve a save/list schema mismatch.",
+    "Do not redesign the Official APA Match Log form UI beyond what is necessary to fix the stuck “Connecting...” save experience.",
+    "Do not implement new authentication providers or non-Internet-Identity auth flows."
   ],
   "imageRequirements": {
     "required": [],

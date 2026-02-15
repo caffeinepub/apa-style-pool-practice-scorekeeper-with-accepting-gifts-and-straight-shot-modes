@@ -1,79 +1,64 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T23:37:38.308Z",
+  "generatedAt": "2026-02-15T00:52:25.638Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 4,
-    "implemented": 3,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-100",
-        "summary": "Fix any frontend-backend schema/type mismatches that can prevent saving or listing matches, especially for Official/Real APA Match Logs. Ensure the Motoko `ApiMatch.officialApaMatchLogData` shape matches the data actually stored in `APADetailedOfficial` and what the frontend sends via `buildOfficialApaMatchLog` (including removal of any stale fields such as `points` if they are no longer collected/sent).",
+        "id": "REQ-107",
+        "summary": "Fix the Official/Real APA Match Log create/edit form so the Save/Update button is not permanently disabled showing “Connecting...” when an authenticated user is trying to save a match. The form must allow saving as soon as a usable backend actor instance exists, even if the actor hook reports a background fetching/refetching state.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/matches/matchBuilders.ts",
-          "frontend/src/pages/history/MatchDetailsPage.tsx",
-          "frontend/src/components/matches/MatchSummaryCard.tsx",
-          "frontend/src/lib/matches/effectiveMatchDate.ts",
-          "frontend/src/pages/history/MatchHistoryPage.tsx",
           "frontend/src/components/apa/RealApaMatchForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/history/MatchDetailsPage.tsx",
-          "frontend/src/components/matches/MatchSummaryCard.tsx",
           "frontend/src/components/apa/RealApaMatchForm.tsx"
         ]
       },
       {
-        "id": "REQ-101",
-        "summary": "Harden the save flows so that the user is not blocked from saving due to avoidable client-side state issues. Specifically: ensure save buttons are not permanently disabled due to stale `actorFetching/isFetching` state, and ensure save actions fail fast with a clear English message when the backend actor/identity is not ready.",
+        "id": "REQ-108",
+        "summary": "Add a clear, user-facing error path on the Official/Real APA Match Log form for the case where the backend actor never becomes available. If the actor is still unavailable after a reasonable wait, show an English inline message and provide a user-invokable retry action (e.g., a “Retry connection” button) without requiring a full page refresh.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/matches/EndMatchDialog.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/hooks/useActorRetry.ts",
           "frontend/src/components/apa/RealApaMatchForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/matches/EndMatchDialog.tsx",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/hooks/useActorRetry.ts",
           "frontend/src/components/apa/RealApaMatchForm.tsx"
         ]
       },
       {
-        "id": "REQ-102",
-        "summary": "Ensure backend access control does not unexpectedly block saving matches in public mode. When `inviteOnlyMode` is disabled, an authenticated (non-anonymous) caller must be able to save and list matches without being rejected as \"must be approved\".",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-99",
-        "summary": "Investigate and fix the regression where the user can no longer save a match. Reproduce the failure for each mode that supports saving (APA Practice, Straight Shot, Accepting Gifts, and Official/Real APA Match Log) and identify whether the failure is caused by frontend validation/disabled actions, backend traps, or frontend-backend type mismatches.",
+        "id": "REQ-109",
+        "summary": "Harden the Official/Real APA Match Log save/update submission flow so that if the save mutation call hangs or takes unusually long, the user receives feedback and can recover. Implement a client-side timeout for the save/update request that surfaces a clear English error message and re-enables the Save/Update button so the user can retry.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/errorText.ts",
+          "frontend/src/utils/withTimeout.ts",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
           "frontend/src/components/apa/RealApaMatchForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/errorText.ts",
+          "frontend/src/utils/withTimeout.ts",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-110",
+        "summary": "Verify end-to-end saving of Official/Real APA Match Logs succeeds against the current backend schema and access-control behavior in public mode, and add any necessary backend fixes so the `saveMatch` call completes and does not trap or deadlock for authenticated users when invite-only mode is disabled.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/apa/RealApaMatchForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/apa/RealApaMatchForm.tsx"
         ]
       }
@@ -81,25 +66,16 @@
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
     "frontend/src/components/apa/RealApaMatchForm.tsx",
-    "frontend/src/components/matches/EndMatchDialog.tsx",
-    "frontend/src/components/matches/MatchSummaryCard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useActorRetry.ts",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/apa/apaAggregateStats.ts",
-    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
-    "frontend/src/pages/apa/PracticeGamePage.tsx",
-    "frontend/src/pages/apa/RealApaMatchEditPage.tsx",
-    "frontend/src/pages/history/MatchDetailsPage.tsx",
-    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
-    "frontend/src/utils/errorText.ts",
+    "frontend/src/pages/owner/OwnerApprovalsPage.tsx",
+    "frontend/src/utils/withTimeout.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
