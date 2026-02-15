@@ -4,16 +4,22 @@ type Player = 'A' | 'B';
 
 interface InningFlowState {
   activePlayer: Player;
-  playerAInnings: number;
-  playerBInnings: number;
+  sharedInnings: number;
   currentInningHasBalls: boolean;
 }
 
-export function useApaInningFlow(startingPlayer: Player = 'A') {
+interface InitialState {
+  startingPlayer?: Player;
+  initialInnings?: number;
+}
+
+export function useApaInningFlow(init?: InitialState) {
+  const startingPlayer = init?.startingPlayer ?? 'A';
+  const initialInnings = init?.initialInnings ?? 0;
+
   const [state, setState] = useState<InningFlowState>({
     activePlayer: startingPlayer,
-    playerAInnings: 0,
-    playerBInnings: 0,
+    sharedInnings: initialInnings,
     currentInningHasBalls: false,
   });
 
@@ -29,36 +35,39 @@ export function useApaInningFlow(startingPlayer: Player = 'A') {
 
   const turnOver = () => {
     setState(prev => {
-      // Always increment innings for the player ending their turn, regardless of whether they scored
-      const newPlayerAInnings = prev.activePlayer === 'A' ? prev.playerAInnings + 1 : prev.playerAInnings;
-      const newPlayerBInnings = prev.activePlayer === 'B' ? prev.playerBInnings + 1 : prev.playerBInnings;
-
+      // Only increment shared innings when Player B ends their turn (switching back to A)
+      const shouldIncrementInnings = prev.activePlayer === 'B';
+      
       return {
         activePlayer: prev.activePlayer === 'A' ? 'B' : 'A',
-        playerAInnings: newPlayerAInnings,
-        playerBInnings: newPlayerBInnings,
+        sharedInnings: shouldIncrementInnings ? prev.sharedInnings + 1 : prev.sharedInnings,
         currentInningHasBalls: false,
       };
     });
   };
 
-  const reset = () => {
+  const resetRack = (preserveActivePlayer?: Player, preserveInnings?: number) => {
     setState({
-      activePlayer: startingPlayer,
-      playerAInnings: 0,
-      playerBInnings: 0,
+      activePlayer: preserveActivePlayer ?? startingPlayer,
+      sharedInnings: preserveInnings ?? 0,
       currentInningHasBalls: false,
     });
   };
 
+  // Helper to compute final innings at rack completion
+  const getFinalSharedInnings = () => {
+    // If active player is B when rack completes, we need to count this final inning
+    return state.activePlayer === 'B' ? state.sharedInnings + 1 : state.sharedInnings;
+  };
+
   return {
     activePlayer: state.activePlayer,
-    playerAInnings: state.playerAInnings,
-    playerBInnings: state.playerBInnings,
+    sharedInnings: state.sharedInnings,
     currentInningHasBalls: state.currentInningHasBalls,
     markBallScored,
     markBallUnscored,
     turnOver,
-    reset,
+    resetRack,
+    getFinalSharedInnings,
   };
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 71,
+  "projectStateVersion": 77,
   "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -23,8 +23,8 @@
     "Official/Real APA Match Log: Save action fails with \"Failed to save match\" when saving from Match History / match log flow (save payload or backend validation mismatch/regression).",
     "Regression/bug: Match History sort control (toggle Newest/Oldest by match date) is missing/not shown even when history list contains matches (user reports 3 matches visible but no sort option).",
     "APA Practice: match does not stop immediately when a player reaches their points-to-win target; scoring can continue into subsequent rack(s), causing final scores to exceed the target (e.g., 36).",
-    "APA Practice: innings auto-increment logic is incorrect—innings only increment after the 2nd player’s turn/turnover, resulting in too-few innings counted for the match.",
-    "Official/Real APA Match Log: Save gets stuck on \"Connecting\" after entering inputs (cannot complete save). Likely save-mutation/network/actor readiness state deadlock."
+    "Official/Real APA Match Log: Save gets stuck on \"Connecting\" after entering inputs (cannot complete save). Likely save-mutation/network/actor readiness state deadlock.",
+    "Bug: Edit Profile / \"Save changes\" button does not respond to clicks (profile changes cannot be saved)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -883,6 +883,94 @@
         "REQ-122"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-apa-9-ball-practice-rack-scoring-so-the-complete-rack-action-becomes-available-as-soon-as-the-current-rack-scoring-causes-either-player-to-reach-exceed-their-points-to-win-target-based-on-matchcontext-current-points-current-rack-points-even-if-the-9-ball-has-not-been-pocketed",
+      "title": "Update APA 9-ball Practice rack scoring so the \"Complete Rack\" action becomes available as soon as the current rack scoring causes either player to reach/exceed their points-to-win target (based on matchContext current points + current rack points), even if the 9-ball has not been pocketed.",
+      "reqIds": [
+        "REQ-123"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-frontend-src-components-apa-aparackscoringpanel-tsx-when-match-completion-is-imminent-a-player-has-reached-exceeded-their-target-with-the-current-rack-scoring-automatically-mark-all-remaining-unscored-balls-in-the-rack-as-dead-so-that-the-rack-totals-reach-10-points-and-the-existing-complete-rack-button-becomes-enabled-support-reverting-these-auto-dead-markings-if-the-user-changes-scoring-such-that-match-completion-is-no-longer-imminent",
+      "title": "In `frontend/src/components/apa/ApaRackScoringPanel.tsx`, when match completion is imminent (a player has reached/exceeded their target with the current rack scoring), automatically mark all remaining unscored balls in the rack as Dead so that the rack totals reach 10 points and the existing \"Complete Rack\" button becomes enabled; support reverting these auto-dead markings if the user changes scoring such that match completion is no longer imminent.",
+      "reqIds": [
+        "REQ-124"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-9-ball-practice-innings-tracking-and-display-so-the-app-shows-exactly-one-shared-innings-value-one-innings-box-line-and-it-increments-only-after-player-2-ends-their-turn-i-e-after-the-turn-switches-from-player-2-back-to-player-1-remove-hide-any-per-player-innings-displays-in-apa-practice-gameplay-ui",
+      "title": "Update APA 9-Ball Practice innings tracking and display so the app shows exactly one shared innings value (one innings box/line), and it increments only after Player 2 ends their turn (i.e., after the turn switches from Player 2 back to Player 1). Remove/hide any per-player innings displays in APA Practice gameplay UI.",
+      "reqIds": [
+        "REQ-125"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-9-ball-practice-scoring-display-so-the-on-screen-match-score-totals-for-each-player-update-immediately-as-balls-are-pocketed-unpocketed-dead-balled-during-rack-entry-not-only-after-pressing-complete-rack-this-includes-updating-the-large-score-shown-on-frontend-src-pages-apa-practicegamepage-tsx-to-reflect-current-match-totals-plus-the-current-rack-s-live-totals",
+      "title": "Update APA 9-Ball Practice scoring display so the on-screen match score totals for each player update immediately as balls are pocketed/unpocketed/dead-balled during rack entry (not only after pressing “Complete Rack”). This includes updating the large score shown on `frontend/src/pages/apa/PracticeGamePage.tsx` to reflect current match totals plus the current rack’s live totals.",
+      "reqIds": [
+        "REQ-126"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-apa-rack-ball-tap-behavior-to-a-3-state-cycle-with-no-new-buttons-first-tap-marks-the-ball-as-pocketed-for-the-current-active-player-second-tap-marks-it-as-a-dead-ball-third-tap-clears-it-back-to-unpocketed-unscored-ensure-dead-balls-continue-to-be-tracked-in-the-per-rack-per-match-summary-data",
+      "title": "Change APA rack ball tap behavior to a 3-state cycle with no new buttons: first tap marks the ball as pocketed for the current active player, second tap marks it as a dead ball, third tap clears it back to unpocketed/unscored. Ensure dead balls continue to be tracked in the per-rack/per-match summary data.",
+      "reqIds": [
+        "REQ-127"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-save-changes-button-in-the-edit-your-profile-dialog-so-it-reliably-responds-to-clicks-and-saves-the-profile-add-clear-english-error-feedback-if-saving-fails-and-prevent-the-ui-from-appearing-to-do-nothing",
+      "title": "Fix the “Save Changes” button in the Edit Your Profile dialog so it reliably responds to clicks and saves the profile. Add clear English error feedback if saving fails, and prevent the UI from appearing to do nothing.",
+      "reqIds": [
+        "REQ-128"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-9-ball-practice-rack-transitions-so-that-the-active-player-continues-their-turn-into-the-next-rack-when-a-rack-is-completed-do-not-reset-the-active-player-back-to-player-1-at-the-start-of-every-new-rack",
+      "title": "Fix APA 9-Ball Practice rack transitions so that the active player continues their turn into the next rack when a rack is completed (do not reset the active player back to Player 1 at the start of every new rack).",
+      "reqIds": [
+        "REQ-129"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-apa-9-ball-practice-gameplay-ui-to-display-dead-ball-totals-under-the-innings-line-in-the-same-area-where-innings-are-shown-using-clear-english-labeling",
+      "title": "Update the APA 9-Ball Practice gameplay UI to display dead-ball totals under the innings line (in the same area where innings are shown), using clear English labeling.",
+      "reqIds": [
+        "REQ-130"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-apa-9-ball-practice-innings-increment-timing-is-correct-innings-must-increment-after-player-2-s-turn-is-over-i-e-when-the-user-turns-over-from-player-2-back-to-player-1-and-must-not-increment-after-player-1-s-turnover",
+      "title": "Ensure APA 9-Ball Practice innings increment timing is correct: innings must increment after Player 2’s turn is over (i.e., when the user turns over from Player 2 back to Player 1), and must not increment after Player 1’s turnover.",
+      "reqIds": [
+        "REQ-131"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-9-ball-practice-match-completion-save-button-so-it-does-not-remain-stuck-showing-connecting-after-the-match-is-over-provide-a-clear-recovery-path-if-the-backend-actor-is-not-available-yet",
+      "title": "Fix the APA 9-Ball Practice match completion save button so it does not remain stuck showing “Connecting...” after the match is over; provide a clear recovery path if the backend actor is not available yet.",
+      "reqIds": [
+        "REQ-132"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-edit-profile-dialog-save-button-so-it-does-not-remain-stuck-showing-connecting-and-blocking-profile-saves-provide-a-clear-recovery-path-if-the-backend-actor-is-not-available-yet",
+      "title": "Fix the Edit Profile dialog save button so it does not remain stuck showing “Connecting...” and blocking profile saves; provide a clear recovery path if the backend actor is not available yet.",
+      "reqIds": [
+        "REQ-133"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1183,6 +1271,24 @@
     {
       "id": "AR-62",
       "summary": "Fix APA 9-ball Practice match save flow: after match completion, Save button gets stuck on \"Connecting\" and does not persist the match record.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-63",
+      "summary": "APA Practice: use a single shared innings field/box (not separate per-player innings) and increment it after Player 2’s turn (i.e., once both players have taken a turn in the inning).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-64",
+      "summary": "APA Practice: update the on-screen score immediately as balls are pocketed/unpocketed during rack entry (not only after \"Complete Rack\").",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-65",
+      "summary": "APA Practice: track dead balls without adding new buttons by cycling each ball’s state on tap: 1st tap = pocketed by current player, 2nd tap = dead ball, 3rd tap = unpocketed/clear.",
       "reqIds": [],
       "status": "pending"
     }

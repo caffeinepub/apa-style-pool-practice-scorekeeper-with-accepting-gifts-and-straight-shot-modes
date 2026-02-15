@@ -1,80 +1,44 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T02:04:49.337Z",
-  "summary": "REQ-122 is primarily about re-running deployment and verifying the live app/navigation. The diff shows multiple code changes (new SmokeCheckPage, router error fallback, match history UI tweaks, backend access/approval logic), but there is no evidence in the diff summary of any deployment trigger/run, deployment success verification, or live reachability checks being performed. Several new UI/behavior changes appear unrelated to simply re-running/verifying deployment.",
+  "generatedAt": "2026-02-15T02:51:51.263Z",
+  "summary": "Diff implements shared-innings logic via a new/updated `useApaInningFlow` hook (innings increment only on B→A), adds state plumbing for `activePlayer`/`sharedInnings` across APA Practice game state, and introduces actor-readiness checks plus delayed retry UI state for both match-save and profile-save flows. However, the diff summary is truncated and does not clearly show the required UI text/labels and inline retry actions for the “Connecting...” states, nor the exact dead-balls UI row placement/content, so some AC items cannot be confirmed from the provided evidence.",
   "missing_requirements": [
     {
-      "id": "REQ-122",
-      "requirement": "Trigger a new deployment run using the current repository state and verify it completes successfully, with the app reachable and basic navigation intact (Home -> Match History -> Home).",
-      "reason": "The diff summary only includes application code changes. It does not show any CI/CD workflow trigger, deployment pipeline configuration/run output, or any verification artifacts (e.g., workflow files, deployment logs, health checks). While UI navigation buttons exist, there is no evidence that an actual deployment was re-run or verified as successful/live per the acceptance criteria.",
+      "id": "REQ-130",
+      "requirement": "Display dead-ball totals under/adjacent to innings on the APA Practice gameplay screen with clear English labeling, computed client-side and showing 0 when no racks completed.",
+      "reason": "While dead-ball counting exists in `ApaRackScoringPanel` (`deadBallCount`) and the file summary claims a dead-balls display, the provided diff snippet for `PracticeGamePage.tsx` is truncated before any innings/dead-balls UI rendering, so the actual labeled UI row (\"Dead Balls:\") and its behavior when zero racks are completed cannot be verified from the evidence shown.",
       "evidence": [
-        "File diff summary shows only app code changes (e.g., frontend/src/App.tsx, frontend/src/pages/SmokeCheckPage.tsx, backend/main.mo) and no deployment/workflow/log evidence."
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+        "frontend/src/pages/apa/PracticeGamePage.tsx (truncated)",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "id": "REQ-132",
+      "requirement": "On match-complete screen, the save button must not stay stuck on “Connecting...”; if actor unavailable, show inline English message + “Retry connection” action; clicking save while actor not ready fails fast with clear error; when actor available label becomes “Save Match & Return to History”.",
+      "reason": "The diff shows actor availability state, an 8-second timer to show retry UI, and access to `retryConnection`, but the actual match-complete save button rendering (labels, disabled state), inline message, and explicit “Retry connection” action are not visible in the truncated snippet. Therefore the specific UI/label/interaction AC cannot be confirmed.",
+      "evidence": [
+        "frontend/src/pages/apa/PracticeGamePage.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-133",
+      "requirement": "In Edit Profile dialog, the save button must not stay stuck on “Connecting...”; if actor unavailable, show inline English message + “Retry connection” action; clicking save while actor not ready shows clear error and dialog remains usable; when actor available label becomes “Save Changes”.",
+      "reason": "The diff shows actor readiness checks (fails fast with a clear toast error) and delayed `showRetryConnection` state, but the truncated snippet does not show the actual primary button label switching (“Connecting...” → “Save Changes”), nor the inline message and the “Retry connection” button wired to `retryConnection`.",
+      "evidence": [
+        "frontend/src/components/auth/ProfileSetupDialog.tsx (truncated)"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Added a new 'SmokeCheckPage' and a new /smoke-check route for post-deployment verification UI.",
-      "reason": "REQ-122 asks to re-run deployment and verify the app is live and basic navigation works; it does not request adding new product pages/routes.",
-      "evidence": [
-        "frontend/src/pages/SmokeCheckPage.tsx",
-        "frontend/src/App.tsx (imports SmokeCheckPage; summary mentions new /smoke-check route)",
-        "frontend-file-summaries.txt (mentions new /smoke-check route)"
-      ]
-    },
-    {
-      "description": "Introduced/expanded route-level error fallback UI ('Something went wrong' page with Try Again/Go Home).",
-      "reason": "Not requested by REQ-122; this is an application feature/change beyond re-running/verifying deployment.",
-      "evidence": [
-        "frontend/src/App.tsx (RouteErrorFallback and errorComponent usage)"
-      ]
-    },
-    {
-      "description": "Backend invite-only mode and approval/admin access-control endpoints/logic changes (get/set invite-only mode, approvals).",
-      "reason": "REQ-122 does not request new authorization features; it is about re-running deployment and verifying reachability/navigation.",
-      "evidence": [
-        "backend/main.mo (inviteOnlyMode, approval checks, access control functions)"
-      ]
-    },
-    {
-      "description": "Match History UI enhancements (back-to-home button, filtering tabs, sort toggle/order UI).",
-      "reason": "REQ-122 only requires verifying basic navigation; it does not request UI/feature enhancements to Match History.",
-      "evidence": [
-        "frontend/src/pages/history/MatchHistoryPage.tsx (sort toggle, tabs, back button)"
-      ]
-    },
-    {
-      "description": "Home page UI changes (layout/grid updates, new placeholder tile, added data-testid on View Match History button).",
-      "reason": "Not requested as part of re-running deployment; this is a product/UI change.",
-      "evidence": [
-        "frontend/src/pages/HomePage.tsx",
-        "frontend-file-summaries.txt (Home page updated layout and new tile/testid)"
-      ]
-    },
-    {
-      "description": "AuthGate behavior changes to loading logic (avoid deadlocks; 'Checking access...' conditions).",
-      "reason": "Not requested by REQ-122; this is a functional change to authentication/authorization flow.",
-      "evidence": [
-        "frontend-file-summaries.txt (AuthGate improved loading logic)"
-      ]
-    },
-    {
-      "description": "Profile setup dialog change to include optional APA 9-ball skill level selector and persistence.",
-      "reason": "Not requested by REQ-122.",
-      "evidence": [
-        "frontend-file-summaries.txt (ProfileSetupDialog includes skill level selector)"
-      ]
-    }
-  ],
-  "confidence": 0.78,
+  "hallucinated_features": [],
+  "confidence": 0.62,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/SmokeCheckPage.tsx",
-    "frontend/src/pages/history/MatchHistoryPage.tsx",
+    "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+    "frontend/src/components/apa/useApaInningFlow.ts",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/pages/apa/PracticeGamePage.tsx",
     "project_state.json"
   ]
 }

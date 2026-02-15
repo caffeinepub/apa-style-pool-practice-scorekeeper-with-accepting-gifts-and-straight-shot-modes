@@ -1,37 +1,108 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Post-deploy smoke verification for core navigation",
+  "title": "APA 9-ball practice: turn carryover, dead balls display, and resilient connecting states",
   "requirements": [
     {
-      "id": "REQ-122",
-      "summary": "Add lightweight frontend smoke-check scaffolding and safer routing error handling to help verify the deployed app loads and core navigation works.",
+      "id": "REQ-129",
+      "summary": "Preserve the active player across APA 9-Ball Practice rack transitions while resetting rack-scoped state.",
       "acceptanceCriteria": [
-        "A new deployment run is triggered using the current repository state.",
-        "The deployment run completes successfully (no build/deploy error status).",
-        "After deployment, the app loads to the Home page without a fatal error.",
-        "Basic navigation works (Home -> Match History -> Home)."
+        "During an in-progress APA Practice match, if Player 2 is the active player when the user clicks “Complete Rack”, the next rack starts with Player 2 still shown as the Active Player.",
+        "During an in-progress APA Practice match, if Player 1 is the active player when the user clicks “Complete Rack”, the next rack starts with Player 1 still shown as the Active Player.",
+        "The rack’s ball states, defensive-shot counters, and any rack-scoped auto-dead bookkeeping are reset for the new rack, but the active-player turn state is preserved.",
+        "The shared-innings behavior remains: innings increment only when the turn switches from Player 2 back to Player 1 (i.e., after Player 2 ends their turn)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/apa/useApaInningFlow.ts",
           "operation": "modify",
-          "description": "Harden router initialization against runtime failures by adding a user-friendly route-level error screen (using existing UI primitives) so the deployed app does not present a blank/fatal crash on unexpected errors, and wire a dedicated SmokeCheckPage route for quick post-deploy verification."
+          "description": "Update the inning-flow hook to support initializing from external state (starting active player + current shared innings) and add a rack-reset method that clears rack-local flags without resetting active-player turn state."
         },
         {
-          "path": "frontend/src/pages/SmokeCheckPage.tsx",
-          "operation": "create",
-          "description": "Create a minimal SmokeCheckPage that renders an English-only checklist view with prominent navigation controls to Home and Match History, plus optional inline guidance for verifying the key flows after deployment (no new product features beyond verification scaffolding)."
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "operation": "modify",
+          "description": "Accept and use externally provided starting active player/shared innings for the rack, and on “Complete Rack” reset only rack-local scoring state (balls/defense/auto-dead) while preserving the active-player turn for the next rack."
         },
         {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
           "operation": "modify",
-          "description": "Add stable QA selectors (e.g., data-testid attributes) to the primary Home call-to-action that navigates to Match History, and ensure navigation uses router-safe primitives so Home -> Match History works reliably after deployment."
+          "description": "Persist match-scoped turn state (active player) in the in-progress practice session and pass it into the rack scoring panel so the next rack continues with the correct active player rather than defaulting back to Player 1."
+        }
+      ]
+    },
+    {
+      "id": "REQ-130",
+      "summary": "Display accumulated dead-ball totals in the APA 9-Ball Practice gameplay UI under the innings line with clear English labeling.",
+      "acceptanceCriteria": [
+        "On the APA Practice gameplay screen (while a match is in progress), the UI shows a “Dead Balls” line/row located under (or immediately adjacent to) the innings display, labeled in English (e.g., “Dead Balls:”).",
+        "The dead-ball value reflects the current match’s accumulated dead-ball total based on completed racks (and must not require any backend calls).",
+        "The dead-ball display does not break gameplay when there are zero racks completed (shows 0)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Compute the match’s dead-ball total from completed racks in session state and render a clearly labeled “Dead Balls:” row under/adjacent to the existing innings display in the in-progress gameplay UI (showing 0 when no racks are complete)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-131",
+      "summary": "Ensure APA 9-Ball Practice innings increment only on Player 2 → Player 1 turnover and carry consistently across racks.",
+      "acceptanceCriteria": [
+        "Starting a new rack, innings do not increment when the active player changes from Player 1 to Player 2.",
+        "Innings increment by exactly +1 when the active player changes from Player 2 to Player 1.",
+        "Innings value remains consistent across rack completion and carries forward correctly into subsequent racks."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/useApaInningFlow.ts",
+          "operation": "modify",
+          "description": "Keep the existing increment rule (only increment on B→A) and adjust the hook so shared innings are match-scoped (carry forward) rather than resetting to 0 at each rack boundary."
         },
         {
-          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Add stable QA selectors (e.g., data-testid attributes) to the 'Back to Home' control and ensure it navigates reliably to '/', so Match History -> Home works reliably after deployment."
+          "description": "Ensure the rack panel uses match-scoped shared innings from the inning-flow hook, reports the correct shared innings on rack completion, and does not reset innings when starting a new rack."
+        },
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Store and persist the match-scoped innings value in practice session state so it remains consistent across rack completion and reloads, and ensure the gameplay UI reflects the carried-forward innings value."
+        }
+      ]
+    },
+    {
+      "id": "REQ-132",
+      "summary": "Prevent the APA Practice match-complete save button from getting stuck on “Connecting...” and provide a retry connection path when the actor is not ready.",
+      "acceptanceCriteria": [
+        "On the APA Practice match-complete screen, the primary save button must not remain permanently disabled with the label “Connecting...” for an authenticated user in normal conditions.",
+        "If the backend actor is not available, show a clear English inline message explaining the app is still connecting and provide a user-invokable “Retry connection” action (using the existing retry hook).",
+        "If the user clicks save while the actor is not ready, the UI fails fast with a clear English error and remains responsive (no permanent disabled state).",
+        "When the actor becomes available, the button label changes from “Connecting...” to “Save Match & Return to History”, and the user can save successfully."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "On the match-complete view, use the existing useActorRetry hook to add an inline English “still connecting” message with a “Retry connection” action; adjust the save button so it never becomes permanently disabled due to missing actor (fail fast with a clear English toast/error when clicked without a ready actor), and update button labeling to switch from “Connecting...” to “Save Match & Return to History” when the actor becomes available."
+        }
+      ]
+    },
+    {
+      "id": "REQ-133",
+      "summary": "Fix the Edit Profile dialog save button “Connecting...” stuck state and add a retry connection recovery path when the actor is not ready.",
+      "acceptanceCriteria": [
+        "In the Edit Your Profile dialog, the primary action button must not remain permanently disabled with the label “Connecting...” for an authenticated user in normal conditions.",
+        "If the backend actor is not available, show a clear English inline message explaining the app is still connecting and provide a user-invokable “Retry connection” action (using the existing retry hook).",
+        "If the user clicks save while the actor is not ready, show a clear English error and keep the dialog usable so the user can retry without refreshing the page.",
+        "When the actor becomes available, the button label changes from “Connecting...” to “Save Changes”, and the profile can be saved successfully."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "operation": "modify",
+          "description": "In edit mode, use the existing useActorRetry hook to show an inline English “still connecting” message and a “Retry connection” action when the actor is unavailable; update the primary button disable rules so the dialog remains usable (no permanent disable due to actor unready), and ensure save attempts without a ready actor fail fast with a clear English error while allowing the user to retry."
         }
       ]
     }

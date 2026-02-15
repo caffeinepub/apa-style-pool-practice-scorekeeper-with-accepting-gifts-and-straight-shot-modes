@@ -139,7 +139,11 @@ export function useSaveCallerUserProfile() {
         throw new Error('Backend connection not ready. Please wait and try again.');
       }
       try {
-        return await actor.saveCallerUserProfile(profile);
+        return await withTimeout(
+          actor.saveCallerUserProfile(profile),
+          MUTATION_TIMEOUT_MS,
+          'Profile save is taking too long. Please try again.'
+        );
       } catch (error) {
         const errorText = extractErrorText(error);
         throw new Error(`Failed to save profile: ${errorText}`);
