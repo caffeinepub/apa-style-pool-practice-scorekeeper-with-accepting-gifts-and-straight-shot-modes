@@ -1,44 +1,104 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T02:51:51.263Z",
-  "summary": "Diff implements shared-innings logic via a new/updated `useApaInningFlow` hook (innings increment only on B→A), adds state plumbing for `activePlayer`/`sharedInnings` across APA Practice game state, and introduces actor-readiness checks plus delayed retry UI state for both match-save and profile-save flows. However, the diff summary is truncated and does not clearly show the required UI text/labels and inline retry actions for the “Connecting...” states, nor the exact dead-balls UI row placement/content, so some AC items cannot be confirmed from the provided evidence.",
+  "generatedAt": "2026-02-15T05:23:01.988Z",
+  "summary": "Diff includes partial APA rack-scoring logic changes for “match completion imminent” (auto-dead balls 1–8) but the evidence is truncated and does not clearly show the required UI path/messaging enabling “Complete Rack” without pocketing the 9. Additionally, multiple unrelated changes appear (routing, auth gate, home page UI, accepting gifts copy/behavior, straight shot summary logic), and at least one change appears to modify Straight Shot behavior outside the allowed scope.",
   "missing_requirements": [
     {
-      "id": "REQ-130",
-      "requirement": "Display dead-ball totals under/adjacent to innings on the APA Practice gameplay screen with clear English labeling, computed client-side and showing 0 when no racks completed.",
-      "reason": "While dead-ball counting exists in `ApaRackScoringPanel` (`deadBallCount`) and the file summary claims a dead-balls display, the provided diff snippet for `PracticeGamePage.tsx` is truncated before any innings/dead-balls UI rendering, so the actual labeled UI row (\"Dead Balls:\") and its behavior when zero racks are completed cannot be verified from the evidence shown.",
+      "id": "REQ-153",
+      "requirement": "Enable completing the current APA 9-Ball Practice rack immediately when either player reaches/exceeds points-to-win during live rack entry, even if the 9-ball is unscored; allow proceeding to match completion; treat remaining rack points as dead for accounting without making the 9-ball a user-visible dead ball; block further scoring after match completion as today.",
+      "reason": "The diff snippet shows detection of match-completion-imminent and auto-dead logic for balls 1–8, but the file is truncated before any evidence of the “Complete Rack” enablement logic, navigation to match completion, or post-completion interaction blocking behavior changes/verification.",
       "evidence": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/pages/apa/PracticeGamePage.tsx (truncated)",
-        "frontend-file-summaries.txt"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx (truncated—shows isMatchCompletionImminent + autoDeadBallsMatchImminent setup, but not the Complete Rack control/flow)"
       ]
     },
     {
-      "id": "REQ-132",
-      "requirement": "On match-complete screen, the save button must not stay stuck on “Connecting...”; if actor unavailable, show inline English message + “Retry connection” action; clicking save while actor not ready fails fast with clear error; when actor available label becomes “Save Match & Return to History”.",
-      "reason": "The diff shows actor availability state, an 8-second timer to show retry UI, and access to `retryConnection`, but the actual match-complete save button rendering (labels, disabled state), inline message, and explicit “Retry connection” action are not visible in the truncated snippet. Therefore the specific UI/label/interaction AC cannot be confirmed.",
+      "id": "REQ-154",
+      "requirement": "Update APA rack-scoring UI messaging in English to explain that when match completion is reached mid-rack the rack can be completed now and remaining balls/points will be treated as dead; do not instruct user to pocket the 9-ball in that scenario.",
+      "reason": "No explicit new/updated English UI messaging is visible in the provided truncated code or summaries; the snippet shows imports for Alert/AlertDescription but not the actual copy changes required by the acceptance criteria.",
       "evidence": [
-        "frontend/src/pages/apa/PracticeGamePage.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-133",
-      "requirement": "In Edit Profile dialog, the save button must not stay stuck on “Connecting...”; if actor unavailable, show inline English message + “Retry connection” action; clicking save while actor not ready shows clear error and dialog remains usable; when actor available label becomes “Save Changes”.",
-      "reason": "The diff shows actor readiness checks (fails fast with a clear toast error) and delayed `showRetryConnection` state, but the truncated snippet does not show the actual primary button label switching (“Connecting...” → “Save Changes”), nor the inline message and the “Retry connection” button wired to `retryConnection`.",
-      "evidence": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx (truncated)"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx (truncated—no visible messaging/copy related to mid-rack match completion)"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.62,
+  "hallucinated_features": [
+    {
+      "description": "Added Straight Shot spot-check checklist documentation.",
+      "reason": "Not requested by the BuildRequest (which only required not modifying Straight Shot codepaths).",
+      "evidence": [
+        "frontend/src/dev/straight-shot-spot-check.md"
+      ]
+    },
+    {
+      "description": "Introduced a new /smoke-check route in the app router.",
+      "reason": "Not requested; also falls under “Do not add new modes… or redesign UI beyond what is required,” and is unrelated to the APA rack completion fix.",
+      "evidence": [
+        "frontend-file-summaries.txt (App.tsx: “including the new /smoke-check route”)"
+      ]
+    },
+    {
+      "description": "Changed AuthGate loading/timeout behavior and related access gating logic.",
+      "reason": "Not requested and unrelated to APA 9-ball rack completion gating.",
+      "evidence": [
+        "frontend-file-summaries.txt (AuthGate.tsx summary)"
+      ]
+    },
+    {
+      "description": "Modified ProfileSetupDialog save/disable behavior and added retry connection UI logic.",
+      "reason": "Not requested and unrelated to APA 9-ball rack completion gating.",
+      "evidence": [
+        "frontend-file-summaries.txt (ProfileSetupDialog.tsx summary)"
+      ]
+    },
+    {
+      "description": "Updated MatchSummaryCard Straight Shot Win/Loss computation logic.",
+      "reason": "Not requested and conflicts with the constraint to not modify Straight Shot behavior/codepaths.",
+      "evidence": [
+        "frontend-file-summaries.txt (MatchSummaryCard.tsx: “Straight Shot now computing Win/Loss…”)"
+      ]
+    },
+    {
+      "description": "Home page layout changes including new placeholder tile and test id.",
+      "reason": "Not requested and unrelated to APA rack completion gating.",
+      "evidence": [
+        "frontend-file-summaries.txt (HomePage.tsx summary: updated grid, new placeholder tile, data-testid)"
+      ]
+    },
+    {
+      "description": "APA PracticeStartPage enhancements (skill level auto-loading symmetry, manual override tracking, duplicate name validation).",
+      "reason": "Not requested; scope was specifically rack/match completion gating behavior.",
+      "evidence": [
+        "frontend-file-summaries.txt (PracticeStartPage.tsx summary)"
+      ]
+    },
+    {
+      "description": "APA PracticeGamePage save-flow hardening and retry connection UI changes.",
+      "reason": "Not requested; scope was rack completion gating behavior, not authentication/save UX.",
+      "evidence": [
+        "frontend-file-summaries.txt (PracticeGamePage.tsx summary)"
+      ]
+    },
+    {
+      "description": "Accepting Gifts mode changes (baseline persistence behavior and rules text updates).",
+      "reason": "Explicit non-goal: “Do not change Accepting Gifts behavior.”",
+      "evidence": [
+        "frontend-file-summaries.txt (AcceptingGiftsStartPage.tsx summary)",
+        "frontend-file-summaries.txt (AcceptingGiftsRulesPanel.tsx summary)"
+      ]
+    },
+    {
+      "description": "AppLayout header/admin Shield button access management changes.",
+      "reason": "Not requested and unrelated to APA rack completion gating.",
+      "evidence": [
+        "frontend-file-summaries.txt (AppLayout.tsx summary)"
+      ]
+    }
+  ],
+  "confidence": 0.66,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-    "frontend/src/components/apa/useApaInningFlow.ts",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/pages/apa/PracticeGamePage.tsx",
+    "frontend/src/dev/straight-shot-spot-check.md",
     "project_state.json"
   ]
 }

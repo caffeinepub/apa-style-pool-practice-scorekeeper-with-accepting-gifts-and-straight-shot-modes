@@ -1,65 +1,55 @@
-import { useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { CheckCircle2 } from 'lucide-react';
-import { extractErrorText } from '../../utils/errorText';
-import { toast } from 'sonner';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface EndMatchDialogProps {
-  onConfirm: () => Promise<void>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  title?: string;
+  description?: string;
+  confirmText?: string;
+  isPending?: boolean;
   disabled?: boolean;
 }
 
-export default function EndMatchDialog({ onConfirm, disabled }: EndMatchDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [isEnding, setIsEnding] = useState(false);
-
-  const handleConfirm = async () => {
-    setIsEnding(true);
-    try {
-      await onConfirm();
-      setOpen(false);
-    } catch (error) {
-      const errorText = extractErrorText(error);
-      toast.error(errorText);
-      console.error('Error ending session:', error);
-    } finally {
-      setIsEnding(false);
-    }
-  };
-
+export default function EndMatchDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  title = 'End Match?',
+  description = 'Are you sure you want to end this match? Your progress will be saved.',
+  confirmText = 'End Match',
+  isPending = false,
+  disabled = false,
+}: EndMatchDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={disabled} size="lg" className="w-full">
-          <CheckCircle2 className="mr-2 h-5 w-5" />
-          End & Save Session
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>End Session?</DialogTitle>
-          <DialogDescription>
-            This will save the session to your history. You can view it later from the Match History page.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={isEnding}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm} disabled={isEnding}>
-            {isEnding ? 'Saving...' : 'End & Save'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
+            disabled={disabled || isPending}
+          >
+            {isPending ? 'Saving...' : confirmText}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

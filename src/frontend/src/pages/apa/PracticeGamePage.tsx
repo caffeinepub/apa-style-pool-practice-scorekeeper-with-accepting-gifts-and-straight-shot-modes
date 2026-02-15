@@ -41,7 +41,7 @@ interface GameState {
 export default function PracticeGamePage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor } = useActor();
   const { retryConnection } = useActorRetry();
   const saveMatch = useSaveMatch();
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -60,6 +60,11 @@ export default function PracticeGamePage() {
       if (state.sharedInnings === undefined) {
         state.sharedInnings = 0;
       }
+      
+      // Clamp totals to targets on load (defensive normalization)
+      state.player1Points = Math.min(state.player1Points, state.player1Target);
+      state.player2Points = Math.min(state.player2Points, state.player2Target);
+      
       setGameState(state);
       // Check if match is already complete
       if (state.player1Points >= state.player1Target || state.player2Points >= state.player2Target) {
@@ -76,9 +81,9 @@ export default function PracticeGamePage() {
     }
   }, [gameState]);
 
-  // Show retry connection after 8 seconds if actor is not ready
+  // Show retry connection after 8 seconds if actor is not ready and match is complete
   useEffect(() => {
-    if (matchComplete && !actor && !actorFetching) {
+    if (matchComplete && !actor) {
       const timer = setTimeout(() => {
         setShowRetryConnection(true);
       }, 8000);
@@ -86,13 +91,21 @@ export default function PracticeGamePage() {
     } else {
       setShowRetryConnection(false);
     }
-  }, [matchComplete, actor, actorFetching]);
+  }, [matchComplete, actor]);
 
-  const handleLiveRackUpdate = (data: { player1Points: number; player2Points: number }) => {
-    setLiveRackPoints(data);
-  };
+  if (!gameState) {
+    return (
+      <div className="container mx-auto max-w-4xl p-4">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Loading game...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const handleRackComplete = (data: {
+  const handleRackComplete = (rackData: {
     player1Points: number;
     player2Points: number;
     deadBalls: number;
@@ -103,71 +116,83 @@ export default function PracticeGamePage() {
     activePlayer: 'A' | 'B';
     sharedInnings: number;
   }) => {
-    if (!gameState || matchComplete) return;
+    setGameState(prev => {
+      if (!prev) return prev;
 
-    const newRack: RackData = {
-      rackNumber: gameState.racks.length + 1,
-      playerA: {
-        points: data.player1Points,
-        defensiveShots: data.player1DefensiveShots,
-        innings: data.player1Innings,
-      },
-      playerB: {
-        points: data.player2Points,
-        defensiveShots: data.player2DefensiveShots,
-        innings: data.player2Innings,
-      },
-      deadBalls: data.deadBalls,
-    };
+      // Clamp points to targets
+      const newPlayer1Points = Math.min(
+        prev.player1Points + rackData.player1Points,
+        prev.player1Target
+      );
+      const newPlayer2Points = Math.min(
+        prev.player2Points + rackData.player2Points,
+        prev.player2Target
+      );
 
-    // Calculate new totals
-    const newPlayer1Points = gameState.player1Points + data.player1Points;
-    const newPlayer2Points = gameState.player2Points + data.player2Points;
+      const newRack: RackData = {
+        rackNumber: prev.racks.length + 1,
+        playerA: {
+          points: rackData.player1Points,
+          defensiveShots: rackData.player1DefensiveShots,
+          innings: rackData.player1Innings,
+        },
+        playerB: {
+          points: rackData.player2Points,
+          defensiveShots: rackData.player2DefensiveShots,
+          innings: rackData.player2Innings,
+        },
+        deadBalls: rackData.deadBalls,
+      };
 
-    // Cap points at target
-    const cappedPlayer1Points = Math.min(newPlayer1Points, gameState.player1Target);
-    const cappedPlayer2Points = Math.min(newPlayer2Points, gameState.player2Target);
+      const newState = {
+        ...prev,
+        player1Points: newPlayer1Points,
+        player2Points: newPlayer2Points,
+        player1Innings: prev.player1Innings + rackData.player1Innings,
+        player2Innings: prev.player2Innings + rackData.player2Innings,
+        player1DefensiveShots: prev.player1DefensiveShots + rackData.player1DefensiveShots,
+        player2DefensiveShots: prev.player2DefensiveShots + rackData.player2DefensiveShots,
+        racks: [...prev.racks, newRack],
+        activePlayer: rackData.activePlayer,
+        sharedInnings: rackData.sharedInnings,
+      };
 
-    const newState = {
-      ...gameState,
-      player1Points: cappedPlayer1Points,
-      player2Points: cappedPlayer2Points,
-      player1Innings: gameState.player1Innings + data.player1Innings,
-      player2Innings: gameState.player2Innings + data.player2Innings,
-      player1DefensiveShots: gameState.player1DefensiveShots + data.player1DefensiveShots,
-      player2DefensiveShots: gameState.player2DefensiveShots + data.player2DefensiveShots,
-      racks: [...gameState.racks, newRack],
-      activePlayer: data.activePlayer,
-      sharedInnings: data.sharedInnings,
-    };
+      // Check if match is complete
+      if (newPlayer1Points >= prev.player1Target || newPlayer2Points >= prev.player2Target) {
+        setMatchComplete(true);
+      }
 
-    setGameState(newState);
-    // Reset live rack points after completion
+      return newState;
+    });
+
+    // Reset live rack points
     setLiveRackPoints({ player1Points: 0, player2Points: 0 });
-
-    // Check if match is complete (either player reached their target)
-    if (cappedPlayer1Points >= gameState.player1Target || cappedPlayer2Points >= gameState.player2Target) {
-      setMatchComplete(true);
-      toast.success('Match Complete!');
-    }
   };
 
-  const handleEndMatch = async () => {
-    if (!gameState || !identity) {
-      toast.error('You must be logged in to save a match');
+  const handleLiveRackUpdate = (data: { player1Points: number; player2Points: number }) => {
+    setLiveRackPoints(data);
+  };
+
+  const handleSaveMatch = async () => {
+    if (!identity) {
+      toast.error('Please log in to save matches');
       return;
     }
 
     if (!actor) {
-      toast.error('Backend connection not ready. Please wait and try again.');
+      toast.error('Backend connection not ready. Please wait or retry connection.');
       return;
     }
 
     try {
-      // Compute match outcome using shared helper
+      // Clamp final totals to targets before saving
+      const finalPlayer1Points = Math.min(gameState.player1Points, gameState.player1Target);
+      const finalPlayer2Points = Math.min(gameState.player2Points, gameState.player2Target);
+
+      // Compute match outcome
       const matchOutcome = computeApaPracticeMatchOutcome({
-        player1Points: gameState.player1Points,
-        player2Points: gameState.player2Points,
+        player1Points: finalPlayer1Points,
+        player2Points: finalPlayer2Points,
         player1SL: gameState.player1SL,
         player2SL: gameState.player2SL,
         player1Target: gameState.player1Target,
@@ -181,8 +206,8 @@ export default function PracticeGamePage() {
         player2SL: gameState.player2SL,
         player1Target: gameState.player1Target,
         player2Target: gameState.player2Target,
-        player1Points: gameState.player1Points,
-        player2Points: gameState.player2Points,
+        player1Points: finalPlayer1Points,
+        player2Points: finalPlayer2Points,
         player1Innings: gameState.player1Innings,
         player2Innings: gameState.player2Innings,
         player1DefensiveShots: gameState.player1DefensiveShots,
@@ -194,220 +219,216 @@ export default function PracticeGamePage() {
       });
 
       await saveMatch.mutateAsync({ matchId, matchRecord });
-      sessionStorage.removeItem('apaPracticeGame');
       toast.success('Match saved successfully!');
+      sessionStorage.removeItem('apaPracticeGame');
       navigate({ to: '/history' });
     } catch (error) {
-      const errorText = extractErrorText(error);
-      toast.error(errorText);
-      console.error('Error saving match:', error);
+      const errorMessage = extractErrorText(error);
+      toast.error(`Failed to save match: ${errorMessage}`);
     }
   };
 
-  if (!gameState) {
-    return null;
-  }
+  const handleNewMatch = () => {
+    sessionStorage.removeItem('apaPracticeGame');
+    navigate({ to: '/apa-practice/start' });
+  };
 
-  const player1Won = gameState.player1Points >= gameState.player1Target && gameState.player2Points < gameState.player2Target;
-  const player2Won = gameState.player2Points >= gameState.player2Target && gameState.player1Points < gameState.player1Target;
-  const player1PPI = calculatePPI(gameState.player1Points, gameState.player1Innings);
-  const player2PPI = calculatePPI(gameState.player2Points, gameState.player2Innings);
+  const handleRetryConnection = async () => {
+    try {
+      await retryConnection();
+      toast.success('Connection restored');
+    } catch (error) {
+      toast.error('Failed to restore connection');
+    }
+  };
 
-  // Calculate live display totals (saved + current rack)
-  const player1DisplayPoints = gameState.player1Points + liveRackPoints.player1Points;
-  const player2DisplayPoints = gameState.player2Points + liveRackPoints.player2Points;
+  // Calculate live totals (capped at targets)
+  const livePlayer1Total = Math.min(
+    gameState.player1Points + liveRackPoints.player1Points,
+    gameState.player1Target
+  );
+  const livePlayer2Total = Math.min(
+    gameState.player2Points + liveRackPoints.player2Points,
+    gameState.player2Target
+  );
 
-  // Calculate total dead balls from completed racks
-  const totalDeadBalls = gameState.racks.reduce((sum, rack) => sum + rack.deadBalls, 0);
+  // Compute match outcome for display
+  const matchOutcome = computeApaPracticeMatchOutcome({
+    player1Points: gameState.player1Points,
+    player2Points: gameState.player2Points,
+    player1SL: gameState.player1SL,
+    player2SL: gameState.player2SL,
+    player1Target: gameState.player1Target,
+    player2Target: gameState.player2Target,
+  });
 
-  if (matchComplete) {
-    // Compute match outcome for display
-    const matchOutcome = computeApaPracticeMatchOutcome({
-      player1Points: gameState.player1Points,
-      player2Points: gameState.player2Points,
-      player1SL: gameState.player1SL,
-      player2SL: gameState.player2SL,
-      player1Target: gameState.player1Target,
-      player2Target: gameState.player2Target,
-    });
-
-    const isActorReady = !!actor;
-
-    return (
-      <div className="mx-auto max-w-4xl space-y-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate({ to: '/' })}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
-        </Button>
-
-        <ApaResultsSummary
-          player1={{
-            name: gameState.player1,
-            skillLevel: gameState.player1SL,
-            pointsNeeded: gameState.player1Target,
-            pointsEarned: gameState.player1Points,
-            defensiveShots: gameState.player1DefensiveShots,
-            innings: gameState.player1Innings,
-            ppi: player1PPI,
-            isWinner: player1Won,
-          }}
-          player2={{
-            name: gameState.player2,
-            skillLevel: gameState.player2SL,
-            pointsNeeded: gameState.player2Target,
-            pointsEarned: gameState.player2Points,
-            defensiveShots: gameState.player2DefensiveShots,
-            innings: gameState.player2Innings,
-            ppi: player2PPI,
-            isWinner: player2Won,
-          }}
-          matchPointOutcome={matchOutcome.outcome}
-        />
-
-        {showRetryConnection && !isActorReady && (
-          <Alert>
-            <AlertDescription className="flex items-center justify-between">
-              <span>Still connecting to backend...</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={retryConnection}
-                className="gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Retry Connection
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="flex justify-center">
-          <Button 
-            onClick={handleEndMatch} 
-            size="lg" 
-            className="gap-2"
-            disabled={!isActorReady || saveMatch.isPending}
-          >
-            <Trophy className="h-5 w-5" />
-            {!isActorReady ? 'Connecting...' : saveMatch.isPending ? 'Saving...' : 'Save Match & Return to History'}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Determine if user is authenticated
+  const isAuthenticated = !!identity;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate({ to: '/' })}
-        className="gap-2"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Home
-      </Button>
-
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">APA 9-Ball Practice Match</h1>
-        <p className="text-muted-foreground">Rack {gameState.racks.length + 1}</p>
+    <div className="container mx-auto max-w-4xl space-y-6 p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+        <h1 className="text-2xl font-bold">APA 9-Ball Practice</h1>
+        <div className="w-24" />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>{gameState.player1}</span>
-              {player1Won && <Trophy className="h-5 w-5 text-yellow-500" />}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Skill Level</span>
-              <Badge variant="secondary">{formatSkillLevel(gameState.player1SL)}</Badge>
+      {/* Live Score Display */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Match Score</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{gameState.player1}</span>
+                <Badge variant="outline">{formatSkillLevel(gameState.player1SL)}</Badge>
+              </div>
+              <div className="flex items-center justify-between text-2xl font-bold">
+                <span>
+                  {livePlayer1Total} / {gameState.player1Target}
+                </span>
+                {livePlayer1Total >= gameState.player1Target && (
+                  <Trophy className="h-6 w-6 text-yellow-500" />
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                PPI: {formatPPI(calculatePPI(gameState.player1Points, gameState.player1Innings))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{gameState.player2}</span>
+                <Badge variant="outline">{formatSkillLevel(gameState.player2SL)}</Badge>
+              </div>
+              <div className="flex items-center justify-between text-2xl font-bold">
+                <span>
+                  {livePlayer2Total} / {gameState.player2Target}
+                </span>
+                {livePlayer2Total >= gameState.player2Target && (
+                  <Trophy className="h-6 w-6 text-yellow-500" />
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                PPI: {formatPPI(calculatePPI(gameState.player2Points, gameState.player2Innings))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Innings</div>
+              <div className="text-lg font-semibold">{gameState.sharedInnings}</div>
             </div>
             <div className="text-center">
-              <div className="text-5xl font-bold text-emerald-600">{player1DisplayPoints}</div>
-              <div className="text-sm text-muted-foreground">of {gameState.player1Target} points</div>
+              <div className="text-sm text-muted-foreground">Racks Played</div>
+              <div className="text-lg font-semibold">{gameState.racks.length}</div>
             </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Innings:</span>
-                <span className="font-semibold">{gameState.player1Innings}</span>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Dead Balls</div>
+              <div className="text-lg font-semibold">
+                {gameState.racks.reduce((sum, rack) => sum + rack.deadBalls, 0)}
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Dead Balls:</span>
-                <span className="font-semibold">{totalDeadBalls}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">PPI:</span>
-                <span className="font-semibold">{formatPPI(player1PPI)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Defensive Shots:</span>
-                <span className="font-semibold">{gameState.player1DefensiveShots}</span>
-              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Match Complete Summary */}
+      {matchComplete && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Match Complete!
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ApaResultsSummary
+              player1={{
+                name: gameState.player1,
+                skillLevel: gameState.player1SL,
+                pointsNeeded: gameState.player1Target,
+                pointsEarned: gameState.player1Points,
+                defensiveShots: gameState.player1DefensiveShots,
+                innings: gameState.player1Innings,
+                ppi: calculatePPI(gameState.player1Points, gameState.player1Innings),
+                isWinner: matchOutcome.player1Won,
+              }}
+              player2={{
+                name: gameState.player2,
+                skillLevel: gameState.player2SL,
+                pointsNeeded: gameState.player2Target,
+                pointsEarned: gameState.player2Points,
+                defensiveShots: gameState.player2DefensiveShots,
+                innings: gameState.player2Innings,
+                ppi: calculatePPI(gameState.player2Points, gameState.player2Innings),
+                isWinner: !matchOutcome.player1Won,
+              }}
+              matchPointOutcome={matchOutcome.outcome}
+            />
+
+            {!isAuthenticated && (
+              <Alert>
+                <AlertDescription>
+                  You must log in to save matches.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isAuthenticated && showRetryConnection && !actor && (
+              <Alert>
+                <AlertDescription className="flex items-center justify-between">
+                  <span>Still connecting to backend. Retry to save your match.</span>
+                  <Button size="sm" variant="outline" onClick={handleRetryConnection}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Retry Connection
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveMatch}
+                disabled={!isAuthenticated || saveMatch.isPending}
+                className="flex-1"
+              >
+                {saveMatch.isPending ? 'Saving...' : 'Save Match'}
+              </Button>
+              <Button onClick={handleNewMatch} variant="outline" className="flex-1">
+                New Match
+              </Button>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>{gameState.player2}</span>
-              {player2Won && <Trophy className="h-5 w-5 text-yellow-500" />}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Skill Level</span>
-              <Badge variant="secondary">{formatSkillLevel(gameState.player2SL)}</Badge>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-emerald-600">{player2DisplayPoints}</div>
-              <div className="text-sm text-muted-foreground">of {gameState.player2Target} points</div>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Innings:</span>
-                <span className="font-semibold">{gameState.player2Innings}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Dead Balls:</span>
-                <span className="font-semibold">{totalDeadBalls}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">PPI:</span>
-                <span className="font-semibold">{formatPPI(player2PPI)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Defensive Shots:</span>
-                <span className="font-semibold">{gameState.player2DefensiveShots}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <ApaRackScoringPanel
-        rackNumber={gameState.racks.length + 1}
-        player1Name={gameState.player1}
-        player2Name={gameState.player2}
-        onRackComplete={handleRackComplete}
-        onLiveRackUpdate={handleLiveRackUpdate}
-        matchContext={{
-          player1CurrentPoints: gameState.player1Points,
-          player2CurrentPoints: gameState.player2Points,
-          player1Target: gameState.player1Target,
-          player2Target: gameState.player2Target,
-          matchComplete: matchComplete,
-          activePlayer: gameState.activePlayer,
-          sharedInnings: gameState.sharedInnings,
-        }}
-      />
+      {/* Rack Scoring Panel */}
+      {!matchComplete && (
+        <ApaRackScoringPanel
+          rackNumber={gameState.racks.length + 1}
+          player1Name={gameState.player1}
+          player2Name={gameState.player2}
+          onRackComplete={handleRackComplete}
+          onLiveRackUpdate={handleLiveRackUpdate}
+          matchContext={{
+            player1CurrentPoints: gameState.player1Points,
+            player2CurrentPoints: gameState.player2Points,
+            player1Target: gameState.player1Target,
+            player2Target: gameState.player2Target,
+            matchComplete,
+            activePlayer: gameState.activePlayer,
+            sharedInnings: gameState.sharedInnings,
+          }}
+        />
+      )}
     </div>
   );
 }

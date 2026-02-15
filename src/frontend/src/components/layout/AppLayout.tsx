@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { Settings, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import LoginButton from '../auth/LoginButton';
 import ProfileSetupDialog from '../auth/ProfileSetupDialog';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
@@ -11,7 +10,6 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const { data: isAdmin } = useIsCallerAdmin();
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const isAuthenticated = !!identity;
 
   return (
@@ -35,16 +33,7 @@ export default function AppLayout() {
                 <Shield className="h-5 w-5" />
               </Button>
             )}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditProfileOpen(true)}
-                title="Edit Profile"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            )}
+            <ProfileSetupDialog />
             <LoginButton />
           </div>
         </div>
@@ -66,12 +55,6 @@ export default function AppLayout() {
           </p>
         </div>
       </footer>
-      <ProfileSetupDialog />
-      <ProfileSetupDialog 
-        open={editProfileOpen} 
-        onOpenChange={setEditProfileOpen} 
-        mode="edit" 
-      />
     </div>
   );
 }

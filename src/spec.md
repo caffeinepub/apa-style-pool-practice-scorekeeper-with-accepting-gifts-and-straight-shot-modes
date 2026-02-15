@@ -1,13 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Correct APA 9-Ball Practice gameplay flow and UI by preserving turn across racks, showing dead-ball totals, ensuring correct innings timing, and preventing “Connecting...” save states from getting stuck.
+**Goal:** Fix APA 9-Ball Practice so a match can be completed immediately when a player reaches their points-to-win target mid-rack, without requiring the 9-ball to be pocketed, while leaving Straight Shot unchanged.
 
 **Planned changes:**
-- Preserve the active player when completing a rack and starting the next rack, while resetting rack-scoped states (ball states, defensive-shot counters, rack-scoped dead bookkeeping).
-- Display the match’s accumulated dead-ball total on the APA Practice gameplay screen under/adjacent to the innings line with clear English labeling (defaults to 0 when none).
-- Ensure innings increment only when the active player changes from Player 2 back to Player 1, and do not increment on Player 1 → Player 2 turnover; keep innings consistent across racks.
-- Update match-complete save flow to avoid being permanently stuck on “Connecting...”; add an inline English message plus a user-invokable “Retry connection” action when the backend actor isn’t ready, and fail fast with a clear error if save is attempted while not ready.
-- Update Edit Profile dialog save flow to avoid being permanently stuck on “Connecting...”; add an inline English message plus “Retry connection” action when the backend actor isn’t ready, and keep the dialog usable with clear errors until the actor is available.
+- Update APA 9-Ball Practice rack completion gating so “Complete Rack” becomes enabled when (current match points + current rack live points) reaches/exceeds the target, even if the 9-ball is unscored.
+- When completing in the above scenario, finalize the rack cleanly by treating remaining unaccounted rack points as dead for rack accounting (10 points accounted) without placing the 9-ball into a user-visible “Dead Ball” state.
+- Add/adjust APA rack-scoring UI messaging in English to clearly explain that the rack can be completed now and remaining balls/points will be treated as dead when match completion is reached mid-rack.
+- Ensure no Straight Shot (20-shot game) logic/UI/persistence/copy changes are made (no changes under `frontend/src/pages/straight-shot/`).
 
-**User-visible outcome:** In APA 9-Ball Practice, the correct player continues after completing a rack, dead balls are shown near innings, innings count updates at the right time, and save buttons on match completion and profile editing no longer get stuck on “Connecting...” and provide clear retry/error feedback when connection isn’t ready.
+**User-visible outcome:** In APA 9-Ball Practice, once either player hits their points-to-win target during live rack entry, the user can immediately complete the rack and proceed to match completion without having to score the 9-ball; after completion, further scoring remains blocked as it is today.

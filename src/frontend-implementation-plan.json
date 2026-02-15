@@ -1,108 +1,58 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "APA 9-ball practice: turn carryover, dead balls display, and resilient connecting states",
+  "title": "APA 9-Ball Practice: allow rack completion once points-to-win reached mid-rack (without forcing 9-ball), leaving Straight Shot untouched",
   "requirements": [
     {
-      "id": "REQ-129",
-      "summary": "Preserve the active player across APA 9-Ball Practice rack transitions while resetting rack-scoped state.",
+      "id": "REQ-153",
+      "summary": "Enable “Complete Rack” in APA Practice as soon as either player reaches/exceeds their points-to-win target mid-rack, without requiring the 9-ball to be pocketed, while keeping rack accounting clean and blocking scoring after completion.",
       "acceptanceCriteria": [
-        "During an in-progress APA Practice match, if Player 2 is the active player when the user clicks “Complete Rack”, the next rack starts with Player 2 still shown as the Active Player.",
-        "During an in-progress APA Practice match, if Player 1 is the active player when the user clicks “Complete Rack”, the next rack starts with Player 1 still shown as the Active Player.",
-        "The rack’s ball states, defensive-shot counters, and any rack-scoped auto-dead bookkeeping are reset for the new rack, but the active-player turn state is preserved.",
-        "The shared-innings behavior remains: innings increment only when the turn switches from Player 2 back to Player 1 (i.e., after Player 2 ends their turn)."
+        "In APA Practice, if Player 1 or Player 2 reaches/exceeds their target based on (match current points + current rack live points), the UI provides a path to immediately finish the rack and proceed to match completion without pocketing the 9-ball.",
+        "The “Complete Rack” action becomes enabled in the above scenario even when ball 9 remains unscored, and the user can proceed to the match completion screen.",
+        "Any remaining unaccounted rack points are treated as dead for rack accounting so the rack finalizes cleanly (10 points accounted), without putting the 9-ball into a user-visible 'Dead Ball' state.",
+        "After the match is complete, further rack scoring interactions are blocked as they are today (no additional points/innings can be added after completion)."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/components/apa/useApaInningFlow.ts",
-          "operation": "modify",
-          "description": "Update the inning-flow hook to support initializing from external state (starting active player + current shared innings) and add a rack-reset method that clears rack-local flags without resetting active-player turn state."
-        },
         {
           "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Accept and use externally provided starting active player/shared innings for the rack, and on “Complete Rack” reset only rack-local scoring state (balls/defense/auto-dead) while preserving the active-player turn for the next rack."
+          "description": "Adjust APA Practice rack completion gating so that when match completion is imminent mid-rack, the rack can be finalized immediately without scoring ball 9: (1) treat any remaining unaccounted rack points as implicit dead points for rack accounting (reaching 10 points) without setting ball 9 to a visible 'dead' state, (2) ensure \"Complete Rack\" becomes enabled under this condition, and (3) ensure the rack-finalization callback uses the same accounting so it finalizes cleanly. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
           "operation": "modify",
-          "description": "Persist match-scoped turn state (active player) in the in-progress practice session and pass it into the rack scoring panel so the next rack continues with the correct active player rather than defaulting back to Player 1."
+          "description": "Confirm APA Practice match-completion flow still blocks further scoring interactions after match completion (rack panel hidden/disabled) and that live totals + rack finalization correctly transition into the existing match completion UI after the updated rack-completion behavior. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-130",
-      "summary": "Display accumulated dead-ball totals in the APA 9-Ball Practice gameplay UI under the innings line with clear English labeling.",
+      "id": "REQ-154",
+      "summary": "Update APA rack-scoring UI messaging to clearly explain mid-rack match completion and that the rack can be completed without pocketing the 9-ball, with remaining points treated as dead for rack accounting.",
       "acceptanceCriteria": [
-        "On the APA Practice gameplay screen (while a match is in progress), the UI shows a “Dead Balls” line/row located under (or immediately adjacent to) the innings display, labeled in English (e.g., “Dead Balls:”).",
-        "The dead-ball value reflects the current match’s accumulated dead-ball total based on completed racks (and must not require any backend calls).",
-        "The dead-ball display does not break gameplay when there are zero racks completed (shows 0)."
+        "When match completion is reached mid-rack, the UI shows clear English guidance that the rack can be completed now and any remaining balls/points will be treated as dead for rack accounting.",
+        "The messaging does not instruct the user that they must pocket the 9-ball to proceed in the match-completion-imminent scenario."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Compute the match’s dead-ball total from completed racks in session state and render a clearly labeled “Dead Balls:” row under/adjacent to the existing innings display in the in-progress gameplay UI (showing 0 when no racks are complete)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-131",
-      "summary": "Ensure APA 9-Ball Practice innings increment only on Player 2 → Player 1 turnover and carry consistently across racks.",
-      "acceptanceCriteria": [
-        "Starting a new rack, innings do not increment when the active player changes from Player 1 to Player 2.",
-        "Innings increment by exactly +1 when the active player changes from Player 2 to Player 1.",
-        "Innings value remains consistent across rack completion and carries forward correctly into subsequent racks."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/apa/useApaInningFlow.ts",
-          "operation": "modify",
-          "description": "Keep the existing increment rule (only increment on B→A) and adjust the hook so shared innings are match-scoped (carry forward) rather than resetting to 0 at each rack boundary."
-        },
         {
           "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Ensure the rack panel uses match-scoped shared innings from the inning-flow hook, reports the correct shared innings on rack completion, and does not reset innings when starting a new rack."
-        },
-        {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "Store and persist the match-scoped innings value in practice session state so it remains consistent across rack completion and reloads, and ensure the gameplay UI reflects the carried-forward innings value."
+          "description": "Update the match-completion-imminent alert/copy to clearly state in English that the rack can be completed immediately and remaining points will be treated as dead for rack accounting, and ensure no copy implies the 9-ball must be pocketed to proceed in this scenario. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-132",
-      "summary": "Prevent the APA Practice match-complete save button from getting stuck on “Connecting...” and provide a retry connection path when the actor is not ready.",
+      "id": "REQ-155",
+      "summary": "Ensure Straight Shot (20-shot game) is not modified as part of this change.",
       "acceptanceCriteria": [
-        "On the APA Practice match-complete screen, the primary save button must not remain permanently disabled with the label “Connecting...” for an authenticated user in normal conditions.",
-        "If the backend actor is not available, show a clear English inline message explaining the app is still connecting and provide a user-invokable “Retry connection” action (using the existing retry hook).",
-        "If the user clicks save while the actor is not ready, the UI fails fast with a clear English error and remains responsive (no permanent disabled state).",
-        "When the actor becomes available, the button label changes from “Connecting...” to “Save Match & Return to History”, and the user can save successfully."
+        "No files under `frontend/src/pages/straight-shot/` are changed.",
+        "No Straight Shot match-building, saving, history rendering, rules copy, or stats code is changed.",
+        "Straight Shot behavior remains identical after deployment (spot-check: start a session, enter total shots, save, view in history)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
-          "operation": "modify",
-          "description": "On the match-complete view, use the existing useActorRetry hook to add an inline English “still connecting” message with a “Retry connection” action; adjust the save button so it never becomes permanently disabled due to missing actor (fail fast with a clear English toast/error when clicked without a ready actor), and update button labeling to switch from “Connecting...” to “Save Match & Return to History” when the actor becomes available."
-        }
-      ]
-    },
-    {
-      "id": "REQ-133",
-      "summary": "Fix the Edit Profile dialog save button “Connecting...” stuck state and add a retry connection recovery path when the actor is not ready.",
-      "acceptanceCriteria": [
-        "In the Edit Your Profile dialog, the primary action button must not remain permanently disabled with the label “Connecting...” for an authenticated user in normal conditions.",
-        "If the backend actor is not available, show a clear English inline message explaining the app is still connecting and provide a user-invokable “Retry connection” action (using the existing retry hook).",
-        "If the user clicks save while the actor is not ready, show a clear English error and keep the dialog usable so the user can retry without refreshing the page.",
-        "When the actor becomes available, the button label changes from “Connecting...” to “Save Changes”, and the profile can be saved successfully."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "operation": "modify",
-          "description": "In edit mode, use the existing useActorRetry hook to show an inline English “still connecting” message and a “Retry connection” action when the actor is unavailable; update the primary button disable rules so the dialog remains usable (no permanent disable due to actor unready), and ensure save attempts without a ready actor fail fast with a clear English error while allowing the user to retry."
+          "path": "frontend/src/dev/straight-shot-spot-check.md",
+          "operation": "create",
+          "description": "Add a lightweight manual QA checklist documenting the required Straight Shot spot-check steps (start a session, enter total shots, save, view in history) to help ensure the Straight Shot codepath remains untouched while implementing APA Practice changes."
         }
       ]
     }

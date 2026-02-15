@@ -264,14 +264,7 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
   };
 
   const isSubmitting = saveMatchMutation.isPending || updateMatchMutation.isPending;
-  const isSubmitDisabled = !actor || isSubmitting || hasValidationErrors() || !hasRequiredFields();
-
-  // Determine button text based on state
-  const getButtonText = () => {
-    if (!actor) return 'Connecting...';
-    if (isSubmitting) return 'Saving...';
-    return mode === 'create' ? 'Save Match' : 'Update Match';
-  };
+  const isSubmitDisabled = isSubmitting || hasValidationErrors() || !hasRequiredFields();
 
   return (
     <div className="space-y-6">
@@ -279,7 +272,7 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
       {showConnectionWarning && !actor && (
         <Alert>
           <AlertDescription className="flex items-center justify-between">
-            <span>Backend connection is taking longer than expected.</span>
+            <span>Still connecting to backend. Please wait or retry.</span>
             <Button
               variant="outline"
               size="sm"
@@ -503,7 +496,7 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
           className="flex-1 gap-2"
         >
           <Save className="h-4 w-4" />
-          {getButtonText()}
+          {isSubmitting ? 'Saving...' : mode === 'create' ? 'Save Match' : 'Update Match'}
         </Button>
       </div>
     </div>

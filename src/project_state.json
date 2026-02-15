@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 77,
+  "projectStateVersion": 93,
   "summary": "APA pool practice scorekeeper app (APA 9-ball Equalizer) with per-rack ball/dead-ball tracking, defensive shots, innings, PPI, match-point conversion, and additional practice modes (Accepting Gifts, Straight Shot); plus a discrete 4th mode to log real/official APA matches and chart both actual PPI and adjusted PPI (each with best-10-of-last-20 rolling line). Invite-only access control/login approval is deprioritized/optionally disabled for now to ship a working version.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
@@ -19,12 +19,12 @@
     "Bug: entering the Primary Player name into Player 2 does not update the skill level on the match page; also possible to start a match with the Primary Player name in both Player 1 and Player 2 (should be blocked).",
     "App can get stuck on the “Checking access…” loading screen during access-control checks; needs a fail-open/disable option or clear error/timeout so the app remains usable.",
     "Regression: the score \"out of\" functionality (displaying each player’s score relative to the computed points-to-win target) was removed; it must be restored (e.g., \"Your Score (out of X)\" / \"Their Score (out of Y)\" based on selected skill levels).",
-    "Official/Real APA Match Log: Save is blocked with validation message \"Unable to determine match winner\" (winner/outcome computation/validation logic may be incorrectly rejecting valid entries or requiring fields unexpectedly).",
-    "Official/Real APA Match Log: Save action fails with \"Failed to save match\" when saving from Match History / match log flow (save payload or backend validation mismatch/regression).",
     "Regression/bug: Match History sort control (toggle Newest/Oldest by match date) is missing/not shown even when history list contains matches (user reports 3 matches visible but no sort option).",
     "APA Practice: match does not stop immediately when a player reaches their points-to-win target; scoring can continue into subsequent rack(s), causing final scores to exceed the target (e.g., 36).",
     "Official/Real APA Match Log: Save gets stuck on \"Connecting\" after entering inputs (cannot complete save). Likely save-mutation/network/actor readiness state deadlock.",
-    "Bug: Edit Profile / \"Save changes\" button does not respond to clicks (profile changes cannot be saved)."
+    "Bug: Edit Profile / \"Save changes\" button does not respond to clicks (profile changes cannot be saved).",
+    "APA Practice: when the match is effectively over (player reached/exceeded points-to-win), the \"Complete Rack\" button becomes unclickable/disabled, preventing the user from finishing the rack and progressing past the scoring screen.",
+    "APA Practice: score can exceed the points-to-win target in the edge case where a player is 1 point away and then pockets the 9-ball (2 points), causing the total to update past the target; must clamp/stop correctly on match completion."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -971,6 +971,174 @@
         "REQ-133"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-apa-9-ball-rack-scoring-so-that-when-the-9-ball-is-marked-as-pocketed-before-the-rack-is-otherwise-fully-accounted-all-remaining-unscored-balls-1-8-are-automatically-treated-as-dead-balls-for-that-rack-the-rack-totals-immediately-reach-10-points-and-the-complete-rack-button-becomes-enabled-without-requiring-any-additional-taps",
+      "title": "Fix APA 9-ball rack scoring so that when the 9-ball is marked as pocketed before the rack is otherwise fully accounted, all remaining unscored balls (1–8) are automatically treated as dead balls for that rack, the rack totals immediately reach 10 points, and the \"Complete Rack\" button becomes enabled without requiring any additional taps.",
+      "reqIds": [
+        "REQ-134"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enforce-that-the-9-ball-can-never-be-put-into-the-dead-ball-state-in-the-apa-9-ball-scoring-ui-including-both-manual-taps-and-any-auto-dead-behaviors",
+      "title": "Enforce that the 9-ball can never be put into the \"dead ball\" state in the APA 9-ball scoring UI, including both manual taps and any auto-dead behaviors.",
+      "reqIds": [
+        "REQ-135"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-apa-9-ball-practice-matches-end-immediately-when-either-player-reaches-or-exceeds-their-points-to-win-target-and-prevent-any-displayed-or-saved-totals-from-ever-exceeding-that-player-s-target-including-during-live-rack-entry",
+      "title": "Ensure APA 9-ball practice matches end immediately when either player reaches or exceeds their points-to-win target, and prevent any displayed or saved totals from ever exceeding that player’s target (including during live rack entry).",
+      "reqIds": [
+        "REQ-136"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-apa-9-ball-practice-scorekeeper-ui-replace-the-user-facing-label-text-shared-innings-with-innings-anywhere-it-appears-while-keeping-the-underlying-shared-innings-behavior-unchanged",
+      "title": "In the APA 9-Ball Practice scorekeeper UI, replace the user-facing label text “Shared Innings” with “Innings” anywhere it appears (while keeping the underlying shared-innings behavior unchanged).",
+      "reqIds": [
+        "REQ-137"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-practice-gameplay-so-the-user-can-always-finish-the-final-rack-and-proceed-past-the-rack-scoring-screen-when-the-match-ending-condition-is-reached-mid-rack-i-e-when-a-player-reaches-exceeds-their-points-to-win-target-before-the-rack-naturally-totals-10-points-specifically-ensure-the-complete-rack-button-becomes-enabled-by-automatically-accounting-for-the-rest-of-the-rack-mark-remaining-unscored-balls-as-dead-as-needed-so-the-rack-totals-reach-10-and-the-user-can-tap-complete-rack-to-finish-the-match",
+      "title": "Fix APA Practice gameplay so the user can always finish the final rack and proceed past the rack-scoring screen when the match-ending condition is reached mid-rack (i.e., when a player reaches/exceeds their points-to-win target before the rack naturally totals 10 points). Specifically, ensure the \"Complete Rack\" button becomes enabled by automatically accounting for the rest of the rack (mark remaining unscored balls as Dead as needed) so the rack totals reach 10 and the user can tap \"Complete Rack\" to finish the match.",
+      "reqIds": [
+        "REQ-138"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-practice-target-limit-behavior-so-the-match-score-shown-and-saved-never-exceeds-a-player-s-points-to-win-target-including-the-edge-case-where-a-player-is-1-point-away-from-their-target-and-then-pockets-the-9-ball-worth-2-points-in-that-case-allow-recording-the-9-ball-pocket-but-clamp-the-player-s-displayed-and-saved-match-total-to-exactly-their-target-not-target-1",
+      "title": "Update APA Practice target-limit behavior so the match score shown and saved never exceeds a player's points-to-win target, including the edge case where a player is 1 point away from their target and then pockets the 9-ball (worth 2 points). In that case, allow recording the 9-ball pocket, but clamp the player's displayed and saved match total to exactly their target (not target+1).",
+      "reqIds": [
+        "REQ-139"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-9-ball-practice-match-results-saving-so-the-user-can-always-click-save-match-when-the-match-is-complete-and-the-user-is-authenticated-and-provide-clear-english-ui-feedback-recovery-when-backend-connection-is-not-ready",
+      "title": "Fix APA 9-Ball Practice match-results saving so the user can always click “Save Match” when the match is complete and the user is authenticated, and provide clear English UI feedback/recovery when backend connection is not ready.",
+      "reqIds": [
+        "REQ-140"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-the-apa-practice-scoring-rule-when-a-player-is-exactly-1-point-away-from-their-points-to-win-target-pocketing-the-9-ball-must-only-increase-that-player-s-match-total-by-1-point-otherwise-the-9-ball-remains-worth-2-points",
+      "title": "Implement the APA Practice scoring rule: when a player is exactly 1 point away from their points-to-win target, pocketing the 9-ball must only increase that player’s match total by 1 point; otherwise the 9-ball remains worth 2 points.",
+      "reqIds": [
+        "REQ-141"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-apa-practice-rack-scoring-validation-and-rack-completion-remain-usable-under-the-9-ball-from-1-point-away-scenario-no-dead-end-state-where-the-rack-cannot-be-completed",
+      "title": "Ensure APA Practice rack-scoring validation and rack completion remain usable under the “9-ball from 1 point away” scenario (no dead-end state where the rack cannot be completed).",
+      "reqIds": [
+        "REQ-142"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-practice-9-ball-scoring-edge-case-so-that-when-the-active-player-is-exactly-1-point-away-from-their-points-to-win-target-pocketing-the-9-ball-increases-that-player-s-rack-match-points-by-exactly-1-point-not-2-in-all-other-situations-the-9-ball-remains-worth-2-points-do-not-change-any-other-apa-scoring-rules-rack-accounting-rules-10-points-per-rack-innings-defensive-shot-tracking-or-other-modes",
+      "title": "Fix the APA Practice 9-ball scoring edge case so that when the active player is exactly 1 point away from their points-to-win target, pocketing the 9-ball increases that player’s rack/match points by exactly 1 point (not 2). In all other situations, the 9-ball remains worth 2 points. Do not change any other APA scoring rules, rack accounting rules (10 points per rack), innings/defensive-shot tracking, or other modes.",
+      "reqIds": [
+        "REQ-143"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-apa-9-ball-rack-scoring-so-the-9-ball-tap-is-never-blocked-by-the-target-limit-would-exceed-target-check-in-frontend-src-components-apa-aparackscoringpanel-tsx-handleballclick-allow-the-9-ball-to-be-toggled-from-unscored-to-pocketed-for-the-active-player-even-when-the-active-player-is-at-near-their-points-to-win-target-after-the-tap-apply-the-existing-one-point-away-override-9-ball-worth-1-when-exactly-1-point-remains-and-rely-on-existing-clamping-behavior-for-displayed-saved-match-totals",
+      "title": "Update APA 9-ball rack scoring so the 9-ball tap is never blocked by the target-limit/\"would exceed target\" check. In `frontend/src/components/apa/ApaRackScoringPanel.tsx` `handleBallClick`, allow the 9-ball to be toggled from unscored to pocketed for the active player even when the active player is at/near their points-to-win target; after the tap, apply the existing one-point-away override (9-ball worth 1 when exactly 1 point remains) and rely on existing clamping behavior for displayed/saved match totals.",
+      "reqIds": [
+        "REQ-144"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-rack-auto-dead-behavior-so-the-9-ball-is-never-auto-marked-as-a-dead-ball-during-match-completion-imminent-auto-dead-filling-in-frontend-src-components-apa-aparackscoringpanel-tsx-ensure-the-match-completion-imminent-auto-dead-set-and-application-logic-only-targets-balls-1-8-never-ball-9-so-the-9-ball-remains-tappable-and-can-be-marked-pocketed-to-lock-finish-the-rack-when-appropriate",
+      "title": "Fix APA rack auto-dead behavior so the 9-ball is never auto-marked as a dead ball during match-completion-imminent auto-dead filling. In `frontend/src/components/apa/ApaRackScoringPanel.tsx`, ensure the match-completion-imminent auto-dead set and application logic only targets balls 1–8 (never ball 9), so the 9-ball remains tappable and can be marked pocketed to lock/finish the rack when appropriate.",
+      "reqIds": [
+        "REQ-145"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-react-query-hooks-in-frontend-src-hooks-usequeries-ts-to-avoid-deadlocking-the-app-by-disabling-queries-solely-due-to-useactor-isfetching-queries-that-require-an-actor-should-be-enabled-whenever-actor-is-non-null-do-not-require-isfetching-as-an-additional-condition",
+      "title": "Update React Query hooks in `frontend/src/hooks/useQueries.ts` to avoid deadlocking the app by disabling queries solely due to `useActor().isFetching`. Queries that require an actor should be enabled whenever `actor` is non-null; do not require `!isFetching` as an additional condition.",
+      "reqIds": [
+        "REQ-147"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-practice-match-completion-save-ux-frontend-src-pages-apa-practicegamepage-tsx-so-saving-never-appears-stuck-or-unclickable-the-save-match-button-must-be-clickable-as-soon-as-an-actor-exists-if-the-actor-is-still-unavailable-after-a-reasonable-wait-show-an-english-inline-message-and-a-user-invokable-retry-connection-action-using-frontend-src-hooks-useactorretry-ts-and-keep-the-ui-responsive",
+      "title": "Fix the APA Practice match completion save UX (`frontend/src/pages/apa/PracticeGamePage.tsx`) so saving never appears stuck or unclickable: the “Save Match” button must be clickable as soon as an actor exists; if the actor is still unavailable after a reasonable wait, show an English inline message and a user-invokable “Retry Connection” action using `frontend/src/hooks/useActorRetry.ts` (and keep the UI responsive).",
+      "reqIds": [
+        "REQ-148"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-straight-shot-20-shot-game-session-saving-frontend-src-pages-straight-shot-straightshotgamepage-tsx-so-the-end-save-flow-does-not-become-stuck-on-connecting-or-permanently-disabled-provide-the-same-fast-fail-and-retry-connection-recovery-pattern-when-the-actor-is-unavailable",
+      "title": "Fix Straight Shot (20-shot game) session saving (`frontend/src/pages/straight-shot/StraightShotGamePage.tsx`) so the End/Save flow does not become stuck on “Connecting…” or permanently disabled. Provide the same fast-fail and retry-connection recovery pattern when the actor is unavailable.",
+      "reqIds": [
+        "REQ-149"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-accepting-gifts-session-saving-frontend-src-pages-accepting-gifts-acceptinggiftsgamepage-tsx-so-the-end-save-flow-does-not-become-stuck-on-connecting-or-permanently-disabled-provide-the-same-fast-fail-and-retry-connection-recovery-pattern-when-the-actor-is-unavailable",
+      "title": "Fix Accepting Gifts session saving (`frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx`) so the End/Save flow does not become stuck on “Connecting…” or permanently disabled. Provide the same fast-fail and retry-connection recovery pattern when the actor is unavailable.",
+      "reqIds": [
+        "REQ-150"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-official-real-apa-match-log-create-edit-saving-frontend-src-components-apa-realapamatchform-tsx-so-save-update-never-remains-permanently-disabled-showing-connecting-for-authenticated-users-when-a-usable-actor-exists-the-form-must-allow-submission-as-soon-as-actor-is-non-null-even-if-the-actor-hook-is-fetching-refetching-in-the-background-and-must-provide-a-clear-retry-path-if-actor-stays-unavailable",
+      "title": "Fix Official/Real APA Match Log create/edit saving (`frontend/src/components/apa/RealApaMatchForm.tsx`) so Save/Update never remains permanently disabled showing “Connecting…” for authenticated users when a usable actor exists. The form must allow submission as soon as `actor` is non-null, even if the actor hook is fetching/refetching in the background, and must provide a clear retry path if `actor` stays unavailable.",
+      "reqIds": [
+        "REQ-151"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-edit-profile-save-changes-reliability-in-frontend-src-components-auth-profilesetupdialog-tsx-ensure-the-primary-submit-button-does-not-become-unclickable-or-stuck-on-connecting-when-an-actor-exists-and-when-the-actor-is-not-available-provide-a-clear-english-recovery-path-retry-connection-fast-fail-messaging-without-the-ui-appearing-to-do-nothing",
+      "title": "Fix the Edit Profile “Save Changes” reliability in `frontend/src/components/auth/ProfileSetupDialog.tsx`: ensure the primary submit button does not become unclickable or stuck on “Connecting…” when an actor exists; and when the actor is not available, provide a clear English recovery path (retry connection + fast-fail messaging) without the UI appearing to do nothing.",
+      "reqIds": [
+        "REQ-152"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-apa-9-ball-practice-so-that-when-either-player-reaches-exceeds-their-points-to-win-target-during-live-rack-entry-the-current-rack-can-be-completed-immediately-without-requiring-the-9-ball-to-be-pocketed-i-e-do-not-force-the-user-to-score-the-9-ball-just-to-enable-complete-rack",
+      "title": "Fix APA 9-Ball Practice so that when either player reaches/exceeds their points-to-win target during live rack entry, the current rack can be completed immediately without requiring the 9-ball to be pocketed (i.e., do not force the user to score the 9-ball just to enable “Complete Rack”).",
+      "reqIds": [
+        "REQ-153"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-apa-rack-scoring-ui-messaging-feedback-to-accurately-describe-the-above-behavior-in-english-when-match-completion-is-reached-mid-rack-and-the-rack-can-be-finalized-without-the-9-ball",
+      "title": "Update the APA rack-scoring UI messaging/feedback to accurately describe the above behavior in English when match completion is reached mid-rack and the rack can be finalized without the 9-ball.",
+      "reqIds": [
+        "REQ-154"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-straight-shot-20-shot-game-codepath-is-not-modified-as-part-of-this-change-no-logic-ui-persistence-or-copy-changes",
+      "title": "Ensure the Straight Shot (20-shot game) codepath is not modified as part of this change (no logic, UI, persistence, or copy changes).",
+      "reqIds": [
+        "REQ-155"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1290,6 +1458,32 @@
       "id": "AR-65",
       "summary": "APA Practice: track dead balls without adding new buttons by cycling each ball’s state on tap: 1st tap = pocketed by current player, 2nd tap = dead ball, 3rd tap = unpocketed/clear.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-66",
+      "summary": "APA 9-ball scorekeeper UI: change the innings label text from \"Shared innings\" to just \"Innings\".",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-67",
+      "summary": "APA Practice scoring: if a player is exactly 1 point away from their points-to-win target, pocketing the 9-ball should award only 1 point (otherwise the 9-ball remains worth 2).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-68",
+      "summary": "Fix all save flows globally (APA Practice, Accepting Gifts, Straight Shot/20-shot game, Official/Real APA Match Log, and Edit Profile) so save/update buttons never get stuck on \"Connecting\" or become permanently disabled due to stale actor/identity fetching state; allow saving as soon as a usable actor exists; fail fast with clear English error + provide retry when actor/mutation is not ready/hangs.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-69",
+      "summary": "Harden backend actor readiness so the UI does not treat background fetching/refetching as “not connected”. Update the actor/query gating so pages can proceed whenever a usable actor instance exists, and only block when the actor is truly null/unavailable.",
+      "reqIds": [
+        "REQ-146"
+      ],
       "status": "pending"
     }
   ],

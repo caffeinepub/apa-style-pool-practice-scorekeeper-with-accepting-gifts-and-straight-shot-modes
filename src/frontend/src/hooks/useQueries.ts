@@ -10,7 +10,7 @@ import { withTimeout } from '../utils/withTimeout';
 const MUTATION_TIMEOUT_MS = 30000;
 
 export function useGetAllMatches() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<ApiMatch[]>({
     queryKey: ['matches'],
@@ -18,12 +18,12 @@ export function useGetAllMatches() {
       if (!actor) return [];
       return actor.getAllMatches();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useGetMatch(matchId: string) {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<ApiMatch | null>({
     queryKey: ['match', matchId],
@@ -31,7 +31,7 @@ export function useGetMatch(matchId: string) {
       if (!actor) return null;
       return actor.getMatch(matchId);
     },
-    enabled: !!actor && !isFetching && !!matchId,
+    enabled: !!actor && !!matchId,
   });
 }
 
@@ -118,7 +118,7 @@ export function useGetCallerUserProfile() {
       if (!actor) throw new Error('Actor not available');
       return actor.getCallerUserProfile();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor,
     retry: false,
   });
 
@@ -156,7 +156,7 @@ export function useSaveCallerUserProfile() {
 }
 
 export function useGetInviteOnlyMode() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<boolean>({
     queryKey: ['inviteOnlyMode'],
@@ -164,7 +164,7 @@ export function useGetInviteOnlyMode() {
       if (!actor) return false;
       return actor.getInviteOnlyMode();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
@@ -191,7 +191,7 @@ export function useSetInviteOnlyMode() {
 }
 
 export function useIsCallerApproved() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<boolean>({
     queryKey: ['isApproved'],
@@ -199,7 +199,7 @@ export function useIsCallerApproved() {
       if (!actor) return false;
       return actor.isCallerApproved();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
@@ -227,7 +227,7 @@ export function useRequestApproval() {
 }
 
 export function useListApprovals() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<UserApprovalInfo[]>({
     queryKey: ['approvals'],
@@ -235,7 +235,7 @@ export function useListApprovals() {
       if (!actor) return [];
       return actor.listApprovals();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
@@ -262,7 +262,7 @@ export function useSetApproval() {
 }
 
 export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<boolean>({
     queryKey: ['isAdmin'],
@@ -270,12 +270,12 @@ export function useIsCallerAdmin() {
       if (!actor) return false;
       return actor.isCallerAdmin();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useGetCallerUserRole() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<UserRole>({
     queryKey: ['userRole'],
@@ -283,7 +283,7 @@ export function useGetCallerUserRole() {
       if (!actor) throw new Error('Actor not available');
       return actor.getCallerUserRole();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
@@ -311,7 +311,7 @@ export function useAssignCallerUserRole() {
 }
 
 export function useGetCurrentObjectBallCount() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
 
   return useQuery<bigint>({
     queryKey: ['currentObjectBallCount'],
@@ -319,7 +319,7 @@ export function useGetCurrentObjectBallCount() {
       if (!actor) return BigInt(2);
       return actor.getCurrentObjectBallCount();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 

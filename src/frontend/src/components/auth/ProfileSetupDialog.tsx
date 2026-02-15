@@ -9,56 +9,64 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { APA_SKILL_LEVELS, formatSkillLevel, getPointsToWin } from '../../lib/apa/apaEqualizer';
-import { RefreshCw } from 'lucide-react';
+import { APA_SKILL_LEVELS, formatSkillLevel } from '../../lib/apa/apaEqualizer';
+import { Settings, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
 
-interface ProfileSetupDialogProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  mode?: 'setup' | 'edit';
-}
-
-export default function ProfileSetupDialog({ open: controlledOpen, onOpenChange, mode = 'setup' }: ProfileSetupDialogProps) {
+export default function ProfileSetupDialog() {
   const { identity } = useInternetIdentity();
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor } = useActor();
   const { retryConnection } = useActorRetry();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [name, setName] = useState('');
-  const [apaSkillLevel, setApaSkillLevel] = useState<string>('');
-  const [showRetryConnection, setShowRetryConnection] = useState(false);
+  const [skillLevel, setSkillLevel] = useState<string>('');
+  const [showConnectionWarning, setShowConnectionWarning] = useState(false);
 
   const isAuthenticated = !!identity;
-  const showProfileSetup = mode === 'setup' && isAuthenticated && !profileLoading && isFetched && userProfile === null;
-  const isOpen = controlledOpen !== undefined ? controlledOpen : showProfileSetup;
 
+  // Show profile setup dialog if user is authenticated but has no profile
   useEffect(() => {
-    if (mode === 'edit' && userProfile) {
-      setName(userProfile.name);
-      setApaSkillLevel(userProfile.apaSkillLevel ? userProfile.apaSkillLevel.toString() : '');
-    } else if (!showProfileSetup) {
-      setName('');
-      setApaSkillLevel('');
+    if (isAuthenticated && !profileLoading && isFetched && userProfile === null) {
+      setIsOpen(true);
+      setIsEditMode(false);
     }
-  }, [showProfileSetup, mode, userProfile]);
+  }, [isAuthenticated, profileLoading, isFetched, userProfile]);
 
-  // Show retry connection after 8 seconds if actor is not ready in edit mode
+  // Show connection warning after 8 seconds if actor is still not available
   useEffect(() => {
-    if (mode === 'edit' && isOpen && !actor && !actorFetching) {
+    if (isOpen && !actor && identity) {
       const timer = setTimeout(() => {
-        setShowRetryConnection(true);
+        setShowConnectionWarning(true);
       }, 8000);
       return () => clearTimeout(timer);
     } else {
-      setShowRetryConnection(false);
+      setShowConnectionWarning(false);
     }
-  }, [mode, isOpen, actor, actorFetching]);
+  }, [isOpen, actor, identity]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  // Load existing profile data when editing
+  useEffect(() => {
+    if (isEditMode && userProfile) {
+      setName(userProfile.name);
+      setSkillLevel(userProfile.apaSkillLevel ? userProfile.apaSkillLevel.toString() : '');
+    }
+  }, [isEditMode, userProfile]);
+
+  const handleOpenEditMode = () => {
+    if (userProfile) {
+      setName(userProfile.name);
+      setSkillLevel(userProfile.apaSkillLevel ? userProfile.apaSkillLevel.toString() : '');
+      setIsEditMode(true);
+      setIsOpen(true);
+    }
+  };
+
+  const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Please enter your name');
       return;
@@ -70,124 +78,140 @@ export default function ProfileSetupDialog({ open: controlledOpen, onOpenChange,
     }
 
     try {
-      const profile = {
+      await saveProfile.mutateAsync({
         name: name.trim(),
-        apaSkillLevel: apaSkillLevel ? BigInt(apaSkillLevel) : undefined,
-      };
-      
-      await saveProfile.mutateAsync(profile);
-      
-      toast.success(mode === 'edit' ? 'Profile updated successfully!' : 'Profile created successfully!');
-      
-      if (onOpenChange) {
-        onOpenChange(false);
-      }
+        apaSkillLevel: skillLevel ? BigInt(parseInt(skillLevel)) : undefined,
+      });
+
+      toast.success(isEditMode ? 'Profile updated successfully' : 'Profile created successfully');
+      setIsOpen(false);
+      setIsEditMode(false);
+      setName('');
+      setSkillLevel('');
     } catch (error) {
       const errorText = extractErrorText(error);
       toast.error(errorText);
-      console.error('Error saving profile:', error);
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (mode === 'edit' && onOpenChange) {
-      onOpenChange(open);
+  const handleCancel = () => {
+    if (isEditMode) {
+      setIsOpen(false);
+      setIsEditMode(false);
+      setName('');
+      setSkillLevel('');
     }
-    // For setup mode, prevent closing
   };
 
-  const isActorReady = !!actor;
-  const isSubmitting = saveProfile.isPending;
+  const handleRetryConnection = () => {
+    retryConnection();
+    toast.info('Retrying connection...');
+  };
+
+  const canSave = name.trim().length > 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
-        if (mode === 'setup') {
-          e.preventDefault();
-        }
-      }}>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'edit' ? 'Edit Your Profile' : 'Welcome! Set up your profile'}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'edit' 
-              ? 'Update your name and default APA skill level'
-              : 'Please enter your name to get started with Pool Scorekeeper'
-            }
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Your Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              autoFocus
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="apa-skill-level">APA 9-Ball Skill Level (Default)</Label>
-            <Select value={apaSkillLevel} onValueChange={setApaSkillLevel} disabled={isSubmitting}>
-              <SelectTrigger id="apa-skill-level">
-                <SelectValue placeholder="Select skill level (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {APA_SKILL_LEVELS.map(sl => (
-                  <SelectItem key={sl} value={sl.toString()}>
-                    {formatSkillLevel(sl)} - {getPointsToWin(sl)} points
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              This will be used as your default skill level when starting APA matches
-            </p>
+    <>
+      {/* Edit Profile Button (only shown when profile exists) */}
+      {isAuthenticated && userProfile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleOpenEditMode}
+          title="Edit Profile"
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Profile Setup/Edit Dialog */}
+      <Dialog open={isOpen} onOpenChange={isEditMode ? setIsOpen : undefined}>
+        <DialogContent className={isEditMode ? '' : 'pointer-events-auto'}>
+          <DialogHeader>
+            <DialogTitle>{isEditMode ? 'Edit Profile' : 'Welcome! Set Up Your Profile'}</DialogTitle>
+            <DialogDescription>
+              {isEditMode
+                ? 'Update your profile information below.'
+                : 'Please enter your name to get started. You can also set your APA skill level.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Connection Warning */}
+            {showConnectionWarning && !actor && (
+              <Alert>
+                <AlertDescription className="flex items-center justify-between">
+                  <span>Still connecting to backend. Please wait or retry.</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetryConnection}
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Retry Connection
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={saveProfile.isPending}
+              />
+            </div>
+
+            {/* APA Skill Level */}
+            <div className="space-y-2">
+              <Label htmlFor="skillLevel">APA Skill Level (Optional)</Label>
+              <Select
+                value={skillLevel}
+                onValueChange={setSkillLevel}
+                disabled={saveProfile.isPending}
+              >
+                <SelectTrigger id="skillLevel">
+                  <SelectValue placeholder="Select your skill level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {APA_SKILL_LEVELS.map((sl) => (
+                    <SelectItem key={sl} value={sl.toString()}>
+                      {formatSkillLevel(sl)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {showRetryConnection && !isActorReady && (
-            <Alert>
-              <AlertDescription className="flex items-center justify-between">
-                <span>Still connecting to backend...</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={retryConnection}
-                  className="gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Retry Connection
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
+          {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={!name.trim() || !isActorReady || isSubmitting}
-            >
-              {!isActorReady ? 'Connecting...' : isSubmitting ? 'Saving...' : mode === 'edit' ? 'Save Changes' : 'Continue'}
-            </Button>
-            {mode === 'edit' && onOpenChange && (
+            {isEditMode && (
               <Button
-                type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
+                onClick={handleCancel}
+                disabled={saveProfile.isPending}
               >
                 Cancel
               </Button>
             )}
+            <Button
+              onClick={handleSave}
+              disabled={!canSave || saveProfile.isPending}
+              className="flex-1"
+            >
+              {saveProfile.isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Profile'}
+            </Button>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

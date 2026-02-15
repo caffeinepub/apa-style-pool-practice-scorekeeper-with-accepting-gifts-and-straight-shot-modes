@@ -1,111 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Fix APA 9-ball rack-to-rack turn carryover, dead-ball display, and “Connecting...” save states",
-  "priority": "normal",
+  "title": "Fix APA 9-Ball Practice rack completion so match can end without waiting for the 9-ball (do not touch Straight Shot)",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-129",
-      "text": "Fix APA 9-Ball Practice rack transitions so that the active player continues their turn into the next rack when a rack is completed (do not reset the active player back to Player 1 at the start of every new rack).",
+      "id": "REQ-153",
+      "text": "Fix APA 9-Ball Practice so that when either player reaches/exceeds their points-to-win target during live rack entry, the current rack can be completed immediately without requiring the 9-ball to be pocketed (i.e., do not force the user to score the 9-ball just to enable “Complete Rack”).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-13"
         ],
         "quotes": [
-          "apa 9ball scorekeeper: each player should  continue their turn in new rack  when rack is completed."
+          "the apa 9 ball practice doesnt end the rack/game when the score is met it seems to wait for the 9ball why is that happening ?  and how are you going to fix it?"
         ]
       },
       "acceptanceCriteria": [
-        "During an in-progress APA Practice match, if Player 2 is the active player when the user clicks “Complete Rack”, the next rack starts with Player 2 still shown as the Active Player.",
-        "During an in-progress APA Practice match, if Player 1 is the active player when the user clicks “Complete Rack”, the next rack starts with Player 1 still shown as the Active Player.",
-        "The rack’s ball states, defensive-shot counters, and any rack-scoped auto-dead bookkeeping are reset for the new rack, but the active-player turn state is preserved.",
-        "The shared-innings behavior remains: innings increment only when the turn switches from Player 2 back to Player 1 (i.e., after Player 2 ends their turn)."
+        "In APA Practice, if Player 1 or Player 2 reaches/exceeds their target based on (match current points + current rack live points), the UI provides a path to immediately finish the rack and proceed to match completion without pocketing the 9-ball.",
+        "The “Complete Rack” action becomes enabled in the above scenario even when ball 9 remains unscored, and the user can proceed to the match completion screen.",
+        "Any remaining unaccounted rack points are treated as dead for rack accounting so the rack finalizes cleanly (10 points accounted), without putting the 9-ball into a user-visible 'Dead Ball' state.",
+        "After the match is complete, further rack scoring interactions are blocked as they are today (no additional points/innings can be added after completion)."
       ]
     },
     {
-      "id": "REQ-130",
-      "text": "Update the APA 9-Ball Practice gameplay UI to display dead-ball totals under the innings line (in the same area where innings are shown), using clear English labeling.",
+      "id": "REQ-154",
+      "text": "Update the APA rack-scoring UI messaging/feedback to accurately describe the above behavior in English when match completion is reached mid-rack and the rack can be finalized without the 9-ball.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-13"
         ],
         "quotes": [
-          "apa 9ball scorekeeper:  Deadballs should be displayed under innings"
+          "the apa 9 ball practice doesnt end the rack/game when the score is met it seems to wait for the 9ball"
         ]
       },
       "acceptanceCriteria": [
-        "On the APA Practice gameplay screen (while a match is in progress), the UI shows a “Dead Balls” line/row located under (or immediately adjacent to) the innings display, labeled in English (e.g., “Dead Balls:”).",
-        "The dead-ball value reflects the current match’s accumulated dead-ball total based on completed racks (and must not require any backend calls).",
-        "The dead-ball display does not break gameplay when there are zero racks completed (shows 0)."
+        "When match completion is reached mid-rack, the UI shows clear English guidance that the rack can be completed now and any remaining balls/points will be treated as dead for rack accounting.",
+        "The messaging does not instruct the user that they must pocket the 9-ball to proceed in the match-completion-imminent scenario."
       ]
     },
     {
-      "id": "REQ-131",
-      "text": "Ensure APA 9-Ball Practice innings increment timing is correct: innings must increment after Player 2’s turn is over (i.e., when the user turns over from Player 2 back to Player 1), and must not increment after Player 1’s turnover.",
-      "target": "frontend",
+      "id": "REQ-155",
+      "text": "Ensure the Straight Shot (20-shot game) codepath is not modified as part of this change (no logic, UI, persistence, or copy changes).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-13"
         ],
         "quotes": [
-          "apa 9ball scorekeeper:  Innings are incremented after player two's turn is over"
+          "the 20 shot game is working perfectly so please DONT EVER TOUCH IT"
         ]
       },
       "acceptanceCriteria": [
-        "Starting a new rack, innings do not increment when the active player changes from Player 1 to Player 2.",
-        "Innings increment by exactly +1 when the active player changes from Player 2 to Player 1.",
-        "Innings value remains consistent across rack completion and carries forward correctly into subsequent racks."
-      ]
-    },
-    {
-      "id": "REQ-132",
-      "text": "Fix the APA 9-Ball Practice match completion save button so it does not remain stuck showing “Connecting...” after the match is over; provide a clear recovery path if the backend actor is not available yet.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "apa 9ball scorekeeper: the save button after match is over says \"connecting\""
-        ]
-      },
-      "acceptanceCriteria": [
-        "On the APA Practice match-complete screen, the primary save button must not remain permanently disabled with the label “Connecting...” for an authenticated user in normal conditions.",
-        "If the backend actor is not available, show a clear English inline message explaining the app is still connecting and provide a user-invokable “Retry connection” action (using the existing retry hook).",
-        "If the user clicks save while the actor is not ready, the UI fails fast with a clear English error and remains responsive (no permanent disabled state).",
-        "When the actor becomes available, the button label changes from “Connecting...” to “Save Match & Return to History”, and the user can save successfully."
-      ]
-    },
-    {
-      "id": "REQ-133",
-      "text": "Fix the Edit Profile dialog save button so it does not remain stuck showing “Connecting...” and blocking profile saves; provide a clear recovery path if the backend actor is not available yet.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "edit your profile: the save buttons says \"connecting\""
-        ]
-      },
-      "acceptanceCriteria": [
-        "In the Edit Your Profile dialog, the primary action button must not remain permanently disabled with the label “Connecting...” for an authenticated user in normal conditions.",
-        "If the backend actor is not available, show a clear English inline message explaining the app is still connecting and provide a user-invokable “Retry connection” action (using the existing retry hook).",
-        "If the user clicks save while the actor is not ready, show a clear English error and keep the dialog usable so the user can retry without refreshing the page.",
-        "When the actor becomes available, the button label changes from “Connecting...” to “Save Changes”, and the profile can be saved successfully."
+        "No files under `frontend/src/pages/straight-shot/` are changed.",
+        "No Straight Shot match-building, saving, history rendering, rules copy, or stats code is changed.",
+        "Straight Shot behavior remains identical after deployment (spot-check: start a session, enter total shots, save, view in history)."
       ]
     }
   ],
   "constraints": [
-    "All user-facing text must be in English.",
-    "Do not edit any frontend files under the immutable paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useActor.ts and frontend/src/hooks/useInternetIdentity.ts). Compose new logic around existing hooks/components instead.",
-    "Keep the backend as a single Motoko actor (backend/main.mo). No additional backend services or databases."
+    "Do not modify Straight Shot (20-shot game) implementation or any files under `frontend/src/pages/straight-shot/`.",
+    "User-facing text must be in English.",
+    "Respect existing APA 9-ball constraints: 9-ball must not become a user-visible 'Dead Ball' state (manual or automatic)."
   ],
   "nonGoals": [
-    "Do not introduce new scoring rules or change APA 9-ball point accounting beyond the turn carryover, innings timing verification, and dead-ball display requested.",
-    "Do not add new persistence or backend schema changes for this request.",
-    "Do not redesign the overall app theme or navigation as part of these fixes."
+    "Do not change Accepting Gifts behavior.",
+    "Do not add new modes, backend schema changes, or persistence changes as part of this fix.",
+    "Do not redesign the APA Practice UI beyond what is required to fix the rack/match completion gating behavior."
   ],
   "imageRequirements": {
     "required": [],
