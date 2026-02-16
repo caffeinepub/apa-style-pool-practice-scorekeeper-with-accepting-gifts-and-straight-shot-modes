@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useGetMatch } from '../../hooks/useQueries';
+import { useGetMatch, useGetAllMatches } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +8,14 @@ import { MatchMode } from '../../backend';
 import DeleteMatchButton from '../../components/matches/DeleteMatchButton';
 import { getPointsToWin } from '../../lib/apa/apaEqualizer';
 import { getOfficialApaOutcome } from '../../lib/apa/officialApaOutcome';
-import { computeOfficialApaPpi, formatOfficialPpi, computeOfficialApaAppi, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
+import { computeOfficialApaPpi, formatOfficialPpi, computeOfficialApaAppiWithContext, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
 import { setNavigationOrigin } from '../../utils/urlParams';
 
 export default function MatchDetailsPage() {
   const navigate = useNavigate();
   const { matchId } = useParams({ from: '/history/$matchId' });
   const { data: match, isLoading } = useGetMatch(matchId);
+  const { data: allMatches } = useGetAllMatches();
 
   if (isLoading) {
     return (
@@ -115,7 +116,7 @@ export default function MatchDetailsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Match Points:</span>
-                  <span className="font-semibold">{player2.pointsWonConverted.toString()}</span>
+  <span className="font-semibold">{player2.pointsWonConverted.toString()}</span>
                 </div>
                 {player2.isPlayerOfMatch && (
                   <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
@@ -208,7 +209,9 @@ export default function MatchDetailsPage() {
       const theirPointsToWin = data.playerTwoSkillLevel ? getPointsToWin(Number(data.playerTwoSkillLevel)) : null;
 
       const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
-      const appiResult = computeOfficialApaAppi(data.myScore, data.innings, data.defensiveShots);
+      const appiResult = allMatches
+        ? computeOfficialApaAppiWithContext(match, allMatches)
+        : { appi: ppiResult.ppi, isValid: ppiResult.isValid };
 
       return (
         <div className="space-y-4">
@@ -250,9 +253,7 @@ export default function MatchDetailsPage() {
                 {outcome === 'win' && (
                   <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
                 )}
-                {outcome === 'loss' && (
-                  <Badge className="mt-2 w-full justify-center" variant="destructive">Loser</Badge>
-                )}
+                {outcome === 'loss' && <Badge className="mt-2 w-full justify-center" variant="destructive">Loser</Badge>}
               </CardContent>
             </Card>
 
@@ -274,20 +275,18 @@ export default function MatchDetailsPage() {
                     {theirPointsToWin !== null && ` / ${theirPointsToWin}`}
                   </span>
                 </div>
+                {outcome === 'win' && <Badge className="mt-2 w-full justify-center" variant="destructive">Loser</Badge>}
                 {outcome === 'loss' && (
                   <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
-                )}
-                {outcome === 'win' && (
-                  <Badge className="mt-2 w-full justify-center" variant="destructive">Loser</Badge>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {data.notes && data.notes.trim() !== '' && (
+          {data.notes && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Notes</CardTitle>
+                <CardTitle>Notes</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{data.notes}</p>
@@ -301,85 +300,81 @@ export default function MatchDetailsPage() {
     return null;
   };
 
-  const getMatchTitle = () => {
-    if (match.officialApaMatchLogData) {
-      return 'Official APA Match Log';
-    }
-    if (match.mode === MatchMode.apaPractice) {
-      return 'APA 9-Ball Practice';
-    }
-    if (match.mode === MatchMode.acceptingGifts) {
-      return 'Accepting Gifts';
-    }
-    if (match.mode === MatchMode.straightShot) {
-      return 'Straight Shot';
-    }
-    return 'Match Details';
-  };
-
-  const canEdit = match.officialApaMatchLogData !== undefined;
-
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-4">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate({ to: '/history' })}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Button variant="ghost" onClick={() => navigate({ to: '/history' })} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
           Back to History
         </Button>
         <div className="flex gap-2">
-          {canEdit && (
+          {match.officialApaMatchLogData && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate({ to: `/real-apa-match/${matchId}/edit` })}
+              onClick={() => navigate({ to: `/apa/real-match/${matchId}/edit` })}
+              className="gap-2"
             >
-              <Edit className="mr-2 h-4 w-4" />
+              <Edit className="h-4 w-4" />
               Edit
             </Button>
           )}
-          <DeleteMatchButton matchId={match.matchId} />
+          <DeleteMatchButton matchId={matchId} />
         </div>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">{getMatchTitle()}</CardTitle>
-            <Badge variant="outline">{match.officialApaMatchLogData ? 'Official APA Match Log' : getMatchTitle()}</Badge>
+            <div>
+              <CardTitle>Match Details</CardTitle>
+              <CardDescription className="mt-2 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {formatDate(match.dateTime)}
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="text-base">
+              {match.mode === MatchMode.apaPractice && 'APA Practice'}
+              {match.mode === MatchMode.acceptingGifts && 'Accepting Gifts'}
+              {match.mode === MatchMode.straightShot && 'Straight Shot'}
+              {match.officialApaMatchLogData && 'Official APA'}
+            </Badge>
           </div>
-          <CardDescription className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            {match.officialApaMatchLogData?.date || formatDate(match.dateTime)}
-          </CardDescription>
         </CardHeader>
+        <CardContent>
+          {match.mode === MatchMode.apaPractice && match.players.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Players:</span>
+              </div>
+              <div className="ml-6 space-y-1">
+                {match.players.map((player, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleNavigateToPlayerAggregate(player.name)}
+                    className="block text-sm text-primary hover:underline"
+                  >
+                    {player.name}
+                    {player.skillLevel !== undefined && ` (SL ${player.skillLevel.toString()})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {match.notes && match.mode !== MatchMode.straightShot && !match.officialApaMatchLogData && (
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Notes:</span>
+              </div>
+              <p className="ml-6 text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
+            </div>
+          )}
+        </CardContent>
       </Card>
 
       {renderModeSpecificDetails()}
-
-      {match.mode === MatchMode.apaPractice && match.players.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Players</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {match.players.map((player, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleNavigateToPlayerAggregate(player.name)}
-                  className="flex w-full items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-accent"
-                >
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{player.name}</span>
-                  {player.skillLevel !== undefined && (
-                    <Badge variant="secondary">Level {player.skillLevel.toString()}</Badge>
-                  )}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

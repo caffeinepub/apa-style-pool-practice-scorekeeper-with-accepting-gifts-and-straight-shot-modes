@@ -6,8 +6,9 @@ import type { ApiMatch } from '../../backend';
 import { MatchMode } from '../../backend';
 import { buildMatchResultsText } from '../../lib/history/matchHistoryRowModel';
 import { formatEffectiveMatchDate } from '../../lib/matches/effectiveMatchDate';
-import { computeOfficialApaPpi, formatOfficialPpi, computeOfficialApaAppi, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
+import { computeOfficialApaPpi, formatOfficialPpi, computeOfficialApaAppiWithContext, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
 import { extractOfficialApaWinRate } from '../../lib/apa/apaAggregateStats';
+import { getOfficialApaOutcome } from '../../lib/apa/officialApaOutcome';
 
 interface MatchHistoryTableProps {
   matches: ApiMatch[];
@@ -28,20 +29,30 @@ export default function MatchHistoryTable({ matches }: MatchHistoryTableProps) {
     if (match.officialApaMatchLogData) {
       const data = match.officialApaMatchLogData;
       const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
-      const appiResult = computeOfficialApaAppi(data.myScore, data.innings, data.defensiveShots);
+      const appiResult = computeOfficialApaAppiWithContext(match, matches);
+
+      // Determine outcome for win-only aPPI fallback
+      const outcome = getOfficialApaOutcome(
+        data.didWin,
+        data.playerOneSkillLevel,
+        data.playerTwoSkillLevel,
+        data.myScore,
+        data.theirScore
+      );
+
+      // For wins without valid PPI, still show aPPI if available
+      const shouldShowAppi = appiResult.isValid && appiResult.appi !== null && outcome === 'win';
 
       return (
         <>
           <TableCell className="text-center">{formatOfficialPpi(ppiResult)}</TableCell>
-          <TableCell className="text-center">{formatOfficialAppi(appiResult)}</TableCell>
+          <TableCell className="text-center">
+            {shouldShowAppi ? formatOfficialAppi(appiResult) : formatOfficialAppi(appiResult)}
+          </TableCell>
           <TableCell className="text-center">—</TableCell>
           <TableCell className="text-center">—</TableCell>
-          <TableCell className="text-center">
-            {total > 0 ? `${wins} / ${total}` : '—'}
-          </TableCell>
-          <TableCell className="text-center">
-            {winRate !== null ? `${winRate.toFixed(1)}%` : '—'}
-          </TableCell>
+          <TableCell className="text-center">{total > 0 ? `${wins} / ${total}` : '—'}</TableCell>
+          <TableCell className="text-center">{winRate !== null ? `${winRate.toFixed(1)}%` : '—'}</TableCell>
         </>
       );
     }

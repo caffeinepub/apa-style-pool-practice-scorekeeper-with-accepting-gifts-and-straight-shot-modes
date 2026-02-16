@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-an-official-apa-appi-adjusted-applied-ppi-value-and-ensure-it-is-available-wherever-official-apa-match-metrics-are-rendered-using-only-existing-lookup-table-logic-if-it-already-exists-in-the-current-codebase-otherwise-fall-back-to-appi-ppi-for-both-wins-and-losses-no-new-tables-no-hardcoded-values-no-placeholders",
-      "featureTitle": "Implement an Official APA aPPI (Adjusted/Applied PPI) value and ensure it is available wherever Official APA match metrics are rendered, using only existing lookup-table logic if it already exists in the current codebase; otherwise fall back to aPPI = PPI for both wins and losses (no new tables, no hardcoded values, no placeholders).",
+      "featureId": "feature-update-the-stats-official-apa-tab-chart-rendering-so-the-ppi-trend-chart-always-renders-when-any-official-apa-datapoints-contain-a-valid-numeric-ppi-or-appi-value-by-generating-two-separate-chart-datasets-1-a-ppi-only-dataset-containing-only-matches-with-numeric-ppi-and-2-an-appi-only-dataset-containing-only-matches-with-numeric-appi-do-not-allow-missing-values-in-one-series-to-suppress-rendering-of-the-other-series",
+      "featureTitle": "Update the Stats → Official APA tab chart rendering so the PPI Trend chart always renders when any Official/APA datapoints contain a valid numeric PPI or aPPI value by generating two separate chart datasets: (1) a PPI-only dataset containing only matches with numeric PPI, and (2) an aPPI-only dataset containing only matches with numeric aPPI. Do not allow missing values in one series to suppress rendering of the other series.",
       "files": [
-        "frontend/src/lib/apa/officialApaPpi.ts"
+        "frontend/src/components/players/ApaAggregateCharts.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,15 +17,15 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-199"
+        "REQ-215"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-official-apa-match-details-rendering-to-show-an-appi-line-directly-under-the-existing-ppi-line-in-the-official-apa-section-english-label-exactly-appi-showing-a-numeric-value-when-computable-and-showing-when-not-available",
-      "featureTitle": "Update Official APA Match Details rendering to show an aPPI line directly under the existing PPI line in the Official APA section (English label exactly: \"aPPI:\"), showing a numeric value when computable and showing \"—\" when not available.",
+      "featureId": "feature-update-the-stats-official-apa-tab-match-results-chart-rendering-so-each-plotted-series-is-built-from-its-own-filtered-dataset-1-your-points-only-dataset-2-opponent-points-only-dataset-and-3-defensive-shots-only-dataset-do-not-allow-missing-values-in-any-one-series-to-suppress-rendering-of-the-other-series",
+      "featureTitle": "Update the Stats → Official APA tab Match Results chart rendering so each plotted series is built from its own filtered dataset: (1) Your Points-only dataset, (2) Opponent Points-only dataset, and (3) Defensive Shots-only dataset. Do not allow missing values in any one series to suppress rendering of the other series.",
       "files": [
-        "frontend/src/pages/history/MatchDetailsPage.tsx"
+        "frontend/src/components/players/ApaAggregateCharts.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -37,16 +37,15 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-200"
+        "REQ-216"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-populate-match-history-table-derived-columns-for-apa-matches-at-minimum-for-official-apa-match-logs-so-that-ppi-appi-rolling-10-20-apa-10-20-wins-losses-and-win-are-not-rendered-as-when-sufficient-data-exists",
-      "featureTitle": "Populate Match History Table derived columns for APA matches (at minimum for Official APA match logs), so that PPI, aPPI, Rolling 10/20, APA 10/20, Wins/Losses, and Win % are not rendered as \"—\" when sufficient data exists.",
+      "featureId": "feature-ensure-both-official-apa-charts-display-a-visible-legend-with-exactly-these-english-labels-for-the-plotted-lines-ppi-appi-your-points-opponent-points-defensive-shots",
+      "featureTitle": "Ensure both Official APA charts display a visible legend with exactly these English labels for the plotted lines: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
       "files": [
-        "frontend/src/components/history/MatchHistoryTable.tsx",
-        "frontend/src/lib/apa/apaAggregateStats.ts"
+        "frontend/src/components/players/ApaAggregateCharts.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -58,28 +57,7 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-201"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-fix-official-apa-win-computation-to-use-the-last-20-official-apa-matches-or-fewer-if-20-exist-ordered-by-effective-match-date-not-a-smaller-window-e-g-not-last-10",
-      "featureTitle": "Fix Official APA win% computation to use the last 20 Official APA matches (or fewer if <20 exist), ordered by effective match date, not a smaller window (e.g., not last-10).",
-      "files": [
-        "frontend/src/lib/apa/apaAggregateStats.ts",
-        "frontend/src/lib/stats/officialApaStats.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-202"
+        "REQ-217"
       ],
       "confidence": "high"
     }

@@ -7,7 +7,6 @@ import { useGetAllMatches, useGetCallerUserProfile, useGetCurrentObjectBallCount
 import ApaAggregateCharts from '../../components/players/ApaAggregateCharts';
 import StraightShotTrendChart from '../../components/straight-shot/StraightShotTrendChart';
 import StraightShotHistogram from '../../components/straight-shot/StraightShotHistogram';
-import StraightShotSummaryTable from '../../components/straight-shot/StraightShotSummaryTable';
 import AcceptingGiftsPerformanceByBallCountTable from '../../components/accepting-gifts/AcceptingGiftsPerformanceByBallCountTable';
 import { extractPlayerApaMatches } from '../../lib/apa/apaAggregateStats';
 import { computeOfficialApaStats } from '../../lib/stats/officialApaStats';
@@ -287,7 +286,6 @@ export default function StatsPage() {
 
               <StraightShotTrendChart trendData={straightShotStats.trendData} />
               <StraightShotHistogram shotCounts={straightShotStats.histogramData} />
-              <StraightShotSummaryTable rows={straightShotStats.summaryRows} />
             </>
           ) : (
             <Card>

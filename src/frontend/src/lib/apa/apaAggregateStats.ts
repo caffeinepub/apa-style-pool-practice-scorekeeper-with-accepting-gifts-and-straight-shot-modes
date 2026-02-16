@@ -1,18 +1,18 @@
 import type { ApiMatch } from '../../backend';
 import { MatchMode } from '../../backend';
 import { getPointsToWin } from './apaEqualizer';
-import { computeOfficialApaPpi, computeOfficialApaAppi } from './officialApaPpi';
+import { computeOfficialApaPpi, computeOfficialApaAppiWithContext } from './officialApaPpi';
 import { getOfficialApaOutcome } from './officialApaOutcome';
 import { normalizePlayerName } from '../../utils/playerName';
 import { getEffectiveMatchTimestamp } from '../matches/effectiveMatchDate';
 
 export interface ApaMatchDataPoint {
   dateTime: bigint;
-  ppi: number;
-  appi: number;
-  yourPoints: number;
-  opponentPoints: number;
-  defensiveShots: number;
+  ppi: number | null;
+  appi: number | null;
+  yourPoints: number | null;
+  opponentPoints: number | null;
+  defensiveShots: number | null;
   didWin?: boolean;
   officialApaMatchLogData?: {
     date: string;
@@ -27,7 +27,7 @@ export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string)
     if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
       const player1 = match.players[0];
       const player2 = match.players[1];
-      
+
       if (!player1 || !player2) continue;
 
       const normalizedP1 = normalizePlayerName(player1.name);
@@ -65,41 +65,51 @@ export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string)
     if (match.officialApaMatchLogData) {
       const data = match.officialApaMatchLogData;
       const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
-      const appiResult = computeOfficialApaAppi(data.myScore, data.innings, data.defensiveShots);
-      
-      if (ppiResult.isValid && ppiResult.ppi !== null && appiResult.isValid && appiResult.appi !== null) {
-        const myScore = parseInt(data.myScore, 10) || 0;
-        const theirScore = parseInt(data.theirScore, 10) || 0;
-        const defensiveShots = parseInt(data.defensiveShots, 10) || 0;
+      const appiResult = computeOfficialApaAppiWithContext(match, matches);
 
-        dataPoints.push({
-          dateTime: match.dateTime,
-          ppi: ppiResult.ppi,
-          appi: appiResult.appi,
-          yourPoints: myScore,
-          opponentPoints: theirScore,
-          defensiveShots,
-          didWin: data.didWin,
-          officialApaMatchLogData: {
-            date: data.date,
-          },
-        });
-      }
+      // Parse numeric values, ensuring clean numbers or null (never NaN or strings)
+      const myScore = parseInt(data.myScore, 10);
+      const theirScore = parseInt(data.theirScore, 10);
+      const defensiveShots = parseInt(data.defensiveShots, 10);
+
+      const yourPoints = !isNaN(myScore) && myScore >= 0 ? myScore : null;
+      const opponentPoints = !isNaN(theirScore) && theirScore >= 0 ? theirScore : null;
+      const defShots = !isNaN(defensiveShots) && defensiveShots >= 0 ? defensiveShots : null;
+
+      // Accept computed PPI/aPPI whenever they are finite numbers, regardless of isValid flag
+      const ppi = typeof ppiResult.ppi === 'number' && isFinite(ppiResult.ppi) ? ppiResult.ppi : null;
+      const appi = typeof appiResult.appi === 'number' && isFinite(appiResult.appi) ? appiResult.appi : null;
+
+      dataPoints.push({
+        dateTime: match.dateTime,
+        ppi,
+        appi,
+        yourPoints,
+        opponentPoints,
+        defensiveShots: defShots,
+        didWin: data.didWin,
+        officialApaMatchLogData: {
+          date: data.date,
+        },
+      });
     }
   }
 
   return dataPoints;
 }
 
-export function computeBest10Of20Average(values: number[]): number | null {
-  if (values.length === 0) return null;
+export function computeBest10Of20Average(values: (number | null)[]): number | null {
+  // Filter out null values
+  const validValues = values.filter((v): v is number => v !== null);
   
-  const last20 = values.slice(-20);
+  if (validValues.length === 0) return null;
+
+  const last20 = validValues.slice(-20);
   const sorted = [...last20].sort((a, b) => b - a);
   const best10 = sorted.slice(0, Math.min(10, sorted.length));
-  
+
   if (best10.length === 0) return null;
-  
+
   return best10.reduce((sum, val) => sum + val, 0) / best10.length;
 }
 
@@ -109,7 +119,7 @@ export function computeBest10Of20Average(values: number[]): number | null {
  */
 export function extractOfficialApaWinRate(matches: ApiMatch[]): { wins: number; total: number; winRate: number | null } {
   const officialMatches = matches.filter(m => m.officialApaMatchLogData);
-  
+
   // Sort by effective match date (newest first)
   const sortedMatches = [...officialMatches].sort((a, b) => {
     const timeA = getEffectiveMatchTimestamp(a);

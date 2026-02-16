@@ -209,29 +209,29 @@ export function getSecretParameter(paramName: string): string | null {
 
 /**
  * Navigation origin tracking helpers
- * Used to provide context-aware back links (e.g., "Back to Stats" vs "Back to Home")
+ * Used for context-aware back links (e.g., back to history vs back to stats)
  */
 
 const NAVIGATION_ORIGIN_KEY = 'navigationOrigin';
 
 /**
- * Store the navigation origin in sessionStorage
- * @param origin - The origin page identifier (e.g., 'home', 'stats', 'history')
+ * Sets the navigation origin in sessionStorage
+ * @param origin - The origin identifier (e.g., 'history', 'stats')
  */
 export function setNavigationOrigin(origin: string): void {
     storeSessionParameter(NAVIGATION_ORIGIN_KEY, origin);
 }
 
 /**
- * Retrieve the navigation origin from sessionStorage
- * @returns The origin page identifier if set, null otherwise
+ * Gets the current navigation origin from sessionStorage
+ * @returns The origin identifier if set, null otherwise
  */
 export function getNavigationOrigin(): string | null {
     return getSessionParameter(NAVIGATION_ORIGIN_KEY);
 }
 
 /**
- * Clear the navigation origin from sessionStorage
+ * Clears the navigation origin from sessionStorage
  */
 export function clearNavigationOrigin(): void {
     clearSessionParameter(NAVIGATION_ORIGIN_KEY);

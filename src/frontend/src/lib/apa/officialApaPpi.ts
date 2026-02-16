@@ -1,8 +1,13 @@
 /**
  * Official APA PPI and aPPI calculation helpers
  * PPI Formula: myScore / (innings - defensiveShots)
- * aPPI: For Build 1, aPPI = PPI (no lookup table exists in codebase)
+ * aPPI: For wins, aPPI = max(PPI, expectedPpiFromTable); for losses, aPPI = PPI
  */
+
+import type { ApiMatch } from '../../backend';
+import { lookupExpectedPpi } from './officialApaExpectedPpiTable';
+import { getOfficialApaOutcome } from './officialApaOutcome';
+import { getEffectiveMatchTimestamp } from '../matches/effectiveMatchDate';
 
 export interface OfficialPpiResult {
   ppi: number | null;
@@ -20,12 +25,12 @@ export interface OfficialAppiResult {
 function parseNonNegativeInt(value: string): number | null {
   const trimmed = value.trim();
   if (trimmed === '') return null;
-  
+
   const num = Number(trimmed);
   if (isNaN(num) || num < 0 || !Number.isInteger(num)) {
     return null;
   }
-  
+
   return num;
 }
 
@@ -59,9 +64,152 @@ export function computeOfficialApaPpi(
 }
 
 /**
- * Compute Official APA aPPI from text fields
- * Build 1 implementation: aPPI = PPI (no lookup table exists in codebase)
- * Returns null aPPI if PPI cannot be computed
+ * Compute win% for a specific Official APA match using last up-to-20 matches on/before that match's effective date
+ * Excludes unknown outcomes from the denominator
+ */
+function computeWinPercentageForMatch(
+  allMatches: ApiMatch[],
+  currentMatch: ApiMatch
+): number | null {
+  const officialMatches = allMatches.filter(m => m.officialApaMatchLogData);
+
+  const currentEffectiveTime = getEffectiveMatchTimestamp(currentMatch);
+
+  // Filter to matches on or before current match's effective date
+  const eligibleMatches = officialMatches.filter(m => {
+    const effectiveTime = getEffectiveMatchTimestamp(m);
+    return effectiveTime <= currentEffectiveTime;
+  });
+
+  // Sort by effective date descending (newest first)
+  const sortedMatches = [...eligibleMatches].sort((a, b) => {
+    const timeA = getEffectiveMatchTimestamp(a);
+    const timeB = getEffectiveMatchTimestamp(b);
+    return timeB - timeA;
+  });
+
+  // Take up to 20 matches
+  const last20Matches = sortedMatches.slice(0, 20);
+
+  let wins = 0;
+  let total = 0;
+
+  for (const match of last20Matches) {
+    const data = match.officialApaMatchLogData;
+    if (!data) continue;
+
+    const outcome = getOfficialApaOutcome(
+      data.didWin,
+      data.playerOneSkillLevel,
+      data.playerTwoSkillLevel,
+      data.myScore,
+      data.theirScore
+    );
+
+    if (outcome === 'win' || outcome === 'loss') {
+      total++;
+      if (outcome === 'win') {
+        wins++;
+      }
+    }
+  }
+
+  if (total === 0) return null;
+
+  return (wins / total) * 100;
+}
+
+/**
+ * Compute Official APA aPPI for a specific match with full context
+ * For wins: aPPI = max(PPI, expectedPpiFromTable) OR expectedPpiFromTable if PPI unavailable
+ * For losses: aPPI = PPI (requires valid PPI)
+ * Returns null aPPI if required inputs are missing
+ */
+export function computeOfficialApaAppiWithContext(
+  currentMatch: ApiMatch,
+  allMatches: ApiMatch[]
+): OfficialAppiResult {
+  const data = currentMatch.officialApaMatchLogData;
+  if (!data) {
+    return { appi: null, isValid: false };
+  }
+
+  const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
+
+  // Determine outcome
+  const outcome = getOfficialApaOutcome(
+    data.didWin,
+    data.playerOneSkillLevel,
+    data.playerTwoSkillLevel,
+    data.myScore,
+    data.theirScore
+  );
+
+  // For losses or unknown outcomes, aPPI = PPI (requires valid PPI)
+  if (outcome === 'loss' || outcome === 'unknown') {
+    if (!ppiResult.isValid || ppiResult.ppi === null) {
+      return { appi: null, isValid: false };
+    }
+    return { appi: ppiResult.ppi, isValid: true };
+  }
+
+  // For wins, compute aPPI using expected PPI table
+  if (outcome === 'win') {
+    // Check if we have skill level
+    if (data.playerOneSkillLevel === undefined) {
+      // Missing skill level, fallback to PPI if available
+      if (ppiResult.isValid && ppiResult.ppi !== null) {
+        return { appi: ppiResult.ppi, isValid: true };
+      }
+      return { appi: null, isValid: false };
+    }
+
+    const skillLevel = Number(data.playerOneSkillLevel);
+
+    // Compute win% for this match
+    const winPercent = computeWinPercentageForMatch(allMatches, currentMatch);
+
+    if (winPercent === null) {
+      // No win% data, fallback to PPI if available
+      if (ppiResult.isValid && ppiResult.ppi !== null) {
+        return { appi: ppiResult.ppi, isValid: true };
+      }
+      return { appi: null, isValid: false };
+    }
+
+    // Lookup expected PPI from table
+    const expectedPpi = lookupExpectedPpi(skillLevel, winPercent);
+
+    if (expectedPpi === null) {
+      // Skill level out of range (not SL2-SL7), fallback to PPI if available
+      if (ppiResult.isValid && ppiResult.ppi !== null) {
+        return { appi: ppiResult.ppi, isValid: true };
+      }
+      return { appi: null, isValid: false };
+    }
+
+    // If PPI is valid, aPPI = max(PPI, expectedPpi)
+    // If PPI is invalid (e.g., missing innings), aPPI = expectedPpi
+    if (ppiResult.isValid && ppiResult.ppi !== null) {
+      const appi = Math.max(ppiResult.ppi, expectedPpi);
+      return { appi, isValid: true };
+    } else {
+      // Win without valid PPI: use expectedPpi as aPPI
+      return { appi: expectedPpi, isValid: true };
+    }
+  }
+
+  // Fallback (should not reach here)
+  if (ppiResult.isValid && ppiResult.ppi !== null) {
+    return { appi: ppiResult.ppi, isValid: true };
+  }
+  return { appi: null, isValid: false };
+}
+
+/**
+ * Compute Official APA aPPI from text fields (legacy interface for backward compatibility)
+ * This version does not have match context, so it falls back to aPPI = PPI
+ * Use computeOfficialApaAppiWithContext for correct aPPI computation
  */
 export function computeOfficialApaAppi(
   myScore: string,
@@ -69,8 +217,8 @@ export function computeOfficialApaAppi(
   defensiveShots: string
 ): OfficialAppiResult {
   const ppiResult = computeOfficialApaPpi(myScore, innings, defensiveShots);
-  
-  // aPPI = PPI for Build 1 (no lookup table)
+
+  // Without context, fallback to aPPI = PPI
   return {
     appi: ppiResult.ppi,
     isValid: ppiResult.isValid,

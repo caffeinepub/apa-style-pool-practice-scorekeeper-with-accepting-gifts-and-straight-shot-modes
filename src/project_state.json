@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 109,
-  "summary": "Scope for the next release is narrowed to a single “stability + correctness” build implementing only the user-specified fix list (Accepting Gifts logic overhaul + status/summary correctness; chart fixes incl. Match Results + PPI trend + Straight Shot trend/histogram; Match History table view with specified columns and placeholders; new Straight Shot ball-level W/L table; Home page mode order fix; and addressing 5–10 minute login/connection delay). Explicitly exclude previously speculative/long-term items (e.g., invite-only access control) and make only surgical changes to preserve existing functionality.",
+  "projectStateVersion": 117,
+  "summary": "Next build scope is a surgical stats/display update (no broader refactors): (1) ensure Official/Real APA Match Log aPPI displays for wins even when innings/PPI are unavailable (do not show “—” when expectedPPI can be used), (2) fix Stats → Official APA tab PPI Trend graph to plot two lines (PPI and aPPI) by match date with proper numeric chart data + legend, (3) fix Stats → Official APA tab Match Results graph to plot three lines (My Points, Opponent Points, Defensive Shots) by match date with proper numeric chart data + legend, and (4) remove the incorrect Straight Shot summary box from the Stats → Straight Shot tab. User explicitly requests these changes be tightly scoped and not overwrite other working components.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
     "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
@@ -15,16 +15,16 @@
     "Privacy/team rollout: implement optional invite-only access control for Internet Identity by maintaining an allowlist of approved principals plus a pending-requests list for owner approval (Approve/Reject + 'Reject All Pending'); non-approved users are blocked; plan for a future toggle to disable this for public release."
   ],
   "known_issues": [
-    "User reports login/session state was lost (had to redo login). Investigate persistence/auth regression causing logout or lost saved credentials.",
     "Regression/bug: Match History sort control (toggle Newest/Oldest by match date) is missing/not shown even when history list contains matches (user reports 3 matches visible but no sort option).",
-    "APA Practice: match does not stop immediately when a player reaches their points-to-win target; scoring can continue into subsequent rack(s), causing final scores to exceed the target (e.g., 36).",
     "Official/Real APA Match Log: Save gets stuck on \"Connecting\" after entering inputs (cannot complete save). Likely save-mutation/network/actor readiness state deadlock.",
-    "Bug: Edit Profile / \"Save changes\" button does not respond to clicks (profile changes cannot be saved).",
     "APA Practice: when the match is effectively over (player reached/exceeded points-to-win), the \"Complete Rack\" button becomes unclickable/disabled, preventing the user from finishing the rack and progressing past the scoring screen.",
     "APA Practice: score can exceed the points-to-win target in the edge case where a player is 1 point away and then pockets the 9-ball (2 points), causing the total to update past the target; must clamp/stop correctly on match completion.",
     "Official/Real APA Match Log: aPPI is missing (not computed/stored/displayed) under PPI in Match Details and elsewhere Official APA appears.",
     "Match History Table view: APA-derived columns (PPI/aPPI/rolling 10/20/APA 10/20/W-L/win%) render blank for APA matches even when underlying data exists.",
-    "Stats (Official APA): win% windowing appears to use last-10 (or other smaller window) instead of last-20 matches (ordered by match date)."
+    "Stats (Official APA): win% windowing appears to use last-10 (or other smaller window) instead of last-20 matches (ordered by match date).",
+    "Stats → Official APA tab: PPI Trend chart renders blank (should plot PPI and aPPI lines by match date with a legend).",
+    "Stats → Official APA tab: Match Results chart renders blank (should plot My Points, Opponent Points, Defensive Shots lines by match date with a legend).",
+    "Stats → Straight Shot tab: an incorrect/unused Straight Shot summary box is shown and should be removed."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -1499,6 +1499,118 @@
         "REQ-202"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-implement-the-user-provided-official-apa-expected-ppi-lookup-table-win-bucket-skill-level-in-the-frontend-codebase-using-the-uploaded-table-image-as-the-authoritative-source-of-values",
+      "title": "Implement the user-provided Official APA Expected PPI lookup table (win% bucket × skill level) in the frontend codebase, using the uploaded table image as the authoritative source of values.",
+      "reqIds": [
+        "REQ-203"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-compute-official-apa-match-log-appi-adjusted-applied-ppi-using-the-table-and-the-correct-win-loss-rules-for-wins-appi-max-ppi-expectedppifromtable-for-losses-appi-ppi",
+      "title": "Compute Official APA match-log aPPI (Adjusted/Applied PPI) using the table and the correct win/loss rules: for wins, aPPI = max(PPI, expectedPpiFromTable); for losses, aPPI = PPI.",
+      "reqIds": [
+        "REQ-204"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-define-and-implement-the-official-apa-win-used-for-appi-lookup-as-the-win-percentage-from-the-last-up-to-20-official-apa-matches-with-effective-match-date-the-current-match-s-effective-match-date-inclusive-counting-only-matches-with-known-outcomes-win-loss-in-the-denominator",
+      "title": "Define and implement the Official APA win% used for aPPI lookup as: the win percentage from the last up-to-20 Official APA matches with effective match date <= the current match’s effective match date (inclusive), counting only matches with known outcomes (win/loss) in the denominator.",
+      "reqIds": [
+        "REQ-205"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-official-apa-appi-computations-everywhere-they-are-currently-derived-from-computeofficialapaappi-so-they-use-the-new-match-context-aware-appi-calculation-including-at-minimum-the-match-history-table-s-adjusted-ppi-column-and-any-official-apa-stats-calculations-that-use-computeofficialapaappi",
+      "title": "Update Official APA aPPI computations everywhere they are currently derived from computeOfficialApaAppi so they use the new match-context-aware aPPI calculation, including (at minimum) the Match History Table’s “Adjusted PPI” column and any Official APA stats calculations that use computeOfficialApaAppi.",
+      "reqIds": [
+        "REQ-206"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predicted-skill-level-from-appi-logic-so-it-uses-the-table-s-expected-ppi-column-ranges-as-shown-in-the-uploaded-table-header-for-predicting-skill-levels-from-appi-averages-and-ensure-the-per-player-aggregate-stats-page-continues-to-show-both-average-ppi-and-average-appi-with-their-predicted-skill-levels",
+      "title": "Update predicted-skill-level-from-aPPI logic so it uses the table’s Expected PPI column ranges (as shown in the uploaded table header) for predicting skill levels from aPPI averages, and ensure the per-player Aggregate Stats page continues to show both Average PPI and Average aPPI with their predicted skill levels.",
+      "reqIds": [
+        "REQ-207"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-official-real-apa-match-log-appi-computation-so-appi-can-still-be-computed-and-displayed-for-wins-even-when-raw-ppi-is-unavailable-due-to-missing-invalid-innings-defensive-shot-inputs-specifically-when-the-match-outcome-is-a-win-and-an-expected-ppi-can-be-looked-up-from-the-existing-expected-ppi-table-using-skill-level-contextual-win-calculation-return-a-valid-appi-value-based-on-expected-ppi-even-if-computeofficialapappi-returns-invalid-null-do-not-require-raw-ppi-to-exist-for-this-win-only-appi-fallback-keep-loss-unknown-behavior-unchanged-if-ppi-cannot-be-computed-for-a-loss-unknown-appi-remains-unavailable",
+      "title": "Fix Official/Real APA Match Log aPPI computation so aPPI can still be computed and displayed for wins even when raw PPI is unavailable due to missing/invalid innings/defensive-shot inputs. Specifically: when the match outcome is a win and an expected PPI can be looked up from the existing expected-PPI table (using skill level + contextual win% calculation), return a valid aPPI value based on expected PPI even if `computeOfficialApaPpi(...)` returns invalid/null; do not require raw PPI to exist for this win-only aPPI fallback. Keep loss/unknown behavior unchanged (if PPI cannot be computed for a loss/unknown, aPPI remains unavailable).",
+      "reqIds": [
+        "REQ-208"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-ppi-trend-chart-official-apa-tab-so-it-is-not-blank-by-ensuring-the-chart-receives-a-clean-numeric-dataset-before-passing-data-to-recharts-coerce-compute-numeric-ppi-and-appi-values-and-exclude-any-rows-that-do-not-have-at-least-one-valid-numeric-value-for-the-plotted-series-the-chart-must-plot-exactly-two-lines-labeled-in-english-as-ppi-and-appi-and-the-x-axis-must-remain-based-on-effective-match-date",
+      "title": "Fix the APA PPI Trend chart (Official APA tab) so it is not blank by ensuring the chart receives a clean numeric dataset. Before passing data to Recharts, coerce/compute numeric PPI and aPPI values and exclude any rows that do not have at least one valid numeric value for the plotted series. The chart must plot exactly two lines labeled in English as “PPI” and “aPPI”, and the x-axis must remain based on effective match date.",
+      "reqIds": [
+        "REQ-209"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-apa-match-results-chart-official-apa-tab-so-it-is-not-blank-by-building-a-clean-numeric-dataset-for-recharts-ensure-your-points-opponent-points-and-defensive-shots-are-numeric-for-chart-rows-convert-from-strings-when-needed-and-exclude-rows-that-cannot-provide-valid-numeric-values-for-all-required-series-the-chart-must-plot-exactly-three-lines-labeled-in-english-as-your-points-opponent-points-and-defensive-shots-with-match-date-on-the-x-axis",
+      "title": "Fix the APA Match Results chart (Official APA tab) so it is not blank by building a clean numeric dataset for Recharts. Ensure “Your Points”, “Opponent Points”, and “Defensive Shots” are numeric for chart rows (convert from strings when needed) and exclude rows that cannot provide valid numeric values for all required series. The chart must plot exactly three lines labeled in English as “Your Points”, “Opponent Points”, and “Defensive Shots”, with match date on the x-axis.",
+      "reqIds": [
+        "REQ-210"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-straight-shot-summary-box-table-from-the-stats-straight-shot-tab-so-it-is-no-longer-displayed-do-not-remove-or-modify-the-straight-shot-trend-chart-histogram-or-top-level-summary-metrics-total-sessions-last-20-average-with-lifetime-line-lowest-shot-count",
+      "title": "Remove the Straight Shot Summary box/table from the Stats → Straight Shot tab so it is no longer displayed. Do not remove or modify the Straight Shot Trend chart, histogram, or top-level summary metrics (Total Sessions, Last 20 Average with Lifetime line, Lowest Shot Count).",
+      "reqIds": [
+        "REQ-211"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-lib-apa-apaaggregatestats-ts-extractplayerapamatches-so-official-real-apa-match-log-datapoints-always-output-clean-numeric-values-or-null-for-fields-consumed-by-charts-ppi-appi-yourpoints-opponentpoints-defensiveshots-do-not-change-the-underlying-appi-ppi-math-only-prevent-valid-computed-numbers-from-being-discarded-due-to-overly-strict-validity-checks-or-string-parsing-issues",
+      "title": "Update `frontend/src/lib/apa/apaAggregateStats.ts` `extractPlayerApaMatches(...)` so Official/Real APA Match Log datapoints always output clean numeric values (or null) for fields consumed by charts: `ppi`, `appi`, `yourPoints`, `opponentPoints`, `defensiveShots`. Do not change the underlying aPPI/PPI math; only prevent valid computed numbers from being discarded due to overly-strict validity checks or string parsing issues.",
+      "reqIds": [
+        "REQ-212"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-harden-frontend-src-components-players-apaaggregatecharts-tsx-so-the-official-apa-tab-charts-never-receive-an-empty-invalid-dataset-due-to-type-issues-build-a-clean-numeric-dataset-for-recharts-by-coercing-values-to-numbers-and-filtering-out-rows-that-do-not-contain-at-least-one-numeric-value-for-the-plotted-series-preserve-existing-chart-structure-ppi-trend-plots-exactly-two-lines-labeled-ppi-and-appi-match-results-plots-exactly-three-lines-labeled-your-points-opponent-points-defensive-shots-x-axis-remains-based-on-effective-match-date",
+      "title": "Harden `frontend/src/components/players/ApaAggregateCharts.tsx` so the Official APA tab charts never receive an empty/invalid dataset due to type issues: build a clean numeric dataset for Recharts by coercing values to numbers and filtering out rows that do not contain at least one numeric value for the plotted series. Preserve existing chart structure: PPI Trend plots exactly two lines labeled \"PPI\" and \"aPPI\"; Match Results plots exactly three lines labeled \"Your Points\", \"Opponent Points\", \"Defensive Shots\"; x-axis remains based on effective match date.",
+      "reqIds": [
+        "REQ-213"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-stats-official-apa-tab-chart-rendering-so-the-ppi-trend-chart-always-renders-when-any-official-apa-datapoints-contain-a-valid-numeric-ppi-or-appi-value-by-generating-two-separate-chart-datasets-1-a-ppi-only-dataset-containing-only-matches-with-numeric-ppi-and-2-an-appi-only-dataset-containing-only-matches-with-numeric-appi-do-not-allow-missing-values-in-one-series-to-suppress-rendering-of-the-other-series",
+      "title": "Update the Stats → Official APA tab chart rendering so the PPI Trend chart always renders when any Official/APA datapoints contain a valid numeric PPI or aPPI value by generating two separate chart datasets: (1) a PPI-only dataset containing only matches with numeric PPI, and (2) an aPPI-only dataset containing only matches with numeric aPPI. Do not allow missing values in one series to suppress rendering of the other series.",
+      "reqIds": [
+        "REQ-215"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-stats-official-apa-tab-match-results-chart-rendering-so-each-plotted-series-is-built-from-its-own-filtered-dataset-1-your-points-only-dataset-2-opponent-points-only-dataset-and-3-defensive-shots-only-dataset-do-not-allow-missing-values-in-any-one-series-to-suppress-rendering-of-the-other-series",
+      "title": "Update the Stats → Official APA tab Match Results chart rendering so each plotted series is built from its own filtered dataset: (1) Your Points-only dataset, (2) Opponent Points-only dataset, and (3) Defensive Shots-only dataset. Do not allow missing values in any one series to suppress rendering of the other series.",
+      "reqIds": [
+        "REQ-216"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-both-official-apa-charts-display-a-visible-legend-with-exactly-these-english-labels-for-the-plotted-lines-ppi-appi-your-points-opponent-points-defensive-shots",
+      "title": "Ensure both Official APA charts display a visible legend with exactly these English labels for the plotted lines: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
+      "reqIds": [
+        "REQ-217"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -2010,6 +2122,28 @@
       "id": "AR-105",
       "summary": "Accepting Gifts stats: add a \"Performance by Ball Count\" summary showing Wins/Losses per ball level (2–7), derived from saved completed Accepting Gifts sets at each ball-count level (not a Straight Shot stat).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-106",
+      "summary": "Stats UI surgical cleanup: remove/delete the incorrect Straight Shot summary box from the Stats → Straight Shot tab (no other Straight Shot graph changes).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-109",
+      "summary": "Remove the incorrect Straight Shot summary box/table from the Stats → Straight Shot tab by updating `frontend/src/pages/stats/StatsPage.tsx` so it no longer imports or renders `StraightShotSummaryTable` (or any equivalent summary-box component). Do not remove or modify the Straight Shot Trend chart, histogram, or top-level summary metric cards.",
+      "reqIds": [
+        "REQ-214"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-113",
+      "summary": "Keep `extractPlayerApaMatches(...)` producing clean numeric values (or null) for chart-consumed fields for both APA Practice and Official APA matches, and adjust any remaining parsing/coercion so values the user entered in the Official APA match log (scores and defensive shots) reliably reach the chart datasets as numbers when valid.",
+      "reqIds": [
+        "REQ-218"
+      ],
       "status": "pending"
     }
   ],

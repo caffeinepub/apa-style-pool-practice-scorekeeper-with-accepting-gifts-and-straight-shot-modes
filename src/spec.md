@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Correct and complete Official APA metrics by adding Official APA aPPI, ensuring match-history derived fields populate for APA matches, and fixing Official APA Win% to use a last-20 match window.
+**Goal:** Fix Stats → Official APA charts so each series renders independently when valid data exists, and ensure clear legends are shown.
 
 **Planned changes:**
-- Compute and expose an Official APA aPPI value wherever Official APA match metrics are rendered, reusing any existing expected-PPI/aPPI lookup logic if it already exists; otherwise set aPPI = PPI (no new tables or hardcoded lookup values).
-- Update Official APA Match Details to render an `aPPI:` line directly under `PPI:` in the Official APA section, showing a formatted number when available or `—` when not.
-- Populate Match History table derived columns for APA matches (at minimum Official APA match logs) so PPI, aPPI, Rolling 10/20, APA 10/20, Wins/Losses, and Win % render as values when inputs exist (and remain `—` for non-APA drill modes).
-- Fix Official APA Win% computation to use up to the 20 most recent Official APA matches by effective match date (excluding unknown outcomes from the denominator), without changing charts.
+- Update the Official APA → PPI Trend chart to build two independent series datasets: one filtered to numeric PPI points and one filtered to numeric aPPI points, so missing values in one series never prevent the other from rendering.
+- Update the Official APA → Match Results chart to build three independent series datasets: Your Points-only, Opponent Points-only, and Defensive Shots-only, so missing values in one series never prevent the others from rendering.
+- Ensure both Official APA charts display visible legends with exactly these labels: “PPI”, “aPPI”, “Your Points”, “Opponent Points”, “Defensive Shots”, matching the rendered line colors/markers.
+- Keep effective match date as the x-axis basis (existing getEffectiveMatchTimestamp behavior) and harden numeric parsing/coercion in `extractPlayerApaMatches(...)` so chart-consumed values are numbers when valid and null otherwise (avoiding NaN/runtime errors).
 
-**User-visible outcome:** In match details and match history, Official APA rows show aPPI under PPI and derived APA fields populate when data exists; Official APA Win% on Stats reflects the last 20 Official APA matches (or fewer if less exist).
+**User-visible outcome:** On Stats → Official APA, the PPI Trend and Match Results charts reliably plot any available valid datapoints (even when other fields are missing) and show clear legends for the displayed lines.

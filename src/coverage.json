@@ -1,62 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T23:13:44.871Z",
+  "generatedAt": "2026-02-16T12:38:34.816Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 4,
-    "implemented": 4,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-199",
-        "summary": "Implement an Official APA aPPI (Adjusted/Applied PPI) value and ensure it is available wherever Official APA match metrics are rendered, using only existing lookup-table logic if it already exists in the current codebase; otherwise fall back to aPPI = PPI for both wins and losses (no new tables, no hardcoded values, no placeholders).",
+        "id": "REQ-215",
+        "summary": "Update the Stats → Official APA tab chart rendering so the PPI Trend chart always renders when any Official/APA datapoints contain a valid numeric PPI or aPPI value by generating two separate chart datasets: (1) a PPI-only dataset containing only matches with numeric PPI, and (2) an aPPI-only dataset containing only matches with numeric aPPI. Do not allow missing values in one series to suppress rendering of the other series.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/apa/officialApaPpi.ts"
+          "frontend/src/components/players/ApaAggregateCharts.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/apa/officialApaPpi.ts"
+          "frontend/src/components/players/ApaAggregateCharts.tsx"
         ]
       },
       {
-        "id": "REQ-200",
-        "summary": "Update Official APA Match Details rendering to show an aPPI line directly under the existing PPI line in the Official APA section (English label exactly: \"aPPI:\"), showing a numeric value when computable and showing \"—\" when not available.",
+        "id": "REQ-216",
+        "summary": "Update the Stats → Official APA tab Match Results chart rendering so each plotted series is built from its own filtered dataset: (1) Your Points-only dataset, (2) Opponent Points-only dataset, and (3) Defensive Shots-only dataset. Do not allow missing values in any one series to suppress rendering of the other series.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/history/MatchDetailsPage.tsx"
+          "frontend/src/components/players/ApaAggregateCharts.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/history/MatchDetailsPage.tsx"
+          "frontend/src/components/players/ApaAggregateCharts.tsx"
         ]
       },
       {
-        "id": "REQ-201",
-        "summary": "Populate Match History Table derived columns for APA matches (at minimum for Official APA match logs), so that PPI, aPPI, Rolling 10/20, APA 10/20, Wins/Losses, and Win % are not rendered as \"—\" when sufficient data exists.",
+        "id": "REQ-217",
+        "summary": "Ensure both Official APA charts display a visible legend with exactly these English labels for the plotted lines: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx",
+          "frontend/src/components/players/ApaAggregateCharts.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/players/ApaAggregateCharts.tsx"
+        ]
+      },
+      {
+        "id": "REQ-218",
+        "summary": "Keep `extractPlayerApaMatches(...)` producing clean numeric values (or null) for chart-consumed fields for both APA Practice and Official APA matches, and adjust any remaining parsing/coercion so values the user entered in the Official APA match log (scores and defensive shots) reliably reach the chart datasets as numbers when valid.",
+        "status": "missing",
+        "plannedFiles": [
           "frontend/src/lib/apa/apaAggregateStats.ts"
         ],
-        "matchedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx",
-          "frontend/src/lib/apa/apaAggregateStats.ts"
-        ]
-      },
-      {
-        "id": "REQ-202",
-        "summary": "Fix Official APA win% computation to use the last 20 Official APA matches (or fewer if <20 exist), ordered by effective match date, not a smaller window (e.g., not last-10).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/apa/apaAggregateStats.ts",
-          "frontend/src/lib/stats/officialApaStats.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/apa/apaAggregateStats.ts",
-          "frontend/src/lib/stats/officialApaStats.ts"
-        ]
+        "matchedFiles": []
       }
     ]
   },
@@ -65,11 +59,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/history/MatchHistoryTable.tsx",
-    "frontend/src/lib/apa/apaAggregateStats.ts",
-    "frontend/src/lib/apa/officialApaPpi.ts",
-    "frontend/src/lib/stats/officialApaStats.ts",
-    "frontend/src/pages/history/MatchDetailsPage.tsx",
+    "frontend/src/components/players/ApaAggregateCharts.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

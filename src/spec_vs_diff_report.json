@@ -1,57 +1,53 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T23:13:44.860Z",
-  "summary": "Diff implements Official APA aPPI computation as a client-side fallback (aPPI = PPI) and wires PPI/aPPI plus last-20 win-rate extraction into stats + Match History table for Official APA rows. However, Match Details UI changes for displaying the \"aPPI:\" line are not evidenced in the truncated diff, and Match History derived columns for Rolling 10/20 and APA 10/20 still appear to render \"—\".",
+  "generatedAt": "2026-02-16T12:38:34.805Z",
+  "summary": "Diff shows work toward fixing Official APA chart emptiness by building per-series filtered datasets in `ApaAggregateCharts.tsx`, but other required pieces (legends with exact labels; numeric coercion in `extractPlayerApaMatches`) are not evidenced. There are also unrelated changes (URL param utilities and meta/state files) outside the requested scope.",
   "missing_requirements": [
     {
-      "id": "REQ-200",
-      "requirement": "Update Official APA Match Details rendering to show an aPPI line directly under the existing PPI line in the Official APA section (label exactly \"aPPI:\"), showing numeric value or \"—\" when not available.",
-      "reason": "The provided diff snippet for MatchDetailsPage.tsx is truncated before any Official APA match log rendering is shown; there is no visible evidence of the added \"aPPI:\" line under the Official APA PPI line.",
+      "id": "REQ-217",
+      "requirement": "Ensure both Official APA charts display a visible legend with exactly these English labels for the plotted lines: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
+      "reason": "Although `Legend` is imported in `ApaAggregateCharts.tsx`, the diff snippet does not show legend rendering or the exact label strings assigned to the plotted lines (e.g., via `Line` `name` props). Without this evidence, the requirement cannot be verified as implemented.",
       "evidence": [
-        "frontend/src/pages/history/MatchDetailsPage.tsx (truncated)"
+        "frontend/src/components/players/ApaAggregateCharts.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-201",
-      "requirement": "Populate Match History Table derived columns for APA matches so that PPI, aPPI, Rolling 10/20, APA 10/20, Wins/Losses, and Win % are not rendered as \"—\" when sufficient data exists.",
-      "reason": "In the MatchHistoryTable derived columns for Official APA rows, Rolling 10/20 and APA 10/20 cells are still hardcoded to \"—\" in the shown snippet, indicating not all derived columns are being populated when data exists.",
+      "id": "REQ-218",
+      "requirement": "Keep `extractPlayerApaMatches(...)` producing clean numeric values (or null) for chart-consumed fields for both APA Practice and Official APA matches, adjusting parsing/coercion so Official APA match log scores/defensive shots reliably reach chart datasets as numbers when valid.",
+      "reason": "No changes to `extractPlayerApaMatches(...)` (or related parsing/coercion code in the APA aggregation layer) are shown in the diff summary; only chart-side filtering for numeric values is visible.",
       "evidence": [
-        "frontend/src/components/history/MatchHistoryTable.tsx (shows Rolling 10/20 and next column as \"—\" for Official APA rows)"
+        "frontend/src/components/players/ApaAggregateCharts.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added/changed URL parameter persistence utilities (sessionStorage helpers, hash/query extraction, etc.) unrelated to Official APA aPPI/win%/match history derived fields.",
-      "reason": "Build 1 scope is limited to Official APA aPPI, Match Details rendering, Match History derived fields, and win% last-20 computation; URL param persistence work is not requested.",
+      "description": "Added/expanded URL parameter and sessionStorage utilities (getUrlParameter/getPersistedUrlParameter/etc.).",
+      "reason": "BuildRequest scope is tightly limited to Stats → Official APA chart data/plotting, legends, and numeric coercion; URL parameter utilities are unrelated and constitute a broader change.",
       "evidence": [
         "frontend/src/utils/urlParams.ts (truncated)"
       ]
     },
     {
-      "description": "Implemented APA Practice aPPI computation and rendering in MatchHistoryTable (aPPI derived as score/(innings-defensiveShots)) even though requirement only mandates derived columns at minimum for Official APA match logs.",
-      "reason": "REQ-201 specifies \"at minimum for Official APA match logs\"; adding APA Practice aPPI is extra behavior not explicitly requested.",
+      "description": "Updates to project meta/state documentation describing additional planned work (e.g., Straight Shot stats changes, aPPI display behavior).",
+      "reason": "BuildRequest explicitly scopes work to fixing Stats → Official APA charts and legends with no broad refactors; modifying project state/summary content and referencing unrelated changes is out of scope.",
       "evidence": [
-        "frontend/src/components/history/MatchHistoryTable.tsx (\"// APA Practice\" block computes and displays appi)"
+        "project_state.json (truncated)"
       ]
     },
     {
-      "description": "Extended Official APA stats output to include averageAppi and corresponding computation.",
-      "reason": "BuildRequest focuses on Official APA aPPI availability/rendering and win% last-20; it does not request adding new stats fields such as average aPPI.",
+      "description": "Bulk modification of a generated/summary listing file (`frontend-file-summaries.txt`).",
+      "reason": "Not requested by any requirement; appears to be auxiliary documentation rather than implementing the specified chart fixes.",
       "evidence": [
-        "frontend/src/lib/stats/officialApaStats.ts (adds averageAppi to interface and computes it)"
+        "frontend-file-summaries.txt (truncated)"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.68,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/history/MatchHistoryTable.tsx",
-    "frontend/src/lib/apa/apaAggregateStats.ts",
-    "frontend/src/lib/apa/officialApaPpi.ts",
-    "frontend/src/lib/stats/officialApaStats.ts",
-    "frontend/src/pages/history/MatchDetailsPage.tsx",
+    "frontend/src/components/players/ApaAggregateCharts.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]
