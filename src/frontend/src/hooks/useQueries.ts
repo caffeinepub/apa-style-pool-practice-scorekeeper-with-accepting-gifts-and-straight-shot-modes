@@ -1,37 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { ApiMatch, UserProfile, MatchLogRecord, UserApprovalInfo, UserRole } from '../backend';
-import { ApprovalStatus } from '../backend';
-import { Principal } from '@dfinity/principal';
-import { extractErrorText } from '../utils/errorText';
-import { withTimeout } from '../utils/withTimeout';
-
-const MUTATION_TIMEOUT_MS = 30000;
+import type { MatchLogRecord, UserProfile, ApprovalStatus, UserApprovalInfo } from '../backend';
+import { Principal } from '@icp-sdk/core/principal';
 
 export function useGetAllMatches() {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
 
-  return useQuery<ApiMatch[]>({
+  return useQuery({
     queryKey: ['matches'],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllMatches();
     },
-    enabled: !!actor,
-    staleTime: 5000,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useGetMatch(matchId: string) {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
 
-  return useQuery<ApiMatch | null>({
+  return useQuery({
     queryKey: ['match', matchId],
     queryFn: async () => {
       if (!actor) return null;
       return actor.getMatch(matchId);
     },
-    enabled: !!actor && !!matchId,
+    enabled: !!actor && !isFetching && !!matchId,
   });
 }
 
@@ -41,19 +35,8 @@ export function useSaveMatch() {
 
   return useMutation({
     mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await withTimeout(
-          actor.saveMatch(matchId, matchRecord),
-          MUTATION_TIMEOUT_MS,
-          'Save operation is taking too long. Please try again.'
-        );
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to save match: ${errorText}`);
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.saveMatch(matchId, matchRecord);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
@@ -67,22 +50,12 @@ export function useUpdateMatch() {
 
   return useMutation({
     mutationFn: async ({ matchId, matchRecord }: { matchId: string; matchRecord: MatchLogRecord }) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await withTimeout(
-          actor.updateMatch(matchId, matchRecord),
-          MUTATION_TIMEOUT_MS,
-          'Update operation is taking too long. Please try again.'
-        );
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to update match: ${errorText}`);
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateMatch(matchId, matchRecord);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
+      queryClient.invalidateQueries({ queryKey: ['match', variables.matchId] });
     },
   });
 }
@@ -93,15 +66,23 @@ export function useDeleteMatch() {
 
   return useMutation({
     mutationFn: async (matchId: string) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.deleteMatch(matchId);
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to delete match: ${errorText}`);
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteMatch(matchId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+    },
+  });
+}
+
+export function useDeleteMatches() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (matchIds: string[]) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteMatches(matchIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
@@ -118,9 +99,8 @@ export function useGetCallerUserProfile() {
       if (!actor) throw new Error('Actor not available');
       return actor.getCallerUserProfile();
     },
-    enabled: !!actor,
+    enabled: !!actor && !actorFetching,
     retry: false,
-    staleTime: 10000,
   });
 
   return {
@@ -136,19 +116,8 @@ export function useSaveCallerUserProfile() {
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await withTimeout(
-          actor.saveCallerUserProfile(profile),
-          MUTATION_TIMEOUT_MS,
-          'Profile save is taking too long. Please try again.'
-        );
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to save profile: ${errorText}`);
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -156,16 +125,100 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-export function useGetInviteOnlyMode() {
-  const { actor } = useActor();
+export function useGetAgLevelIndex() {
+  const { actor, isFetching } = useActor();
 
-  return useQuery<boolean>({
+  return useQuery({
+    queryKey: ['agLevelIndex'],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return actor.getAgLevelIndex();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSetAgLevelIndex() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newLevel: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.setAgLevelIndex(newLevel);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agLevelIndex'] });
+    },
+  });
+}
+
+export function useCompleteAgSession() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (finalLevel: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.completeAgSession(finalLevel);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agLevelIndex'] });
+    },
+  });
+}
+
+export function useIsCallerAdmin() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['isCallerAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetCallerUserRole() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['callerUserRole'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getCallerUserRole();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAssignCallerUserRole() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ user, role }: { user: Principal; role: any }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.assignCallerUserRole(user, role);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['callerUserRole'] });
+    },
+  });
+}
+
+export function useGetInviteOnlyMode() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
     queryKey: ['inviteOnlyMode'],
     queryFn: async () => {
       if (!actor) return false;
       return actor.getInviteOnlyMode();
     },
-    enabled: !!actor,
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -175,15 +228,8 @@ export function useSetInviteOnlyMode() {
 
   return useMutation({
     mutationFn: async (enabled: boolean) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.setInviteOnlyMode(enabled);
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to update invite-only mode: ${errorText}`);
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.setInviteOnlyMode(enabled);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inviteOnlyMode'] });
@@ -192,15 +238,15 @@ export function useSetInviteOnlyMode() {
 }
 
 export function useIsCallerApproved() {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
 
-  return useQuery<boolean>({
-    queryKey: ['isApproved'],
+  return useQuery({
+    queryKey: ['isCallerApproved'],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isCallerApproved();
     },
-    enabled: !!actor,
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -210,25 +256,18 @@ export function useRequestApproval() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.requestApproval();
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to request approval: ${errorText}`);
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.requestApproval();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['isApproved'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
     },
   });
 }
 
 export function useListApprovals() {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<UserApprovalInfo[]>({
     queryKey: ['approvals'],
@@ -236,7 +275,7 @@ export function useListApprovals() {
       if (!actor) return [];
       return actor.listApprovals();
     },
-    enabled: !!actor,
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -246,133 +285,12 @@ export function useSetApproval() {
 
   return useMutation({
     mutationFn: async ({ user, status }: { user: Principal; status: ApprovalStatus }) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.setApproval(user, status);
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to set approval: ${errorText}`);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['approvals'] });
-    },
-  });
-}
-
-export function useIsCallerAdmin() {
-  const { actor } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['isAdmin'],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
-    },
-    enabled: !!actor,
-  });
-}
-
-export function useGetCallerUserRole() {
-  const { actor } = useActor();
-
-  return useQuery<UserRole>({
-    queryKey: ['userRole'],
-    queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserRole();
-    },
-    enabled: !!actor,
-  });
-}
-
-export function useAssignCallerUserRole() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ user, role }: { user: Principal; role: UserRole }) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.assignCallerUserRole(user, role);
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to assign role: ${errorText}`);
-      }
+      return actor.setApproval(user, status);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userRole'] });
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
-    },
-  });
-}
-
-/**
- * Get the current Accepting Gifts baseline level index (0–11).
- */
-export function useGetAgLevelIndex() {
-  const { actor } = useActor();
-
-  return useQuery<bigint>({
-    queryKey: ['agLevelIndex'],
-    queryFn: async () => {
-      if (!actor) return BigInt(0);
-      return actor.getAgLevelIndex();
-    },
-    enabled: !!actor,
-  });
-}
-
-/**
- * Set the current Accepting Gifts baseline level index (0–11).
- */
-export function useSetAgLevelIndex() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (newLevel: bigint) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.setAgLevelIndex(newLevel);
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to set level index: ${errorText}`);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agLevelIndex'] });
-    },
-  });
-}
-
-/**
- * Complete an Accepting Gifts session and update the baseline level index.
- */
-export function useCompleteAgSession() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (finalLevel: bigint) => {
-      if (!actor) {
-        throw new Error('Backend connection not ready. Please wait and try again.');
-      }
-      try {
-        return await actor.completeAgSession(finalLevel);
-      } catch (error) {
-        const errorText = extractErrorText(error);
-        throw new Error(`Failed to complete session: ${errorText}`);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agLevelIndex'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
     },
   });
 }

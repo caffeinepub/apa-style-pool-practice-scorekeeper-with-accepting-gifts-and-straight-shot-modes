@@ -121,6 +121,45 @@ export default function StraightShotGamePage() {
     }
   };
 
+  const handleSaveAndStartNext = async () => {
+    if (!identity) {
+      toast.error('Please log in to save sessions');
+      return;
+    }
+
+    if (!actor) {
+      toast.error('Backend connection not ready. Please wait or retry connection.');
+      return;
+    }
+
+    try {
+      const { matchId, matchRecord } = buildStraightShotMatch({
+        playerName: gameState.playerName,
+        notes: gameState.notes,
+        totalShots: gameState.totalShots,
+        identity,
+      });
+
+      await saveMatch.mutateAsync({ matchId, matchRecord });
+      toast.success('Session saved successfully!');
+
+      // Clear old session and start new one
+      sessionStorage.removeItem(SESSION_KEYS.STRAIGHT_SHOT);
+
+      const newSession: GameState = {
+        playerName: gameState.playerName,
+        notes: '',
+        totalShots: 0,
+      };
+
+      sessionStorage.setItem(SESSION_KEYS.STRAIGHT_SHOT, JSON.stringify(newSession));
+      setGameState(newSession);
+    } catch (error) {
+      const errorMessage = extractErrorText(error);
+      toast.error(`Failed to save session: ${errorMessage}`);
+    }
+  };
+
   const handleEndWithoutSaving = () => {
     sessionStorage.removeItem(SESSION_KEYS.STRAIGHT_SHOT);
     toast.info('Session ended without saving');
@@ -136,41 +175,46 @@ export default function StraightShotGamePage() {
     }
   };
 
-  const isWin = gameState.totalShots > 0 && gameState.totalShots <= 20;
   const isAuthenticated = !!identity;
+  const isWin = gameState.totalShots > 0 && gameState.totalShots <= 20;
+  const isLoss = gameState.totalShots > 20;
 
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>
-        <h1 className="text-2xl font-bold">Straight Shot Drill</h1>
+        <h1 className="text-2xl font-bold">Straight Shot</h1>
         <div className="w-24" />
       </div>
 
-      {/* Session Info */}
       <Card>
         <CardHeader>
-          <CardTitle>Session Details</CardTitle>
+          <CardTitle>Session Progress</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <div className="text-sm text-muted-foreground">Player</div>
-            <div className="text-lg font-semibold">{gameState.playerName}</div>
-          </div>
-          {gameState.notes && (
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-muted-foreground">Notes</div>
-              <div className="text-sm">{gameState.notes}</div>
+              <div className="text-sm text-muted-foreground">Player</div>
+              <div className="text-lg font-semibold">{gameState.playerName}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Total Shots</div>
+              <div className="text-lg font-semibold">{gameState.totalShots}</div>
+            </div>
+          </div>
+          {gameState.totalShots > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">Result:</div>
+              {isWin && <Badge className="bg-green-600">Win</Badge>}
+              {isLoss && <Badge variant="destructive">Loss</Badge>}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Total Shots Input */}
       <Card>
         <CardHeader>
           <CardTitle>Record Total Shots</CardTitle>
@@ -184,32 +228,25 @@ export default function StraightShotGamePage() {
               min="0"
               value={gameState.totalShots}
               onChange={(e) => handleTotalShotsChange(e.target.value)}
-              className="text-2xl font-bold"
+              placeholder="Enter total shots"
             />
+            <p className="text-sm text-muted-foreground">
+              Complete the run first, then enter the total number of shots you took.
+            </p>
           </div>
-
-          {gameState.totalShots > 0 && (
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <span className="font-medium">Result:</span>
-              <Badge variant={isWin ? 'default' : 'secondary'} className="text-lg">
-                {isWin ? 'Win' : 'Loss'}
-              </Badge>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Rules Panel */}
       <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
         <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50">
-              <div className="flex items-center justify-between">
-                <CardTitle>Rules & Objective</CardTitle>
+          <CardHeader>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
+                <CardTitle>Rules</CardTitle>
                 <ChevronDown className={`h-5 w-5 transition-transform ${rulesOpen ? 'rotate-180' : ''}`} />
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
+              </Button>
+            </CollapsibleTrigger>
+          </CardHeader>
           <CollapsibleContent>
             <CardContent>
               <StraightShotRulesPanel />
@@ -218,49 +255,49 @@ export default function StraightShotGamePage() {
         </Card>
       </Collapsible>
 
-      {/* Connection Warning */}
+      <Card>
+        <CardHeader>
+          <CardTitle>End Session</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button onClick={handleSaveAndStartNext} className="w-full" size="lg" disabled={saveMatch.isPending || !isAuthenticated}>
+            {saveMatch.isPending ? 'Saving...' : 'Save & Start Next Match'}
+          </Button>
+          <Button onClick={handleEndSession} variant="outline" className="w-full" size="lg" disabled={saveMatch.isPending || !isAuthenticated}>
+            {saveMatch.isPending ? 'Saving...' : 'Save & Exit'}
+          </Button>
+          <Button onClick={handleEndWithoutSaving} variant="ghost" className="w-full" size="lg">
+            End Session Without Saving
+          </Button>
+        </CardContent>
+      </Card>
+
       {showRetryConnection && !actor && (
         <Alert>
           <AlertDescription className="flex items-center justify-between">
             <span>Still connecting to backend. Retry to save your session.</span>
-            <Button size="sm" variant="outline" onClick={handleRetryConnection}>
-              <RefreshCw className="mr-2 h-4 w-4" />
+            <Button onClick={handleRetryConnection} variant="outline" size="sm" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
               Retry Connection
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* End Session Buttons */}
-      <div className="space-y-2">
-        <Button
-          onClick={() => setShowEndDialog(true)}
-          disabled={gameState.totalShots === 0}
-          className="w-full"
-          size="lg"
-        >
-          End Session & Save
-        </Button>
-        <Button
-          onClick={handleEndWithoutSaving}
-          variant="outline"
-          className="w-full"
-          size="lg"
-        >
-          End Session Without Saving
-        </Button>
-      </div>
+      {!isAuthenticated && (
+        <Alert>
+          <AlertDescription>Please log in to save your session.</AlertDescription>
+        </Alert>
+      )}
 
-      {/* End Session Dialog */}
       <EndMatchDialog
         open={showEndDialog}
         onOpenChange={setShowEndDialog}
-        onConfirm={handleEndSession}
-        title="End Straight Shot Session?"
-        description="Your session will be saved to history."
-        confirmText="Save Session"
-        isPending={saveMatch.isPending}
-        disabled={!isAuthenticated}
+        onConfirm={handleEndWithoutSaving}
+        title="End Session Without Saving?"
+        description="Are you sure you want to end this session without saving? All progress will be lost."
+        confirmText="End Without Saving"
+        disabled={false}
       />
     </div>
   );

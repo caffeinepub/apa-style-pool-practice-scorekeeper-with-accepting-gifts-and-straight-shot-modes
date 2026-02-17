@@ -430,6 +430,7 @@ export interface backendInterface {
     completeAgSession(finalLevel: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
+    deleteMatches(matchIds: Array<string>): Promise<void>;
     getAgLevelIndex(): Promise<bigint>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -532,6 +533,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteMatch(arg0);
+            return result;
+        }
+    }
+    async deleteMatches(arg0: Array<string>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteMatches(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteMatches(arg0);
             return result;
         }
     }

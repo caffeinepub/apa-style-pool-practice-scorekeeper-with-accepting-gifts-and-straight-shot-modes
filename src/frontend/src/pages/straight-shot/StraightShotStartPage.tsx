@@ -1,171 +1,161 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Play, Info, ChevronDown, TrendingUp, AlertCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useGetAllMatches, useGetCallerUserProfile } from '../../hooks/useQueries';
+import { MatchMode } from '../../backend';
 import StraightShotRulesPanel from './StraightShotRulesPanel';
-import { useGetAllMatches } from '../../hooks/useQueries';
-import { SESSION_KEYS, hasInProgressSession, clearInProgressSession } from '@/lib/session/inProgressSessions';
-import EndMatchDialog from '../../components/matches/EndMatchDialog';
-import type { ApiMatch } from '../../backend';
+import { SESSION_KEYS } from '@/lib/session/inProgressSessions';
 
 export default function StraightShotStartPage() {
   const navigate = useNavigate();
-  const [playerName, setPlayerName] = useState('');
-  const [notes, setNotes] = useState('');
+  const { data: matches, isLoading: matchesLoading } = useGetAllMatches();
+  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
   const [rulesOpen, setRulesOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [hasInProgressSession, setHasInProgressSession] = useState(false);
 
-  const { data: allMatches } = useGetAllMatches();
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SESSION_KEYS.STRAIGHT_SHOT);
+    setHasInProgressSession(!!saved);
+  }, []);
 
-  const hasInProgress = hasInProgressSession(SESSION_KEYS.STRAIGHT_SHOT);
-
-  // Calculate moving average from last 10 Straight Shot sessions
-  const straightShotMatches = (allMatches || []).filter(m => m.mode === 'straightShot');
-  const last10 = straightShotMatches.slice(-10);
-  const movingAverage = last10.length > 0
-    ? last10.reduce((sum, m) => {
-        const totalShots = m.strokes && m.strokes.length > 0 ? Number(m.strokes[0]) : (m.totalScore ? Number(m.totalScore) : 0);
-        return sum + totalShots;
-      }, 0) / last10.length
-    : null;
-
-  const handleStartClick = () => {
-    if (playerName.trim()) {
-      // Check if there's an in-progress game
-      if (hasInProgress) {
-        setShowConfirmDialog(true);
-      } else {
-        startNewSession();
-      }
+  const handleStartSession = () => {
+    if (hasInProgressSession) {
+      setShowConfirmDialog(true);
+    } else {
+      startNewSession();
     }
   };
 
   const startNewSession = () => {
-    const gameState = {
-      playerName: playerName.trim(),
-      notes: notes.trim() || undefined,
+    if (!userProfile?.name) {
+      return;
+    }
+
+    const newSession = {
+      playerName: userProfile.name,
+      notes: '',
       totalShots: 0,
-      completed: false,
     };
-    sessionStorage.setItem(SESSION_KEYS.STRAIGHT_SHOT, JSON.stringify(gameState));
+
+    sessionStorage.setItem(SESSION_KEYS.STRAIGHT_SHOT, JSON.stringify(newSession));
     navigate({ to: '/straight-shot/game' });
   };
 
-  const handleConfirmNewSession = () => {
-    clearInProgressSession(SESSION_KEYS.STRAIGHT_SHOT);
-    setShowConfirmDialog(false);
-    startNewSession();
-  };
-
-  const handleResume = () => {
+  const handleResumeSession = () => {
     navigate({ to: '/straight-shot/game' });
   };
+
+  if (matchesLoading || profileLoading) {
+    return (
+      <div className="container mx-auto max-w-4xl p-4">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const straightShotMatches = matches?.filter((m) => m.mode === MatchMode.straightShot) || [];
+  const recentMatches = straightShotMatches
+    .sort((a, b) => Number(b.dateTime - a.dateTime))
+    .slice(0, 10);
+
+  const validShots = recentMatches
+    .map((m) => m.strokes?.[0] ?? m.totalScore ?? 0)
+    .filter((s) => Number(s) > 0)
+    .map(Number);
+
+  const movingAverage = validShots.length > 0
+    ? (validShots.reduce((sum, s) => sum + s, 0) / validShots.length).toFixed(1)
+    : 'N/A';
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate({ to: '/' })}
-        className="gap-2"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Home
-      </Button>
+    <div className="container mx-auto max-w-4xl space-y-6 p-4">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+        <h1 className="text-2xl font-bold">Straight Shot</h1>
+        <div className="w-24" />
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Start Straight Shot Session</CardTitle>
-          <CardDescription>
-            Clear all balls in 20 shots or under to win
-          </CardDescription>
+          <CardTitle>Start New Session</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {movingAverage !== null && (
-            <Alert>
-              <TrendingUp className="h-4 w-4" />
-              <AlertDescription>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Your last 10 sessions average:</span>
-                  <span className="text-lg font-semibold">{movingAverage.toFixed(1)} shots</span>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="playerName">Your Name</Label>
-              <Input
-                id="playerName"
-                placeholder="Enter your name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-              />
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Player Name</Label>
+            <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm">
+              {userProfile?.name || 'Loading...'}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any notes about this session..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Player name is locked to your profile for this drill.
+            </p>
           </div>
 
-          <Button
-            onClick={handleStartClick}
-            disabled={!playerName.trim()}
-            className="w-full gap-2"
-            size="lg"
-          >
-            <Play className="h-4 w-4" />
+          <div className="rounded-lg bg-muted p-4">
+            <div className="text-sm font-medium">Moving Average (Last 10)</div>
+            <div className="text-lg font-semibold">{movingAverage} shots</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Your average shot count over the last 10 sessions
+            </p>
+          </div>
+
+          <Button onClick={handleStartSession} className="w-full" size="lg" disabled={!userProfile?.name}>
             Start Session
           </Button>
 
-          {hasInProgress && (
-            <Button
-              onClick={handleResume}
-              variant="outline"
-              className="w-full gap-2"
-              size="lg"
-            >
-              <RotateCcw className="h-4 w-4" />
+          {hasInProgressSession && (
+            <Button onClick={handleResumeSession} variant="outline" className="w-full" size="lg">
               Resume Session
             </Button>
           )}
-
-          <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full gap-2">
-                <Info className="h-4 w-4" />
-                {rulesOpen ? 'Hide' : 'Show'} Rules
-                <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${rulesOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <StraightShotRulesPanel />
-            </CollapsibleContent>
-          </Collapsible>
         </CardContent>
       </Card>
 
-      <EndMatchDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        onConfirm={handleConfirmNewSession}
-        title="End Current Session?"
-        description="You have a session in progress. Starting a new session will end your current one. Are you sure?"
-        confirmText="End Current & Start New"
-      />
+      <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
+        <Card>
+          <CardHeader>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
+                <CardTitle>Rules</CardTitle>
+                <ChevronDown className={`h-5 w-5 transition-transform ${rulesOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <StraightShotRulesPanel />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start New Session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have a session in progress. Starting a new session will replace it. Do you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={startNewSession}>Start New Session</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

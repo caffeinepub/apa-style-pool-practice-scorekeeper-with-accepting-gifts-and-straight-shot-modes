@@ -125,10 +125,11 @@ export default function AcceptingGiftsGamePage() {
         playerWonMatch
       );
 
-      const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
       const levelPlayed = getLevelByIndex(gameState.levelPlayedIndex);
       const result = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
-      const noteSummary = `${levelPlayed.label} | ${baselineLevel.label} | ${result}`;
+      const noteSummary = `${levelPlayed.label} | ${result}`;
+
+      const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
 
       const { matchId, matchRecord } = buildAcceptingGiftsMatch({
         playerName: gameState.playerName,
@@ -147,8 +148,26 @@ export default function AcceptingGiftsGamePage() {
       await saveMatch.mutateAsync({ matchId, matchRecord });
       await setAgLevelIndex.mutateAsync(BigInt(nextBaselineIndex));
       toast.success('Session saved successfully!');
+
+      // Clear old session and start new one at next level
       sessionStorage.removeItem(SESSION_KEYS.ACCEPTING_GIFTS);
-      navigate({ to: '/accepting-gifts/start' });
+
+      const nextLevel = getLevelByIndex(nextBaselineIndex);
+      const newSession: GameState = {
+        playerName: gameState.playerName,
+        notes: '',
+        baselineLevelIndex: nextBaselineIndex,
+        levelPlayedIndex: nextBaselineIndex,
+        playerSetScore: 0,
+        ghostSetScore: 0,
+        totalAttempts: 0,
+        setsCompleted: 0,
+        completed: false,
+      };
+
+      sessionStorage.setItem(SESSION_KEYS.ACCEPTING_GIFTS, JSON.stringify(newSession));
+      setGameState(newSession);
+      setGamePhase('playing');
     } catch (error) {
       const errorMessage = extractErrorText(error);
       toast.error(`Failed to save session: ${errorMessage}`);
@@ -174,10 +193,11 @@ export default function AcceptingGiftsGamePage() {
         playerWonMatch
       );
 
-      const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
       const levelPlayed = getLevelByIndex(gameState.levelPlayedIndex);
       const result = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
-      const noteSummary = `${levelPlayed.label} | ${baselineLevel.label} | ${result}`;
+      const noteSummary = `${levelPlayed.label} | ${result}`;
+
+      const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
 
       const { matchId, matchRecord } = buildAcceptingGiftsMatch({
         playerName: gameState.playerName,

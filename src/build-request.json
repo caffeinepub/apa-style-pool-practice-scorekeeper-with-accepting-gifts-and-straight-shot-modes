@@ -1,56 +1,133 @@
 {
   "kind": "build_request",
-  "title": "APA aggregate charts: color differentiation + connectNulls",
-  "projectName": "Pool Scorekeeper",
+  "title": "Surgical drill navigation fixes, match table cleanup, locked profile names, and multi-select delete",
+  "projectName": "Pool Practice Tracker",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-250",
-      "text": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, update the Recharts `<Line />` stroke colors (visual-only) exactly as follows, without changing any chart data generation, keys, labels, or computations:\n- PPI & aPPI Trend chart:\n  - PPI line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - aPPI line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n- Match Results chart:\n  - Your Points line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - Opponent Points line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n  - Defensive Shots line: `stroke=\"#7c3aed\"`, `strokeWidth={2}`",
+      "id": "REQ-1",
+      "text": "Accepting Gifts: Change ONLY the existing “Save & Start Next Match” button behavior so that after saving it immediately starts the next match at the next calculated level (using the already-implemented progression logic), instead of navigating to the home screen or history. Do not change any other buttons’ behavior.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-recent-1"
         ],
         "quotes": [
-          "Required changes (TWO FIXES ONLY)\n1) Color differentiation (visual only)\n\nPPI & aPPI Trend chart\n\nppi → stroke=\"#000\" (black), strokeWidth={2}\n\nappi → stroke=\"#2563eb\" (blue), strokeWidth={2}\n\nMatch Results chart (3 colors total)\n\nyourPoints → stroke=\"#000\" (black), strokeWidth={2}\n\nopponentPoints → stroke=\"#2563eb\" (blue), strokeWidth={2}\n\ndefensiveShots → stroke=\"#7c3aed\" (purple), strokeWidth={2}"
+          "Accepting Gifts:  Save and start next match instead of go to home screen it should go to the next level determined by logic that is already implemented.",
+          "The other buttons already navigate correctly so dont change them"
         ]
       },
       "acceptanceCriteria": [
-        "PPI & aPPI Trend renders PPI in black (#000) and aPPI in blue (#2563eb), both with strokeWidth=2.",
-        "Match Results renders Your Points in black (#000), Opponent Points in blue (#2563eb), and Defensive Shots in purple (#7c3aed), all with strokeWidth=2.",
-        "No changes are made to data building (e.g., unifiedData), sorting, parsing, filtering, datapoints, averaging, regression, smoothing, or any backend code."
+        "When a set is complete, clicking “Save & Start Next Match” saves the match successfully and then navigates directly into the next Accepting Gifts match without taking the user to Home/History/Start screen.",
+        "The next match starts at the next baseline/level computed by existing progression logic (no new progression rules introduced).",
+        "“Save & Exit”, “Exit Without Saving”, “Back to Home”, and any other buttons retain their current navigation and behavior unchanged."
       ]
     },
     {
-      "id": "REQ-251",
-      "text": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, set `connectNulls={true}` on every Recharts `<Line />` used in both the PPI & aPPI Trend chart and the Match Results chart.",
+      "id": "REQ-2",
+      "text": "Straight Shot: Add a “Save & Start Next Match” button that saves the current session and immediately starts a new Straight Shot session. Do not change any other existing buttons’ behavior.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-recent-1"
         ],
         "quotes": [
-          "2) Continuous lines\n\nFor every <Line /> in both charts:\n\nconnectNulls={true}"
+          "Straight Shot: it needs thhe \"Save & Start Next Match\" button and this button will save and start another match.",
+          "The other buttons already navigate correctly so dont change them"
         ]
       },
       "acceptanceCriteria": [
-        "All five rendered `<Line />` components (PPI, aPPI, Your Points, Opponent Points, Defensive Shots) include `connectNulls={true}`.",
-        "Lines render continuously across null/missing values without breaking into segments.",
-        "No other behavioral changes are introduced outside this file."
+        "A “Save & Start Next Match” button is available at the end-of-session flow for Straight Shot.",
+        "Clicking it saves the current match successfully, clears the prior in-progress session state, and navigates directly into a new Straight Shot match.",
+        "All pre-existing Straight Shot buttons (e.g., save/end, exit without saving, back) continue to behave exactly as before."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Accepting Gifts match history notes formatting: Ensure the Accepting Gifts match summary stored in notes (the first line used in the Match History row) shows only “level played | result” (e.g., “2+8 | 7-4”) and does not include any duplicated level/baseline text. Preserve any user-entered notes on subsequent lines if present.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1"
+        ],
+        "quotes": [
+          "Accepting Gifts Log Entry in Match Table: In notes, it needs to show just the level of the game played | results so for example, 2+8 | 7-4.   (it currently shows more than that with the level at end of match printing too. So it shows twice)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Newly saved Accepting Gifts matches store a first-line summary in notes formatted exactly as: \"<levelPlayedLabel> | <playerScore>-<ghostScore>\".",
+        "The stored summary no longer includes baseline level or any duplicated level text.",
+        "If the user entered additional notes during the session, they remain appended after the summary on a new line."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Match History table columns: rename the header “Adjusted PPI” to “aPPI”, and remove the “Rolling 10/20” column entirely (header and corresponding cells) without affecting other columns or row rendering.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1"
+        ],
+        "quotes": [
+          "Change column name “adjusted PPI” to “aPPI”",
+          "Remove rolling 10/20 column"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Match History table header shows “aPPI” instead of “Adjusted PPI”.",
+        "The “Rolling 10/20” column is removed from the table, and all rows align correctly with the remaining headers.",
+        "No other table columns change meaning or ordering beyond removing “Rolling 10/20”."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Accepting Gifts and Straight Shot start pages: lock the player name to the logged-in user’s profile name so it is not editable. The session created from these start pages must always use the profile name as the playerName.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1"
+        ],
+        "quotes": [
+          "Accepting Gifts & Straight Shots Start up pages - on the start up pages: the name is the profile name for these drills and cannot be adjusted as these drills are for the profile."
+        ]
+      },
+      "acceptanceCriteria": [
+        "On Accepting Gifts Start and Straight Shot Start pages, the player name is displayed using the current caller’s saved profile name and cannot be edited.",
+        "Starting a session in either mode uses the profile name as the stored session playerName.",
+        "No other modes’ player naming behavior is changed."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Match History table: add a discrete multi-select + delete-selected-rows feature that permanently deletes the underlying match records from storage using the existing delete capability. Include a confirmation step and keep the existing single-row “View” action intact.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-recent-1"
+        ],
+        "quotes": [
+          "Multiple select/delete rows functionality but discrete",
+          "from storage"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Users can select multiple match rows in the Match History table (including a select-all control for the current list view).",
+        "A “Delete selected” action is shown in a discrete way (e.g., only when one or more rows are selected) and requires confirmation before deleting.",
+        "Confirmed deletion permanently removes the selected matches from backend storage and the UI refreshes to reflect the removals.",
+        "The existing per-row “View” button continues to work as before and does not require selection."
       ]
     }
   ],
   "constraints": [
-    "Modify only `frontend/src/components/players/ApaAggregateCharts.tsx`.",
-    "Frontend-only scope: no backend changes.",
-    "Do not change or add any data recalculation, new datapoints, averaging, regression, smoothing, or any other math/logic.",
-    "Do not change user-facing text (keep existing English labels/titles as-is)."
+    "Implement changes surgically on top of Draft/Build 68 only; ignore Build 69.",
+    "Do not change any unrelated functionality or navigation outside the explicitly listed items.",
+    "For Accepting Gifts and Straight Shot, do not alter the behavior of any buttons other than the specific “Save & Start Next Match” behavior/addition described by the user.",
+    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Changing dot shapes, dot colors, legends, chart datasets, axes, tooltips, or any other chart behavior beyond the specified stroke colors and connectNulls.",
-    "Any changes to `frontend/src/lib/apa/apaAggregateStats.ts` or any other file.",
-    "Any Accepting Gifts, Straight Shot, Match History, routing, or persistence changes."
+    "Recovering or restoring data lost during the prior revert/reinstall.",
+    "Adding new drill modes, changing scoring rules, or changing Accepting Gifts progression logic beyond reusing the existing logic for navigation.",
+    "Adding new authentication methods (Internet Identity remains the only auth)."
   ],
   "imageRequirements": {
     "required": [],

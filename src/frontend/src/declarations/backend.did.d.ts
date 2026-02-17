@@ -317,6 +317,7 @@ export interface _SERVICE {
     APADetailedInnningSummary
   >,
   'deleteMatch' : ActorMethod<[string], undefined>,
+  'deleteMatches' : ActorMethod<[Array<string>], undefined>,
   'getAgLevelIndex' : ActorMethod<[], bigint>,
   'getAllMatches' : ActorMethod<[], Array<ApiMatch>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,

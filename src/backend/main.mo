@@ -12,8 +12,6 @@ import Text "mo:core/Text";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
- // Include migration module
-
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -1012,5 +1010,27 @@ actor {
     };
     agLevelIndices.add(caller, finalLevel);
     finalLevel;
+  };
+
+  // Batch delete matches by IDs
+  public shared ({ caller }) func deleteMatches(matchIds : [Text]) : async () {
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can delete matches");
+    };
+
+    let hasAdminRights = AccessControl.isAdmin(accessControlState, caller);
+
+    for (matchId in matchIds.values()) {
+      switch (matchHistory.get(matchId)) {
+        case (null) { Runtime.trap("Match with id " # matchId # " does not exist") };
+        case (?matchRecord) {
+          let owner = getMatchOwner(matchRecord);
+          if (caller != owner and not hasAdminRights) {
+            Runtime.trap("Unauthorized: Can only delete your own matches");
+          };
+          matchHistory.remove(matchId);
+        };
+      };
+    };
   };
 };

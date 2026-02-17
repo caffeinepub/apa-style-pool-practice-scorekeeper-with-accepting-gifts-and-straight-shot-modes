@@ -1,45 +1,107 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T15:31:45.344Z",
+  "generatedAt": "2026-02-17T19:07:30.100Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 6,
+    "implemented": 6,
     "items": [
       {
-        "id": "REQ-250",
-        "summary": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, update the Recharts `<Line />` stroke colors (visual-only) exactly as follows, without changing any chart data generation, keys, labels, or computations:\n- PPI & aPPI Trend chart:\n  - PPI line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - aPPI line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n- Match Results chart:\n  - Your Points line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - Opponent Points line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n  - Defensive Shots line: `stroke=\"#7c3aed\"`, `strokeWidth={2}`",
+        "id": "REQ-1",
+        "summary": "Accepting Gifts: Change ONLY the existing “Save & Start Next Match” button behavior so that after saving it immediately starts the next match at the next calculated level (using the already-implemented progression logic), instead of navigating to the home screen or history. Do not change any other buttons’ behavior.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/players/ApaAggregateCharts.tsx"
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "frontend/src/lib/session/inProgressSessions.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/players/ApaAggregateCharts.tsx"
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
         ]
       },
       {
-        "id": "REQ-251",
-        "summary": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, set `connectNulls={true}` on every Recharts `<Line />` used in both the PPI & aPPI Trend chart and the Match Results chart.",
+        "id": "REQ-2",
+        "summary": "Straight Shot: Add a “Save & Start Next Match” button that saves the current session and immediately starts a new Straight Shot session. Do not change any other existing buttons’ behavior.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/players/ApaAggregateCharts.tsx"
+          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "frontend/src/lib/session/inProgressSessions.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/players/ApaAggregateCharts.tsx"
+          "frontend/src/pages/straight-shot/StraightShotGamePage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Accepting Gifts match history notes formatting: Ensure the Accepting Gifts match summary stored in notes (the first line used in the Match History row) shows only “level played | result” (e.g., “2+8 | 7-4”) and does not include any duplicated level/baseline text. Preserve any user-entered notes on subsequent lines if present.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Match History table columns: rename the header “Adjusted PPI” to “aPPI”, and remove the “Rolling 10/20” column entirely (header and corresponding cells) without affecting other columns or row rendering.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/history/MatchHistoryTable.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/history/MatchHistoryTable.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Accepting Gifts and Straight Shot start pages: lock the player name to the logged-in user’s profile name so it is not editable. The session created from these start pages must always use the profile name as the playerName.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+          "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Match History table: add a discrete multi-select + delete-selected-rows feature that permanently deletes the underlying match records from storage using the existing delete capability. Include a confirmation step and keep the existing single-row “View” action intact.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/history/MatchHistoryTable.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/history/MatchHistoryTable.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/players/ApaAggregateCharts.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/history/MatchHistoryTable.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

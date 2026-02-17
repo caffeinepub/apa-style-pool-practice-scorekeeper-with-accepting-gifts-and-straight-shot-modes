@@ -347,6 +347,7 @@ export interface backendInterface {
     completeAgSession(finalLevel: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
+    deleteMatches(matchIds: Array<string>): Promise<void>;
     getAgLevelIndex(): Promise<bigint>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;

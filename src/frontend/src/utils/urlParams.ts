@@ -209,16 +209,14 @@ export function getSecretParameter(paramName: string): string | null {
 
 /**
  * Navigation origin tracking helpers
- * Used for context-aware back links (e.g., "Back to Stats" vs "Back to Home")
+ * Used to maintain context-aware back links across the application
  */
 
 const NAVIGATION_ORIGIN_KEY = 'navigationOrigin';
 
 /**
  * Sets the navigation origin in sessionStorage
- * Call this before navigating to a page that needs context-aware back links
- *
- * @param origin - The origin identifier (e.g., 'stats', 'history')
+ * @param origin - The origin identifier (e.g., 'home', 'history', 'stats')
  */
 export function setNavigationOrigin(origin: string): void {
     storeSessionParameter(NAVIGATION_ORIGIN_KEY, origin);
@@ -226,8 +224,7 @@ export function setNavigationOrigin(origin: string): void {
 
 /**
  * Gets the current navigation origin from sessionStorage
- *
- * @returns The navigation origin if set, null otherwise
+ * @returns The origin identifier if set, null otherwise
  */
 export function getNavigationOrigin(): string | null {
     return getSessionParameter(NAVIGATION_ORIGIN_KEY);
@@ -235,7 +232,6 @@ export function getNavigationOrigin(): string | null {
 
 /**
  * Clears the navigation origin from sessionStorage
- * Call this when navigating back to avoid stale origin data
  */
 export function clearNavigationOrigin(): void {
     clearSessionParameter(NAVIGATION_ORIGIN_KEY);

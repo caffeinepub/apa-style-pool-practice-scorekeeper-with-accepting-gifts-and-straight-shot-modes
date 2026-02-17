@@ -1,60 +1,73 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T15:31:45.333Z",
-  "summary": "Diff implements some of the requested visual updates in ApaAggregateCharts.tsx (PPI line stroke/strokeWidth and connectNulls shown), but the diff is truncated before showing the remaining <Line /> components, so full compliance with REQ-250/REQ-251 cannot be verified. The change set also violates the BuildRequest constraint to modify only ApaAggregateCharts.tsx and introduces unrequested dot-shape customization.",
+  "generatedAt": "2026-02-17T19:07:30.096Z",
+  "summary": "Diff implements the Match History multi-select UI (with confirmation) and adds a batch delete hook, and locks player name to the logged-in profile name on Accepting Gifts and Straight Shot start pages. Several drill navigation/notes-format requirements cannot be verified from the truncated diffs (Accepting Gifts and Straight Shot “Save & Start Next Match”, and Accepting Gifts notes first-line formatting). Also includes at least one unrelated utility change (urlParams).",
   "missing_requirements": [
     {
-      "id": "REQ-250",
-      "requirement": "Match Results chart lines must use exact strokes: Your Points #000, Opponent Points #2563eb, Defensive Shots #7c3aed; all with strokeWidth={2}.",
-      "reason": "The diff snippet only shows the PPI & aPPI Trend portion and is truncated before the Match Results chart <Line /> definitions, so these required stroke/strokeWidth settings are not evidenced.",
+      "id": "REQ-1",
+      "requirement": "Accepting Gifts: Change ONLY the existing “Save & Start Next Match” button behavior so that after saving it immediately starts the next match at the next calculated level (using existing progression logic) instead of navigating to home/history; leave all other buttons unchanged.",
+      "reason": "AcceptingGiftsGamePage changes are truncated right as the handler begins (“handleSaveAndStartNe...”), so there is not enough evidence that the button now saves and immediately starts the next match at the next computed level, nor that other buttons are unchanged.",
       "evidence": [
-        "frontend/src/components/players/ApaAggregateCharts.tsx (truncated)"
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx (truncated at handleSaveAndStartNe...)"
       ]
     },
     {
-      "id": "REQ-251",
-      "requirement": "Set connectNulls={true} on every Recharts <Line /> used in both charts (all five lines).",
-      "reason": "Only the PPI line explicitly shows connectNulls={true} in the provided snippet; the remaining lines are not visible due to truncation, so inclusion on all five lines is not evidenced.",
+      "id": "REQ-2",
+      "requirement": "Straight Shot: Add a “Save & Start Next Match” button that saves the current session and immediately starts a new Straight Shot session; do not change any other existing buttons’ behavior.",
+      "reason": "StraightShotGamePage diff is truncated before the end-of-session UI is shown, so there is not enough evidence that a new “Save & Start Next Match” button was added, that it clears in-progress state, and navigates directly into a new session.",
       "evidence": [
-        "frontend/src/components/players/ApaAggregateCharts.tsx (truncated)"
+        "frontend/src/pages/straight-shot/StraightShotGamePage.tsx (truncated before end-of-session flow/UI)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Accepting Gifts match history notes formatting: store first line exactly as “<levelPlayedLabel> | <playerScore>-<ghostScore>” with no duplicated/baseline text; preserve user notes on following lines.",
+      "reason": "No diff evidence shows changes to Accepting Gifts match-building or save logic that formats the stored notes summary line as specified.",
+      "evidence": [
+        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx (no visible notes formatting changes in shown portion)",
+        "frontend/src/components/matches/MatchSummaryCard.tsx (only referenced in frontend-file-summaries; no concrete diff content shown)",
+        "frontend/src/lib/matches/matchBuilders (not shown in diff summary)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Match History table columns: rename “Adjusted PPI” header to “aPPI”, and remove the “Rolling 10/20” column entirely (header and cells) while keeping other columns aligned.",
+      "reason": "The header rename to “aPPI” is visible, but the diff is truncated before the full column set and row cell rendering, so removal of the entire “Rolling 10/20” column (including cells) cannot be verified from the provided evidence.",
+      "evidence": [
+        "frontend/src/components/history/MatchHistoryTable.tsx (shows “aPPI” header; truncated before full table definition)"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Match History table: add multi-select + delete-selected-rows that permanently deletes underlying match records from storage using existing delete capability; include confirmation; keep per-row “View” intact.",
+      "reason": "Frontend multi-select UI and confirmation are present, but the backend capability to delete multiple matches (actor.deleteMatches) is only referenced from the hook and not evidenced as implemented in the backend diff excerpt (backend/main.mo is truncated before match deletion APIs).",
+      "evidence": [
+        "frontend/src/components/history/MatchHistoryTable.tsx (multi-select + confirmation + calls useDeleteMatches)",
+        "frontend/src/hooks/useQueries.ts (useDeleteMatches calls actor.deleteMatches(matchIds))",
+        "backend/main.mo (truncated; deleteMatches implementation not shown)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Custom dot shapes (CircleDot/SquareDot/TriangleDot) and assigning dot props to lines.",
-      "reason": "BuildRequest explicitly lists changing dot shapes/colors as a non-goal and only requests stroke color/width and connectNulls changes.",
-      "evidence": [
-        "frontend/src/components/players/ApaAggregateCharts.tsx"
-      ]
-    },
-    {
-      "description": "Modifications to frontend/src/utils/urlParams.ts.",
-      "reason": "BuildRequest constraint: modify only frontend/src/components/players/ApaAggregateCharts.tsx.",
+      "description": "Expanded URL parameter/sessionStorage utility functions (getUrlParameter/getPersistedUrlParameter/etc.).",
+      "reason": "Not requested by any requirement (REQ-1..REQ-6) and appears unrelated to the specified drill navigation/table/name-locking/delete features.",
       "evidence": [
         "frontend/src/utils/urlParams.ts"
       ]
-    },
-    {
-      "description": "Modifications to frontend-file-summaries.txt.",
-      "reason": "BuildRequest constraint: modify only frontend/src/components/players/ApaAggregateCharts.tsx.",
-      "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Modifications to project_state.json.",
-      "reason": "BuildRequest constraint: modify only frontend/src/components/players/ApaAggregateCharts.tsx.",
-      "evidence": [
-        "project_state.json"
-      ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.63,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/players/ApaAggregateCharts.tsx",
+    "frontend/src/components/history/MatchHistoryTable.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+    "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+    "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]
