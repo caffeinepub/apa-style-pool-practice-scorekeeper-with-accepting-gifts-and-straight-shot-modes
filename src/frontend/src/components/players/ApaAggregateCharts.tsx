@@ -8,6 +8,23 @@ interface ApaAggregateChartsProps {
   playerName: string;
 }
 
+// Custom dot shapes for differentiation
+const CircleDot = (props: any) => {
+  const { cx, cy, stroke } = props;
+  return <circle cx={cx} cy={cy} r={4} fill={stroke} />;
+};
+
+const SquareDot = (props: any) => {
+  const { cx, cy, stroke } = props;
+  return <rect x={cx - 4} y={cy - 4} width={8} height={8} fill={stroke} />;
+};
+
+const TriangleDot = (props: any) => {
+  const { cx, cy, stroke } = props;
+  const points = `${cx},${cy - 5} ${cx - 4.5},${cy + 3} ${cx + 4.5},${cy + 3}`;
+  return <polygon points={points} fill={stroke} />;
+};
+
 export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggregateChartsProps) {
   console.log('APA RAW DATAPOINTS', dataPoints);
 
@@ -15,58 +32,43 @@ export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggreg
     return [...dataPoints].sort((a, b) => a.timestamp - b.timestamp);
   }, [dataPoints]);
 
-  // Build five independent series arrays
-  const ppiSeries = useMemo(() => {
-    return sortedDataPoints
-      .filter((dp) => typeof dp.ppi === 'number' && isFinite(dp.ppi))
-      .map((dp) => ({
-        date: new Date(dp.timestamp).toLocaleDateString(),
-        ppi: dp.ppi,
-      }));
+  // Build unified dataset keyed by timestamp
+  const unifiedData = useMemo(() => {
+    const dataMap = new Map<number, {
+      timestamp: number;
+      ppi?: number;
+      appi?: number;
+      yourPoints?: number;
+      opponentPoints?: number;
+      defensiveShots?: number;
+    }>();
+
+    sortedDataPoints.forEach((dp) => {
+      const existing = dataMap.get(dp.timestamp) || { timestamp: dp.timestamp };
+
+      if (typeof dp.ppi === 'number' && isFinite(dp.ppi)) {
+        existing.ppi = dp.ppi;
+      }
+      if (typeof dp.appi === 'number' && isFinite(dp.appi)) {
+        existing.appi = dp.appi;
+      }
+      if (typeof dp.yourPoints === 'number' && isFinite(dp.yourPoints)) {
+        existing.yourPoints = dp.yourPoints;
+      }
+      if (typeof dp.opponentPoints === 'number' && isFinite(dp.opponentPoints)) {
+        existing.opponentPoints = dp.opponentPoints;
+      }
+      if (typeof dp.defensiveShots === 'number' && isFinite(dp.defensiveShots)) {
+        existing.defensiveShots = dp.defensiveShots;
+      }
+
+      dataMap.set(dp.timestamp, existing);
+    });
+
+    return Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
   }, [sortedDataPoints]);
 
-  const appiSeries = useMemo(() => {
-    return sortedDataPoints
-      .filter((dp) => typeof dp.appi === 'number' && isFinite(dp.appi))
-      .map((dp) => ({
-        date: new Date(dp.timestamp).toLocaleDateString(),
-        appi: dp.appi,
-      }));
-  }, [sortedDataPoints]);
-
-  const yourPointsSeries = useMemo(() => {
-    return sortedDataPoints
-      .filter((dp) => typeof dp.yourPoints === 'number' && isFinite(dp.yourPoints))
-      .map((dp) => ({
-        date: new Date(dp.timestamp).toLocaleDateString(),
-        yourPoints: dp.yourPoints,
-      }));
-  }, [sortedDataPoints]);
-
-  const opponentPointsSeries = useMemo(() => {
-    return sortedDataPoints
-      .filter((dp) => typeof dp.opponentPoints === 'number' && isFinite(dp.opponentPoints))
-      .map((dp) => ({
-        date: new Date(dp.timestamp).toLocaleDateString(),
-        opponentPoints: dp.opponentPoints,
-      }));
-  }, [sortedDataPoints]);
-
-  const defensiveShotsSeries = useMemo(() => {
-    return sortedDataPoints
-      .filter((dp) => typeof dp.defensiveShots === 'number' && isFinite(dp.defensiveShots))
-      .map((dp) => ({
-        date: new Date(dp.timestamp).toLocaleDateString(),
-        defensiveShots: dp.defensiveShots,
-      }));
-  }, [sortedDataPoints]);
-
-  // Debug taps: log final series arrays right before they're fed into LineChart
-  console.log('PPI SERIES (final):', ppiSeries);
-  console.log('APPI SERIES (final):', appiSeries);
-  console.log('YOUR POINTS SERIES (final):', yourPointsSeries);
-  console.log('OPPONENT POINTS SERIES (final):', opponentPointsSeries);
-  console.log('DEFENSIVE SHOTS SERIES (final):', defensiveShotsSeries);
+  console.log('UNIFIED DATA (final):', unifiedData);
 
   if (dataPoints.length === 0) {
     return (
@@ -81,39 +83,9 @@ export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggreg
     );
   }
 
-  // Combine all series for unified x-axis (all unique dates)
-  const allDates = Array.from(
-    new Set([
-      ...ppiSeries.map((d) => d.date),
-      ...appiSeries.map((d) => d.date),
-      ...yourPointsSeries.map((d) => d.date),
-      ...opponentPointsSeries.map((d) => d.date),
-      ...defensiveShotsSeries.map((d) => d.date),
-    ])
-  ).sort();
-
-  // Build unified datasets for each chart
-  const ppiAppiChartData = allDates.map((date) => {
-    const ppiPoint = ppiSeries.find((d) => d.date === date);
-    const appiPoint = appiSeries.find((d) => d.date === date);
-    return {
-      date,
-      ppi: ppiPoint?.ppi,
-      appi: appiPoint?.appi,
-    };
-  });
-
-  const matchResultsChartData = allDates.map((date) => {
-    const yourPoint = yourPointsSeries.find((d) => d.date === date);
-    const oppPoint = opponentPointsSeries.find((d) => d.date === date);
-    const defPoint = defensiveShotsSeries.find((d) => d.date === date);
-    return {
-      date,
-      yourPoints: yourPoint?.yourPoints,
-      opponentPoints: oppPoint?.opponentPoints,
-      defensiveShots: defPoint?.defensiveShots,
-    };
-  });
+  const formatTimestamp = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString();
+  };
 
   return (
     <div className="space-y-6" data-apa-aggregate-root>
@@ -123,14 +95,34 @@ export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggreg
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={ppiAppiChartData}>
+            <LineChart data={unifiedData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                scale="time"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={formatTimestamp}
+              />
               <YAxis />
-              <Tooltip />
+              <Tooltip labelFormatter={formatTimestamp} />
               <Legend />
-              <Line type="monotone" dataKey="ppi" name="PPI" stroke="hsl(var(--chart-1))" connectNulls={false} />
-              <Line type="monotone" dataKey="appi" name="aPPI" stroke="hsl(var(--chart-2))" connectNulls={false} />
+              <Line
+                dataKey="ppi"
+                name="PPI"
+                stroke="#000"
+                strokeWidth={2}
+                dot={CircleDot}
+                connectNulls={true}
+              />
+              <Line
+                dataKey="appi"
+                name="aPPI"
+                stroke="#2563eb"
+                strokeWidth={2}
+                dot={SquareDot}
+                connectNulls={true}
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -142,32 +134,41 @@ export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggreg
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={matchResultsChartData}>
+            <LineChart data={unifiedData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                scale="time"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={formatTimestamp}
+              />
               <YAxis />
-              <Tooltip />
+              <Tooltip labelFormatter={formatTimestamp} />
               <Legend />
               <Line
-                type="monotone"
                 dataKey="yourPoints"
                 name="Your Points"
-                stroke="hsl(var(--chart-3))"
-                connectNulls={false}
+                stroke="#000"
+                strokeWidth={2}
+                dot={CircleDot}
+                connectNulls={true}
               />
               <Line
-                type="monotone"
                 dataKey="opponentPoints"
                 name="Opponent Points"
-                stroke="hsl(var(--chart-4))"
-                connectNulls={false}
+                stroke="#2563eb"
+                strokeWidth={2}
+                dot={SquareDot}
+                connectNulls={true}
               />
               <Line
-                type="monotone"
                 dataKey="defensiveShots"
                 name="Defensive Shots"
-                stroke="hsl(var(--chart-5))"
-                connectNulls={false}
+                stroke="#7c3aed"
+                strokeWidth={2}
+                dot={TriangleDot}
+                connectNulls={true}
               />
             </LineChart>
           </ResponsiveContainer>

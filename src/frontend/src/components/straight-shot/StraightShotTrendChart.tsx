@@ -30,10 +30,10 @@ export default function StraightShotTrendChart({ trendData }: StraightShotTrendC
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis domain={[0, 'auto']} />
-            <Tooltip />
+            <Tooltip cursor={false} />
             <Legend />
-            <Bar dataKey="shots" fill="hsl(var(--primary))" name="Shots" />
-            <Line type="monotone" dataKey="shots" stroke="hsl(var(--chart-2))" name="Trend" strokeWidth={2} dot={false} />
+            <Bar dataKey="shots" fill="#000" stroke="#000" name="Shots" />
+            <Line type="monotone" dataKey="shots" stroke="#000" strokeWidth={2} dot={false} name="Trend" />
           </ComposedChart>
         </ResponsiveContainer>
         <p className="mt-2 text-sm text-muted-foreground">

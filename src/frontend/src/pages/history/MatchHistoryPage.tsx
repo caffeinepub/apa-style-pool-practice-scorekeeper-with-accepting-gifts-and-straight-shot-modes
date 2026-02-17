@@ -15,7 +15,7 @@ export default function MatchHistoryPage() {
   const navigate = useNavigate();
   const { data: matches, isLoading } = useGetAllMatches();
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
 
   const navOrigin = getNavigationOrigin();
   const backLabel = navOrigin === 'stats' ? 'Back to Stats' : 'Back to Home';

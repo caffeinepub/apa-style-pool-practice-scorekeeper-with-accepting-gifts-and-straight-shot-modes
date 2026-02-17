@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T03:14:19.963Z",
+  "generatedAt": "2026-02-17T15:31:45.344Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -11,8 +11,8 @@
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-233",
-        "summary": "Fix the Official APA Performance Charts so they render reliably (not blank) by removing the current merged `dateMap`/single-dataset approach in `frontend/src/components/players/ApaAggregateCharts.tsx` and instead building five fully independent per-series datasets (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Each series must include only entries that have (1) a valid x-axis date derived from the datapoint timestamp and (2) a valid numeric value for that specific series. Render each series as its own `<Line>` such that missing/invalid values for one metric never suppress the other lines. Preserve the existing chart sections and English legend labels: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
+        "id": "REQ-250",
+        "summary": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, update the Recharts `<Line />` stroke colors (visual-only) exactly as follows, without changing any chart data generation, keys, labels, or computations:\n- PPI & aPPI Trend chart:\n  - PPI line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - aPPI line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n- Match Results chart:\n  - Your Points line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - Opponent Points line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n  - Defensive Shots line: `stroke=\"#7c3aed\"`, `strokeWidth={2}`",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/players/ApaAggregateCharts.tsx"
@@ -22,8 +22,8 @@
         ]
       },
       {
-        "id": "REQ-234",
-        "summary": "Add console-only debug taps in `frontend/src/components/players/ApaAggregateCharts.tsx` immediately before the data is fed into each `<Line>` so it is possible to see the exact per-series arrays being passed to Recharts. Keep any existing debug tap(s) earlier in the pipeline (e.g., in `frontend/src/lib/apa/apaAggregateStats.ts`) unchanged, and do not add any on-screen debug UI.",
+        "id": "REQ-251",
+        "summary": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, set `connectNulls={true}` on every Recharts `<Line />` used in both the PPI & aPPI Trend chart and the Match Results chart.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/players/ApaAggregateCharts.tsx"

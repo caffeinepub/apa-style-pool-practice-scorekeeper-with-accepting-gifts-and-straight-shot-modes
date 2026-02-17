@@ -1,73 +1,59 @@
 {
   "kind": "build_request",
-  "title": "Fix Official APA charts rendering and add console debug taps before LineChart input",
+  "title": "APA aggregate charts: color differentiation + connectNulls",
   "projectName": "Pool Scorekeeper",
-  "priority": "high",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-233",
-      "text": "Fix the Official APA Performance Charts so they render reliably (not blank) by removing the current merged `dateMap`/single-dataset approach in `frontend/src/components/players/ApaAggregateCharts.tsx` and instead building five fully independent per-series datasets (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Each series must include only entries that have (1) a valid x-axis date derived from the datapoint timestamp and (2) a valid numeric value for that specific series. Render each series as its own `<Line>` such that missing/invalid values for one metric never suppress the other lines. Preserve the existing chart sections and English legend labels: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
+      "id": "REQ-250",
+      "text": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, update the Recharts `<Line />` stroke colors (visual-only) exactly as follows, without changing any chart data generation, keys, labels, or computations:\n- PPI & aPPI Trend chart:\n  - PPI line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - aPPI line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n- Match Results chart:\n  - Your Points line: `stroke=\"#000\"`, `strokeWidth={2}`\n  - Opponent Points line: `stroke=\"#2563eb\"`, `strokeWidth={2}`\n  - Defensive Shots line: `stroke=\"#7c3aed\"`, `strokeWidth={2}`",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "fix the graphs and add the debug taps!!!"
+          "Required changes (TWO FIXES ONLY)\n1) Color differentiation (visual only)\n\nPPI & aPPI Trend chart\n\nppi → stroke=\"#000\" (black), strokeWidth={2}\n\nappi → stroke=\"#2563eb\" (blue), strokeWidth={2}\n\nMatch Results chart (3 colors total)\n\nyourPoints → stroke=\"#000\" (black), strokeWidth={2}\n\nopponentPoints → stroke=\"#2563eb\" (blue), strokeWidth={2}\n\ndefensiveShots → stroke=\"#7c3aed\" (purple), strokeWidth={2}"
         ]
       },
       "acceptanceCriteria": [
-        "In `frontend/src/components/players/ApaAggregateCharts.tsx`, the charts no longer use a merged `dateMap` dataset (`ppiAppiChartData` / `matchResultsChartData`) as the sole data source.",
-        "The component builds five separate arrays: `ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries` where each element contains the x-axis key (`date`) and only the y-value for that series (e.g., only `ppi` for `ppiSeries`).",
-        "The PPI & aPPI Trend chart renders PPI and aPPI as two independent line series that can render even if the other series has no points.",
-        "The Match Results chart renders Your Points, Opponent Points, and Defensive Shots as three independent line series that can render even if one of the other series has no points.",
-        "With at least one datapoint containing a valid numeric value for any one of the metrics, the corresponding line is visible (the chart is not fully blank as shown in the uploaded screenshot)."
+        "PPI & aPPI Trend renders PPI in black (#000) and aPPI in blue (#2563eb), both with strokeWidth=2.",
+        "Match Results renders Your Points in black (#000), Opponent Points in blue (#2563eb), and Defensive Shots in purple (#7c3aed), all with strokeWidth=2.",
+        "No changes are made to data building (e.g., unifiedData), sorting, parsing, filtering, datapoints, averaging, regression, smoothing, or any backend code."
       ]
     },
     {
-      "id": "REQ-234",
-      "text": "Add console-only debug taps in `frontend/src/components/players/ApaAggregateCharts.tsx` immediately before the data is fed into each `<Line>` so it is possible to see the exact per-series arrays being passed to Recharts. Keep any existing debug tap(s) earlier in the pipeline (e.g., in `frontend/src/lib/apa/apaAggregateStats.ts`) unchanged, and do not add any on-screen debug UI.",
+      "id": "REQ-251",
+      "text": "In `frontend/src/components/players/ApaAggregateCharts.tsx`, set `connectNulls={true}` on every Recharts `<Line />` used in both the PPI & aPPI Trend chart and the Match Results chart.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "ii want an addtional debug tap right before the data goes into linechart...",
-          "console only",
-          "(dont do yet)...just add the debugs to the next build plan.",
-          "fix the graphs and add the debug taps!!!"
+          "2) Continuous lines\n\nFor every <Line /> in both charts:\n\nconnectNulls={true}"
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/src/components/players/ApaAggregateCharts.tsx` logs the final arrays for: `ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries` to the browser console right before those arrays are provided to their corresponding `<Line>` components.",
-        "No debug output is rendered in the UI (console only).",
-        "No changes are made to existing debug logging in `frontend/src/lib/apa/apaAggregateStats.ts` (it remains present and behaviorally unchanged)."
+        "All five rendered `<Line />` components (PPI, aPPI, Your Points, Opponent Points, Defensive Shots) include `connectNulls={true}`.",
+        "Lines render continuously across null/missing values without breaking into segments.",
+        "No other behavioral changes are introduced outside this file."
       ]
     }
   ],
   "constraints": [
-    "Frontend must not edit any files under `frontend/src/components/ui` or any other immutable paths listed in SYSTEM_CONTEXT.",
-    "Keep this change tightly scoped to the Official APA chart pipeline; modify only `frontend/src/components/players/ApaAggregateCharts.tsx` and (only if absolutely required for compatibility) `frontend/src/lib/apa/apaAggregateStats.ts`.",
-    "All user-facing text must remain in English."
+    "Modify only `frontend/src/components/players/ApaAggregateCharts.tsx`.",
+    "Frontend-only scope: no backend changes.",
+    "Do not change or add any data recalculation, new datapoints, averaging, regression, smoothing, or any other math/logic.",
+    "Do not change user-facing text (keep existing English labels/titles as-is)."
   ],
   "nonGoals": [
-    "Do not add any on-screen/debug UI panels or overlays for chart datasets (console logging only).",
-    "Do not change match history routing, sorting, table rendering, or any backend Motoko code as part of this charts/debug build.",
-    "Do not change the underlying PPI/aPPI computation rules; this build is focused on getting valid series data into Recharts and making the charts render."
+    "Changing dot shapes, dot colors, legends, chart datasets, axes, tooltips, or any other chart behavior beyond the specified stroke colors and connectNulls.",
+    "Any changes to `frontend/src/lib/apa/apaAggregateStats.ts` or any other file.",
+    "Any Accepting Gifts, Straight Shot, Match History, routing, or persistence changes."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

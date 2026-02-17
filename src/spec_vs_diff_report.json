@@ -1,44 +1,57 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T03:14:19.954Z",
-  "summary": "ApaAggregateCharts.tsx now builds five per-metric series arrays and adds console logs, but it also reconstructs unified merged chart datasets (ppiAppiChartData/matchResultsChartData) from a combined allDates list, which appears to reintroduce the merged-data approach the BuildRequest asked to remove. Additionally, unrelated files (urlParams.ts, frontend-file-summaries.txt, project_state.json) were modified despite the request to keep changes tightly scoped and to modify only ApaAggregateCharts.tsx (and only if absolutely required, apaAggregateStats.ts).",
+  "generatedAt": "2026-02-17T15:31:45.333Z",
+  "summary": "Diff implements some of the requested visual updates in ApaAggregateCharts.tsx (PPI line stroke/strokeWidth and connectNulls shown), but the diff is truncated before showing the remaining <Line /> components, so full compliance with REQ-250/REQ-251 cannot be verified. The change set also violates the BuildRequest constraint to modify only ApaAggregateCharts.tsx and introduces unrequested dot-shape customization.",
   "missing_requirements": [
     {
-      "id": "REQ-233",
-      "requirement": "Remove the merged dateMap/single-dataset approach and render each metric as its own independent <Line> using its own per-series dataset so missing values in one metric never suppress other lines.",
-      "reason": "The diff shows the component still creating merged/unified datasets (ppiAppiChartData and matchResultsChartData) from a combined allDates set, which strongly suggests the charts may still be driven by merged chart data rather than each <Line> receiving its own series array as the data source.",
+      "id": "REQ-250",
+      "requirement": "Match Results chart lines must use exact strokes: Your Points #000, Opponent Points #2563eb, Defensive Shots #7c3aed; all with strokeWidth={2}.",
+      "reason": "The diff snippet only shows the PPI & aPPI Trend portion and is truncated before the Match Results chart <Line /> definitions, so these required stroke/strokeWidth settings are not evidenced.",
       "evidence": [
-        "frontend/src/components/players/ApaAggregateCharts.tsx (builds allDates, then builds ppiAppiChartData and matchResultsChartData)"
+        "frontend/src/components/players/ApaAggregateCharts.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-234",
-      "requirement": "Log the final arrays for ppiSeries/appiSeries/yourPointsSeries/opponentPointsSeries/defensiveShotsSeries immediately before those arrays are provided to their corresponding <Line> components.",
-      "reason": "While the diff adds console.log statements for each series, the visible code does not show these arrays being passed directly into <Line> components (and the code proceeds to build merged chart datasets). With truncation, it cannot be confirmed that each <Line> is fed the per-series array and that the logs occur immediately before that handoff.",
+      "id": "REQ-251",
+      "requirement": "Set connectNulls={true} on every Recharts <Line /> used in both charts (all five lines).",
+      "reason": "Only the PPI line explicitly shows connectNulls={true} in the provided snippet; the remaining lines are not visible due to truncation, so inclusion on all five lines is not evidenced.",
       "evidence": [
-        "frontend/src/components/players/ApaAggregateCharts.tsx (logs series, then builds allDates and merged chart data; <Line> usage not shown in truncated diff)"
+        "frontend/src/components/players/ApaAggregateCharts.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Modified URL parameter utility functions (getUrlParameter, sessionStorage helpers, hash param clearing logic).",
-      "reason": "Not requested; BuildRequest constrained changes to the Official APA chart pipeline and specified modifying only ApaAggregateCharts.tsx (and only if required, apaAggregateStats.ts).",
+      "description": "Custom dot shapes (CircleDot/SquareDot/TriangleDot) and assigning dot props to lines.",
+      "reason": "BuildRequest explicitly lists changing dot shapes/colors as a non-goal and only requests stroke color/width and connectNulls changes.",
+      "evidence": [
+        "frontend/src/components/players/ApaAggregateCharts.tsx"
+      ]
+    },
+    {
+      "description": "Modifications to frontend/src/utils/urlParams.ts.",
+      "reason": "BuildRequest constraint: modify only frontend/src/components/players/ApaAggregateCharts.tsx.",
       "evidence": [
         "frontend/src/utils/urlParams.ts"
       ]
     },
     {
-      "description": "Updated repository metadata/summary files (frontend-file-summaries.txt and project_state.json).",
-      "reason": "Not requested and outside the allowed/specified scope of chart rendering and console debug taps.",
+      "description": "Modifications to frontend-file-summaries.txt.",
+      "reason": "BuildRequest constraint: modify only frontend/src/components/players/ApaAggregateCharts.tsx.",
       "evidence": [
-        "frontend-file-summaries.txt",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Modifications to project_state.json.",
+      "reason": "BuildRequest constraint: modify only frontend/src/components/players/ApaAggregateCharts.tsx.",
+      "evidence": [
         "project_state.json"
       ]
     }
   ],
-  "confidence": 0.74,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/players/ApaAggregateCharts.tsx",

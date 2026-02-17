@@ -39,7 +39,7 @@ export default function StraightShotHistogram({ shotCounts }: StraightShotHistog
             <YAxis label={{ value: 'Frequency', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="frequency" fill="hsl(var(--primary))" name="Frequency" />
+            <Bar dataKey="frequency" fill="#000" stroke="#000" name="Frequency" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

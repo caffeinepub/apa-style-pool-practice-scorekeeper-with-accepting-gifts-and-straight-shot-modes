@@ -1,39 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Reliable Official APA charts via independent per-series datasets + pre-Line console debug taps",
+  "title": "APA aggregate charts: stroke color differentiation + connectNulls",
   "requirements": [
     {
-      "id": "REQ-233",
-      "summary": "Refactor Official APA chart data prep to build five independent per-metric series arrays and render each metric as its own Line so missing values don't blank the charts.",
+      "id": "REQ-250",
+      "summary": "Update Recharts Line stroke colors (visual-only) in ApaAggregateCharts for the Trend and Match Results charts without changing any data logic.",
       "acceptanceCriteria": [
-        "In `frontend/src/components/players/ApaAggregateCharts.tsx`, the charts no longer use a merged `dateMap` dataset (`ppiAppiChartData` / `matchResultsChartData`) as the sole data source.",
-        "The component builds five separate arrays: `ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries` where each element contains the x-axis key (`date`) and only the y-value for that series (e.g., only `ppi` for `ppiSeries`).",
-        "The PPI & aPPI Trend chart renders PPI and aPPI as two independent line series that can render even if the other series has no points.",
-        "The Match Results chart renders Your Points, Opponent Points, and Defensive Shots as three independent line series that can render even if one of the other series has no points.",
-        "With at least one datapoint containing a valid numeric value for any one of the metrics, the corresponding line is visible (the chart is not fully blank as shown in the uploaded screenshot)."
+        "PPI & aPPI Trend renders PPI in black (#000) and aPPI in blue (#2563eb), both with strokeWidth=2.",
+        "Match Results renders Your Points in black (#000), Opponent Points in blue (#2563eb), and Defensive Shots in purple (#7c3aed), all with strokeWidth=2.",
+        "No changes are made to data building (e.g., unifiedData), sorting, parsing, filtering, datapoints, averaging, regression, smoothing, or any backend code."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/players/ApaAggregateCharts.tsx",
           "operation": "modify",
-          "description": "Replace the current merged per-date dataset construction with five fully independent per-series arrays (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Ensure each series includes only datapoints that have (1) a valid date string derived from the datapoint timestamp and (2) a valid numeric y-value for that specific metric. Update the two existing chart sections to render each metric as its own `<Line>` backed by its own series array so missing/invalid values in one metric never suppress other lines; preserve existing section structure and English legend labels (PPI, aPPI, Your Points, Opponent Points, Defensive Shots)."
+          "description": "Change only the specified <Line /> stroke values: set aPPI and Opponent Points to stroke=\"#2563eb\" and Defensive Shots to stroke=\"#7c3aed\" while keeping PPI and Your Points stroke=\"#000\"; ensure strokeWidth remains {2} for all specified lines; do not alter any data keys, labels, or computations."
         }
       ]
     },
     {
-      "id": "REQ-234",
-      "summary": "Add console-only debug logs immediately before each Line receives its final per-series data arrays (no on-screen UI changes).",
+      "id": "REQ-251",
+      "summary": "Ensure all Recharts lines render continuously by enabling connectNulls for every Line in both charts in ApaAggregateCharts.",
       "acceptanceCriteria": [
-        "`frontend/src/components/players/ApaAggregateCharts.tsx` logs the final arrays for: `ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries` to the browser console right before those arrays are provided to their corresponding `<Line>` components.",
-        "No debug output is rendered in the UI (console only).",
-        "No changes are made to existing debug logging in `frontend/src/lib/apa/apaAggregateStats.ts` (it remains present and behaviorally unchanged)."
+        "All five rendered `<Line />` components (PPI, aPPI, Your Points, Opponent Points, Defensive Shots) include `connectNulls={true}`.",
+        "Lines render continuously across null/missing values without breaking into segments.",
+        "No other behavioral changes are introduced outside this file."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/players/ApaAggregateCharts.tsx",
           "operation": "modify",
-          "description": "Add console-only debug taps immediately before rendering each chart's `<Line>` components so the exact final arrays passed to Recharts are visible: log `ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, and `defensiveShotsSeries` right before they are provided to their corresponding `<Line>` props. Keep logging strictly in the console (no UI), and do not alter any existing debug logging earlier in the pipeline (e.g., in `frontend/src/lib/apa/apaAggregateStats.ts`)."
+          "description": "Add connectNulls={true} to each of the five existing Recharts <Line /> components in the PPI & aPPI Trend chart and the Match Results chart, without changing any other props, chart configuration, or non-visual logic."
         }
       ]
     }

@@ -90,7 +90,7 @@ export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string)
       }
 
       dataPoints.push({
-        timestamp: Number(match.dateTime) / 1_000_000,
+        timestamp: getEffectiveMatchTimestamp(match),
         ppi,
         appi,
         yourPoints,
@@ -120,7 +120,7 @@ export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string)
       const appi = typeof appiResult.appi === 'number' && isFinite(appiResult.appi) ? appiResult.appi : null;
 
       dataPoints.push({
-        timestamp: Number(match.dateTime) / 1_000_000,
+        timestamp: getEffectiveMatchTimestamp(match),
         ppi,
         appi,
         yourPoints,
