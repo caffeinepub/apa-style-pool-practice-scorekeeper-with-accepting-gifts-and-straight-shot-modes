@@ -6,6 +6,19 @@ import { getOfficialApaOutcome } from './officialApaOutcome';
 import { normalizePlayerName } from '../../utils/playerName';
 import { getEffectiveMatchTimestamp } from '../matches/effectiveMatchDate';
 
+export interface ApaAggregateDataPoint {
+  timestamp: number;
+  ppi: number | null;
+  appi: number | null;
+  yourPoints: number | null;
+  opponentPoints: number | null;
+  defensiveShots: number | null;
+  didWin?: boolean;
+  officialApaMatchLogData?: {
+    date: string;
+  };
+}
+
 export interface ApaMatchDataPoint {
   dateTime: bigint;
   ppi: number | null;
@@ -19,11 +32,20 @@ export interface ApaMatchDataPoint {
   };
 }
 
-export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string): ApaMatchDataPoint[] {
+/**
+ * Extracts per-player APA match datapoints from both APA Practice and Official APA matches.
+ * Each field (ppi, appi, yourPoints, opponentPoints, defensiveShots) is independently cleaned:
+ * - Valid numeric values are preserved as numbers
+ * - Invalid/unparseable values become null
+ * - No field's invalidity affects any other field
+ * - Returns one datapoint per eligible match
+ */
+export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string): ApaAggregateDataPoint[] {
   const normalizedPlayerName = normalizePlayerName(playerName);
-  const dataPoints: ApaMatchDataPoint[] = [];
+  const dataPoints: ApaAggregateDataPoint[] = [];
 
   for (const match of matches) {
+    // APA Practice matches
     if (match.mode === MatchMode.apaPractice && match.apaMatchInfo) {
       const player1 = match.players[0];
       const player2 = match.players[1];
@@ -43,17 +65,32 @@ export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string)
 
       if (!playerStats || !opponentStats) continue;
 
-      const ppi = playerStats.ppi;
-      const innings = Number(playerStats.innings);
-      const defensiveShots = Number(playerStats.defensiveShots);
-      const yourPoints = Number(playerStats.totalScore);
-      const opponentPoints = Number(opponentStats.totalScore);
+      // Clean each field independently - coerce to number or null, never NaN
+      const ppiValue = playerStats.ppi;
+      const ppi = typeof ppiValue === 'number' && isFinite(ppiValue) ? ppiValue : null;
 
-      const adjustedInnings = Math.max(1, innings - defensiveShots);
-      const appi = yourPoints / adjustedInnings;
+      const inningsValue = Number(playerStats.innings);
+      const innings = isFinite(inningsValue) && inningsValue > 0 ? inningsValue : null;
+
+      const defensiveShotsValue = Number(playerStats.defensiveShots);
+      const defensiveShots = isFinite(defensiveShotsValue) && defensiveShotsValue >= 0 ? defensiveShotsValue : null;
+
+      const yourPointsValue = Number(playerStats.totalScore);
+      const yourPoints = isFinite(yourPointsValue) && yourPointsValue >= 0 ? yourPointsValue : null;
+
+      const opponentPointsValue = Number(opponentStats.totalScore);
+      const opponentPoints = isFinite(opponentPointsValue) && opponentPointsValue >= 0 ? opponentPointsValue : null;
+
+      // Compute aPPI only if we have valid innings and defensive shots
+      let appi: number | null = null;
+      if (innings !== null && defensiveShots !== null && yourPoints !== null) {
+        const adjustedInnings = Math.max(1, innings - defensiveShots);
+        const computedAppi = yourPoints / adjustedInnings;
+        appi = isFinite(computedAppi) ? computedAppi : null;
+      }
 
       dataPoints.push({
-        dateTime: match.dateTime,
+        timestamp: Number(match.dateTime) / 1_000_000,
         ppi,
         appi,
         yourPoints,
@@ -62,31 +99,33 @@ export function extractPlayerApaMatches(matches: ApiMatch[], playerName: string)
       });
     }
 
+    // Official APA Match Logs
     if (match.officialApaMatchLogData) {
       const data = match.officialApaMatchLogData;
       const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
       const appiResult = computeOfficialApaAppiWithContext(match, matches);
 
-      // Parse numeric values, ensuring clean numbers or null (never NaN or strings)
-      const myScore = parseInt(data.myScore, 10);
-      const theirScore = parseInt(data.theirScore, 10);
-      const defensiveShots = parseInt(data.defensiveShots, 10);
+      // Clean each numeric field independently - parse and validate, never allow NaN or strings
+      const myScoreParsed = parseInt(data.myScore, 10);
+      const yourPoints = isFinite(myScoreParsed) && myScoreParsed >= 0 ? myScoreParsed : null;
 
-      const yourPoints = !isNaN(myScore) && myScore >= 0 ? myScore : null;
-      const opponentPoints = !isNaN(theirScore) && theirScore >= 0 ? theirScore : null;
-      const defShots = !isNaN(defensiveShots) && defensiveShots >= 0 ? defensiveShots : null;
+      const theirScoreParsed = parseInt(data.theirScore, 10);
+      const opponentPoints = isFinite(theirScoreParsed) && theirScoreParsed >= 0 ? theirScoreParsed : null;
 
-      // Accept computed PPI/aPPI whenever they are finite numbers, regardless of isValid flag
+      const defensiveShotsParsed = parseInt(data.defensiveShots, 10);
+      const defensiveShots = isFinite(defensiveShotsParsed) && defensiveShotsParsed >= 0 ? defensiveShotsParsed : null;
+
+      // Accept computed PPI/aPPI whenever they are finite numbers
       const ppi = typeof ppiResult.ppi === 'number' && isFinite(ppiResult.ppi) ? ppiResult.ppi : null;
       const appi = typeof appiResult.appi === 'number' && isFinite(appiResult.appi) ? appiResult.appi : null;
 
       dataPoints.push({
-        dateTime: match.dateTime,
+        timestamp: Number(match.dateTime) / 1_000_000,
         ppi,
         appi,
         yourPoints,
         opponentPoints,
-        defensiveShots: defShots,
+        defensiveShots,
         didWin: data.didWin,
         officialApaMatchLogData: {
           date: data.date,

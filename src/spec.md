@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix Stats → Official APA charts so each series renders independently when valid data exists, and ensure clear legends are shown.
+**Goal:** Fix the Official APA Performance Charts so they render reliably (not blank) and add console-only debug taps showing the final per-series data passed into each chart line.
 
 **Planned changes:**
-- Update the Official APA → PPI Trend chart to build two independent series datasets: one filtered to numeric PPI points and one filtered to numeric aPPI points, so missing values in one series never prevent the other from rendering.
-- Update the Official APA → Match Results chart to build three independent series datasets: Your Points-only, Opponent Points-only, and Defensive Shots-only, so missing values in one series never prevent the others from rendering.
-- Ensure both Official APA charts display visible legends with exactly these labels: “PPI”, “aPPI”, “Your Points”, “Opponent Points”, “Defensive Shots”, matching the rendered line colors/markers.
-- Keep effective match date as the x-axis basis (existing getEffectiveMatchTimestamp behavior) and harden numeric parsing/coercion in `extractPlayerApaMatches(...)` so chart-consumed values are numbers when valid and null otherwise (avoiding NaN/runtime errors).
+- Update `frontend/src/components/players/ApaAggregateCharts.tsx` to stop using the current merged `dateMap` / single-dataset approach for chart data.
+- Build five independent per-series datasets (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`), each containing only points with a valid x-axis date and a valid numeric y-value for that specific metric.
+- Render each metric as its own `<Line>` so missing/invalid values in one metric do not suppress other lines; keep existing chart sections and English legend labels (PPI, aPPI, Your Points, Opponent Points, Defensive Shots).
+- Add console-only debug logs in `frontend/src/components/players/ApaAggregateCharts.tsx` immediately before each series array is passed into its corresponding `<Line>`; do not add any on-screen debug UI and do not change existing debug logging in `frontend/src/lib/apa/apaAggregateStats.ts`.
 
-**User-visible outcome:** On Stats → Official APA, the PPI Trend and Match Results charts reliably plot any available valid datapoints (even when other fields are missing) and show clear legends for the displayed lines.
+**User-visible outcome:** The Official APA Performance Charts no longer appear fully blank when at least one metric has valid data, and developers can inspect the exact per-series arrays in the browser console right before they are rendered.

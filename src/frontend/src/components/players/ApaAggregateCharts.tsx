@@ -1,221 +1,178 @@
+import { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { ApaMatchDataPoint } from '../../lib/apa/apaAggregateStats';
-import { computeBest10Of20Average } from '../../lib/apa/apaAggregateStats';
-import { getEffectiveMatchTimestamp } from '../../lib/matches/effectiveMatchDate';
+import type { ApaAggregateDataPoint } from '../../lib/apa/apaAggregateStats';
 
 interface ApaAggregateChartsProps {
-  dataPoints: ApaMatchDataPoint[];
+  dataPoints: ApaAggregateDataPoint[];
   playerName: string;
 }
 
 export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggregateChartsProps) {
+  console.log('APA RAW DATAPOINTS', dataPoints);
+
+  const sortedDataPoints = useMemo(() => {
+    return [...dataPoints].sort((a, b) => a.timestamp - b.timestamp);
+  }, [dataPoints]);
+
+  // Build five independent series arrays
+  const ppiSeries = useMemo(() => {
+    return sortedDataPoints
+      .filter((dp) => typeof dp.ppi === 'number' && isFinite(dp.ppi))
+      .map((dp) => ({
+        date: new Date(dp.timestamp).toLocaleDateString(),
+        ppi: dp.ppi,
+      }));
+  }, [sortedDataPoints]);
+
+  const appiSeries = useMemo(() => {
+    return sortedDataPoints
+      .filter((dp) => typeof dp.appi === 'number' && isFinite(dp.appi))
+      .map((dp) => ({
+        date: new Date(dp.timestamp).toLocaleDateString(),
+        appi: dp.appi,
+      }));
+  }, [sortedDataPoints]);
+
+  const yourPointsSeries = useMemo(() => {
+    return sortedDataPoints
+      .filter((dp) => typeof dp.yourPoints === 'number' && isFinite(dp.yourPoints))
+      .map((dp) => ({
+        date: new Date(dp.timestamp).toLocaleDateString(),
+        yourPoints: dp.yourPoints,
+      }));
+  }, [sortedDataPoints]);
+
+  const opponentPointsSeries = useMemo(() => {
+    return sortedDataPoints
+      .filter((dp) => typeof dp.opponentPoints === 'number' && isFinite(dp.opponentPoints))
+      .map((dp) => ({
+        date: new Date(dp.timestamp).toLocaleDateString(),
+        opponentPoints: dp.opponentPoints,
+      }));
+  }, [sortedDataPoints]);
+
+  const defensiveShotsSeries = useMemo(() => {
+    return sortedDataPoints
+      .filter((dp) => typeof dp.defensiveShots === 'number' && isFinite(dp.defensiveShots))
+      .map((dp) => ({
+        date: new Date(dp.timestamp).toLocaleDateString(),
+        defensiveShots: dp.defensiveShots,
+      }));
+  }, [sortedDataPoints]);
+
+  // Debug taps: log final series arrays right before they're fed into LineChart
+  console.log('PPI SERIES (final):', ppiSeries);
+  console.log('APPI SERIES (final):', appiSeries);
+  console.log('YOUR POINTS SERIES (final):', yourPointsSeries);
+  console.log('OPPONENT POINTS SERIES (final):', opponentPointsSeries);
+  console.log('DEFENSIVE SHOTS SERIES (final):', defensiveShotsSeries);
+
   if (dataPoints.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-muted-foreground">No data available for charts</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>APA Performance Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No APA match data available for {playerName}.</p>
+        </CardContent>
+      </Card>
     );
   }
 
-  const sortedDataPoints = [...dataPoints].sort((a, b) => {
-    const aTime = getEffectiveMatchTimestamp({ dateTime: a.dateTime, officialApaMatchLogData: a.officialApaMatchLogData } as any);
-    const bTime = getEffectiveMatchTimestamp({ dateTime: b.dateTime, officialApaMatchLogData: b.officialApaMatchLogData } as any);
-    return aTime - bTime;
+  // Combine all series for unified x-axis (all unique dates)
+  const allDates = Array.from(
+    new Set([
+      ...ppiSeries.map((d) => d.date),
+      ...appiSeries.map((d) => d.date),
+      ...yourPointsSeries.map((d) => d.date),
+      ...opponentPointsSeries.map((d) => d.date),
+      ...defensiveShotsSeries.map((d) => d.date),
+    ])
+  ).sort();
+
+  // Build unified datasets for each chart
+  const ppiAppiChartData = allDates.map((date) => {
+    const ppiPoint = ppiSeries.find((d) => d.date === date);
+    const appiPoint = appiSeries.find((d) => d.date === date);
+    return {
+      date,
+      ppi: ppiPoint?.ppi,
+      appi: appiPoint?.appi,
+    };
   });
 
-  // Build separate filtered datasets for PPI Trend chart
-  const ppiList = sortedDataPoints
-    .map((dp, index) => {
-      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
-      const date = new Date(timestamp);
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
-      const ppiValue = dp.ppi;
-      const ppi = typeof ppiValue === 'number' && isFinite(ppiValue) ? ppiValue : null;
-
-      return {
-        index: index + 1,
-        date: dateStr,
-        ppi,
-      };
-    })
-    .filter(row => row.ppi !== null);
-
-  const appiList = sortedDataPoints
-    .map((dp, index) => {
-      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
-      const date = new Date(timestamp);
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
-      const appiValue = dp.appi;
-      const appi = typeof appiValue === 'number' && isFinite(appiValue) ? appiValue : null;
-
-      return {
-        index: index + 1,
-        date: dateStr,
-        appi,
-      };
-    })
-    .filter(row => row.appi !== null);
-
-  // Build separate filtered datasets for Match Results chart
-  const yourPointsList = sortedDataPoints
-    .map((dp, index) => {
-      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
-      const date = new Date(timestamp);
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
-      const yourPointsValue = dp.yourPoints;
-      const yourPoints = typeof yourPointsValue === 'number' && isFinite(yourPointsValue) ? yourPointsValue : null;
-
-      return {
-        index: index + 1,
-        date: dateStr,
-        yourPoints,
-      };
-    })
-    .filter(row => row.yourPoints !== null);
-
-  const opponentPointsList = sortedDataPoints
-    .map((dp, index) => {
-      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
-      const date = new Date(timestamp);
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
-      const opponentPointsValue = dp.opponentPoints;
-      const opponentPoints = typeof opponentPointsValue === 'number' && isFinite(opponentPointsValue) ? opponentPointsValue : null;
-
-      return {
-        index: index + 1,
-        date: dateStr,
-        opponentPoints,
-      };
-    })
-    .filter(row => row.opponentPoints !== null);
-
-  const defensiveShotsList = sortedDataPoints
-    .map((dp, index) => {
-      const timestamp = getEffectiveMatchTimestamp({ dateTime: dp.dateTime, officialApaMatchLogData: dp.officialApaMatchLogData } as any);
-      const date = new Date(timestamp);
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
-      const defensiveShotsValue = dp.defensiveShots;
-      const defensiveShots = typeof defensiveShotsValue === 'number' && isFinite(defensiveShotsValue) ? defensiveShotsValue : null;
-
-      return {
-        index: index + 1,
-        date: dateStr,
-        defensiveShots,
-      };
-    })
-    .filter(row => row.defensiveShots !== null);
-
-  const best10PpiValues = sortedDataPoints.map(dp => dp.ppi);
-  const best10Ppi = computeBest10Of20Average(best10PpiValues);
-
-  const best10AppiValues = sortedDataPoints.map(dp => dp.appi);
-  const best10Appi = computeBest10Of20Average(best10AppiValues);
-
-  const hasPpiTrendData = ppiList.length > 0 || appiList.length > 0;
-  const hasMatchResultsData = yourPointsList.length > 0 || opponentPointsList.length > 0 || defensiveShotsList.length > 0;
+  const matchResultsChartData = allDates.map((date) => {
+    const yourPoint = yourPointsSeries.find((d) => d.date === date);
+    const oppPoint = opponentPointsSeries.find((d) => d.date === date);
+    const defPoint = defensiveShotsSeries.find((d) => d.date === date);
+    return {
+      date,
+      yourPoints: yourPoint?.yourPoints,
+      opponentPoints: oppPoint?.opponentPoints,
+      defensiveShots: defPoint?.defensiveShots,
+    };
+  });
 
   return (
-    <div className="space-y-8">
-      {hasPpiTrendData && (
-        <div>
-          <h3 className="mb-4 text-lg font-semibold">PPI Trend</h3>
+    <div className="space-y-6" data-apa-aggregate-root>
+      <Card>
+        <CardHeader>
+          <CardTitle>PPI & aPPI Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart>
+            <LineChart data={ppiAppiChartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" type="category" allowDuplicatedCategory={false} />
-              <YAxis domain={[0, 'auto']} />
+              <XAxis dataKey="date" />
+              <YAxis />
               <Tooltip />
               <Legend />
-              {ppiList.length > 0 && (
-                <Line 
-                  data={ppiList}
-                  type="monotone" 
-                  dataKey="ppi" 
-                  stroke="hsl(var(--primary))" 
-                  name="PPI" 
-                  strokeWidth={2} 
-                  dot={{ r: 4 }} 
-                />
-              )}
-              {appiList.length > 0 && (
-                <Line 
-                  data={appiList}
-                  type="monotone" 
-                  dataKey="appi" 
-                  stroke="hsl(var(--chart-2))" 
-                  name="aPPI" 
-                  strokeWidth={2} 
-                  dot={{ r: 4 }} 
-                />
-              )}
+              <Line type="monotone" dataKey="ppi" name="PPI" stroke="hsl(var(--chart-1))" connectNulls={false} />
+              <Line type="monotone" dataKey="appi" name="aPPI" stroke="hsl(var(--chart-2))" connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
-          {best10Ppi !== null && best10Appi !== null && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Best 10 of last 20: PPI {best10Ppi.toFixed(2)} | aPPI {best10Appi.toFixed(2)}
-            </p>
-          )}
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {hasMatchResultsData && (
-        <div>
-          <h3 className="mb-4 text-lg font-semibold">Match Results</h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>Match Results</CardTitle>
+        </CardHeader>
+        <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart>
+            <LineChart data={matchResultsChartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" type="category" allowDuplicatedCategory={false} />
-              <YAxis domain={[0, 'auto']} />
+              <XAxis dataKey="date" />
+              <YAxis />
               <Tooltip />
               <Legend />
-              {yourPointsList.length > 0 && (
-                <Line 
-                  data={yourPointsList}
-                  type="monotone" 
-                  dataKey="yourPoints" 
-                  stroke="hsl(var(--primary))" 
-                  name="Your Points" 
-                  strokeWidth={2} 
-                  dot={{ r: 4 }} 
-                />
-              )}
-              {opponentPointsList.length > 0 && (
-                <Line 
-                  data={opponentPointsList}
-                  type="monotone" 
-                  dataKey="opponentPoints" 
-                  stroke="hsl(var(--chart-2))" 
-                  name="Opponent Points" 
-                  strokeWidth={2} 
-                  dot={{ r: 4 }} 
-                />
-              )}
-              {defensiveShotsList.length > 0 && (
-                <Line 
-                  data={defensiveShotsList}
-                  type="monotone" 
-                  dataKey="defensiveShots" 
-                  stroke="hsl(var(--chart-3))" 
-                  name="Defensive Shots" 
-                  strokeWidth={2} 
-                  dot={{ r: 4 }} 
-                />
-              )}
+              <Line
+                type="monotone"
+                dataKey="yourPoints"
+                name="Your Points"
+                stroke="hsl(var(--chart-3))"
+                connectNulls={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="opponentPoints"
+                name="Opponent Points"
+                stroke="hsl(var(--chart-4))"
+                connectNulls={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="defensiveShots"
+                name="Defensive Shots"
+                stroke="hsl(var(--chart-5))"
+                connectNulls={false}
+              />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      )}
-
-      {!hasPpiTrendData && !hasMatchResultsData && (
-        <div className="py-12 text-center">
-          <p className="text-muted-foreground">No valid chart data available</p>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, User, History } from 'lucide-react';
-import { useGetAllMatches, useGetCallerUserProfile, useGetCurrentObjectBallCount } from '../../hooks/useQueries';
+import { useGetAllMatches, useGetCallerUserProfile, useGetAgLevelIndex } from '../../hooks/useQueries';
 import ApaAggregateCharts from '../../components/players/ApaAggregateCharts';
 import StraightShotTrendChart from '../../components/straight-shot/StraightShotTrendChart';
 import StraightShotHistogram from '../../components/straight-shot/StraightShotHistogram';
@@ -15,12 +15,13 @@ import { computeAcceptingGiftsStats } from '../../lib/stats/acceptingGiftsStats'
 import { computeAcceptingGiftsPerformanceByBallCount } from '../../lib/stats/acceptingGiftsPerformanceByBallCount';
 import { getPlayerStatsRoute } from '../../utils/playerRoutes';
 import { setNavigationOrigin } from '../../utils/urlParams';
+import { ACCEPTING_GIFTS_LEVELS } from '../../lib/accepting-gifts/acceptingGiftsLevels';
 
 export default function StatsPage() {
   const navigate = useNavigate();
   const { data: userProfile } = useGetCallerUserProfile();
   const { data: allMatches, isLoading } = useGetAllMatches();
-  const { data: currentBallCount } = useGetCurrentObjectBallCount();
+  const { data: agLevelIndex } = useGetAgLevelIndex();
 
   const myName = userProfile?.name || '';
 
@@ -44,7 +45,8 @@ export default function StatsPage() {
     ? extractPlayerApaMatches(allMatches, myName)
     : [];
 
-  const currentObjectBalls = currentBallCount ? Number(currentBallCount) : 2;
+  const currentLevelIndex = agLevelIndex ? Number(agLevelIndex) : 0;
+  const currentLevel = ACCEPTING_GIFTS_LEVELS[currentLevelIndex];
 
   const handleNavigateToPlayerAggregate = () => {
     setNavigationOrigin('stats');
@@ -58,7 +60,15 @@ export default function StatsPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6 p-4">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+          <h1 className="text-3xl font-bold">Stats</h1>
+          <div className="w-24" />
+        </div>
         <Card>
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground">Loading stats...</p>
@@ -69,297 +79,230 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4">
       <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => navigate({ to: '/' })}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>
-        <h1 className="text-2xl font-bold">My Stats</h1>
+        <h1 className="text-3xl font-bold">Stats</h1>
         <div className="w-24" />
       </div>
 
-      {myName && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <User className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Viewing stats for</p>
-                <p className="font-semibold">{myName}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNavigateToPlayerAggregate}
-              >
-                View Player Aggregate Stats
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNavigateToHistory}
-                className="gap-2"
-              >
-                <History className="h-4 w-4" />
-                View Match History
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="official" className="w-full">
+      <Tabs defaultValue="official-apa" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="official">Official APA</TabsTrigger>
-          <TabsTrigger value="straightshot">Straight Shot</TabsTrigger>
-          <TabsTrigger value="acceptinggifts">Accepting Gifts</TabsTrigger>
+          <TabsTrigger value="official-apa">Official APA</TabsTrigger>
+          <TabsTrigger value="straight-shot">Straight Shot</TabsTrigger>
+          <TabsTrigger value="accepting-gifts">Accepting Gifts</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="official" className="space-y-6">
-          {officialApaStats?.hasData ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Total Matches
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{officialApaStats.totalMatches}</div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Official APA logs
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Win Rate
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {officialApaStats.winRate !== null ? (
-                      <>
-                        <div className="text-3xl font-bold">
-                          {officialApaStats.winRate.toFixed(1)}%
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {officialApaStats.wins} wins of {officialApaStats.totalKnownOutcome} known
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-3xl font-bold text-muted-foreground">—</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          No matches with known outcome
-                        </p>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Average PPI
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {officialApaStats.averagePpi !== null ? (
-                      <>
-                        <div className="text-3xl font-bold">
-                          {officialApaStats.averagePpi.toFixed(2)}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Points per inning
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-3xl font-bold text-muted-foreground">—</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          No valid PPI data
-                        </p>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>APA Performance Charts</CardTitle>
-                  <CardDescription>
-                    Combined view of all APA matches (Practice + Official)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {myApaDataPoints.length > 0 ? (
-                    <ApaAggregateCharts dataPoints={myApaDataPoints} playerName={myName} />
-                  ) : (
-                    <div className="py-12 text-center">
-                      <p className="text-muted-foreground">
-                        No APA match data available for charts
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          ) : (
+        <TabsContent value="official-apa" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  No Official APA match data available. Log your first match to see stats.
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {officialApaStats?.winRate !== null && officialApaStats?.winRate !== undefined
+                    ? `${officialApaStats.winRate.toFixed(1)}%`
+                    : '—'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Last 20 matches
                 </p>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Average PPI</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {officialApaStats?.averagePpi !== null && officialApaStats?.averagePpi !== undefined
+                    ? officialApaStats.averagePpi.toFixed(2)
+                    : '—'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  All matches
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Average aPPI</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {officialApaStats?.averageAppi !== null && officialApaStats?.averageAppi !== undefined
+                    ? officialApaStats.averageAppi.toFixed(2)
+                    : '—'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  All matches
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Total Matches</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {officialApaStats?.totalMatches ?? 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Official APA logs
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {myApaDataPoints.length > 0 ? (
+            <ApaAggregateCharts dataPoints={myApaDataPoints} playerName={myName} />
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">No APA match data available yet.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {myName && (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={handleNavigateToPlayerAggregate} className="gap-2">
+                <User className="h-4 w-4" />
+                View Detailed Player Stats
+              </Button>
+            </div>
           )}
         </TabsContent>
 
-        <TabsContent value="straightshot" className="space-y-6">
-          {straightShotStats?.hasData ? (
+        <TabsContent value="straight-shot" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {straightShotStats?.totalSessions ?? 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Last 20 Average</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {straightShotStats?.rollingAverage !== null && straightShotStats?.rollingAverage !== undefined
+                    ? straightShotStats.rollingAverage.toFixed(1)
+                    : '—'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Lifetime: {straightShotStats?.lifetimeAverage !== null && straightShotStats?.lifetimeAverage !== undefined
+                    ? straightShotStats.lifetimeAverage.toFixed(1)
+                    : '—'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Best Session</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {straightShotStats?.lowestShotCount ?? '—'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {straightShotStats?.lowestShotDate || 'No data'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {straightShotStats && straightShotStats.trendData.length > 0 ? (
             <>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Total Sessions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{straightShotStats.totalSessions}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Last 20 Average
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {straightShotStats.rollingAverage !== null ? (
-                      <>
-                        <div className="text-3xl font-bold">
-                          {straightShotStats.rollingAverage.toFixed(1)}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Lifetime: {straightShotStats.lifetimeAverage !== null ? straightShotStats.lifetimeAverage.toFixed(1) : '—'}
-                        </p>
-                      </>
-                    ) : (
-                      <div className="text-3xl font-bold text-muted-foreground">—</div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Lowest Shot Count
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {straightShotStats.lowestShotCount !== null ? (
-                      <>
-                        <div className="text-3xl font-bold">{straightShotStats.lowestShotCount}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {straightShotStats.lowestShotDate}
-                        </p>
-                      </>
-                    ) : (
-                      <div className="text-3xl font-bold text-muted-foreground">—</div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
               <StraightShotTrendChart trendData={straightShotStats.trendData} />
               <StraightShotHistogram shotCounts={straightShotStats.histogramData} />
             </>
           ) : (
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  No Straight Shot data available. Complete your first session to see stats.
-                </p>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">No Straight Shot data available yet.</p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="acceptinggifts" className="space-y-6">
-          {acceptingGiftsStats?.hasData ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Total Sessions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{acceptingGiftsStats.totalSessions}</div>
-                  </CardContent>
-                </Card>
+        <TabsContent value="accepting-gifts" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {acceptingGiftsStats?.totalSessions ?? 0}
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Current Ball Count
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{currentObjectBalls}</div>
-                  </CardContent>
-                </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Current Level</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {currentLevel.label}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {currentLevel.objectBallCount} balls, {currentLevel.gameType}
+                </p>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Rolling Average (Last 20)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {acceptingGiftsStats.rollingAverage !== null ? (
-                      <div className="text-3xl font-bold">
-                        {acceptingGiftsStats.rollingAverage.toFixed(1)}
-                      </div>
-                    ) : (
-                      <div className="text-3xl font-bold text-muted-foreground">—</div>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Ending ball count
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Rolling Average</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {acceptingGiftsStats?.rollingAverage !== null && acceptingGiftsStats?.rollingAverage !== undefined
+                    ? acceptingGiftsStats.rollingAverage.toFixed(1)
+                    : '—'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Last 20 sessions
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-              {acceptingGiftsPerformance && acceptingGiftsPerformance.rows.length > 0 && (
-                <AcceptingGiftsPerformanceByBallCountTable rows={acceptingGiftsPerformance.rows} />
-              )}
-            </>
+          {acceptingGiftsPerformance && acceptingGiftsPerformance.rows.length > 0 ? (
+            <AcceptingGiftsPerformanceByBallCountTable rows={acceptingGiftsPerformance.rows} />
           ) : (
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  No Accepting Gifts data available. Complete your first session to see stats.
-                </p>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">No Accepting Gifts data available yet.</p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
       </Tabs>
+
+      <div className="flex justify-center pt-4">
+        <Button variant="outline" onClick={handleNavigateToHistory} className="gap-2">
+          <History className="h-4 w-4" />
+          View Match History
+        </Button>
+      </div>
     </div>
   );
 }

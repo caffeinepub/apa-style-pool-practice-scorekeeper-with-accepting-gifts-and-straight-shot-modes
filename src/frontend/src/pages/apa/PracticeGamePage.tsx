@@ -200,23 +200,24 @@ export default function PracticeGamePage() {
         player2Target: gameState.player2Target,
       });
 
+      const player1PPI = calculatePPI(finalPlayer1Points, gameState.player1Innings);
+      const player2PPI = calculatePPI(finalPlayer2Points, gameState.player2Innings);
+
       const { matchId, matchRecord } = buildApaNineBallMatch({
-        player1: gameState.player1,
-        player2: gameState.player2,
-        player1SL: gameState.player1SL,
-        player2SL: gameState.player2SL,
-        player1Target: gameState.player1Target,
-        player2Target: gameState.player2Target,
-        player1Points: finalPlayer1Points,
-        player2Points: finalPlayer2Points,
-        player1Innings: gameState.player1Innings,
-        player2Innings: gameState.player2Innings,
-        player1DefensiveShots: gameState.player1DefensiveShots,
-        player2DefensiveShots: gameState.player2DefensiveShots,
-        racks: gameState.racks,
+        playerOneName: gameState.player1,
+        playerTwoName: gameState.player2,
+        playerOneSkillLevel: gameState.player1SL,
+        playerTwoSkillLevel: gameState.player2SL,
+        playerOneScore: finalPlayer1Points,
+        playerTwoScore: finalPlayer2Points,
+        playerOneDefensiveShots: gameState.player1DefensiveShots,
+        playerTwoDefensiveShots: gameState.player2DefensiveShots,
+        playerOneInnings: gameState.player1Innings,
+        playerTwoInnings: gameState.player2Innings,
+        playerOnePpi: player1PPI,
+        playerTwoPpi: player2PPI,
         notes: gameState.notes,
         identity,
-        matchOutcome,
       });
 
       await saveMatch.mutateAsync({ matchId, matchRecord });

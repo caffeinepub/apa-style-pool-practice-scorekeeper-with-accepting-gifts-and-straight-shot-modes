@@ -427,13 +427,13 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearHistory(): Promise<void>;
-    completeSession(finalCount: bigint): Promise<bigint>;
+    completeAgSession(finalLevel: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
+    getAgLevelIndex(): Promise<bigint>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getCurrentObjectBallCount(): Promise<bigint>;
     getInviteOnlyMode(): Promise<boolean>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
@@ -443,8 +443,8 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveMatch(matchId: string, matchRecord: MatchLogRecord): Promise<void>;
+    setAgLevelIndex(newLevel: bigint): Promise<bigint>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
-    setCurrentObjectBallCount(newCount: bigint): Promise<bigint>;
     setInviteOnlyMode(enabled: boolean): Promise<void>;
     updateMatch(matchId: string, updatedMatch: MatchLogRecord): Promise<void>;
 }
@@ -493,17 +493,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async completeSession(arg0: bigint): Promise<bigint> {
+    async completeAgSession(arg0: bigint): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.completeSession(arg0);
+                const result = await this.actor.completeAgSession(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.completeSession(arg0);
+            const result = await this.actor.completeAgSession(arg0);
             return result;
         }
     }
@@ -532,6 +532,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteMatch(arg0);
+            return result;
+        }
+    }
+    async getAgLevelIndex(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAgLevelIndex();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAgLevelIndex();
             return result;
         }
     }
@@ -575,20 +589,6 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getCallerUserRole();
             return from_candid_UserRole_n34(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCurrentObjectBallCount(): Promise<bigint> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCurrentObjectBallCount();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCurrentObjectBallCount();
-            return result;
         }
     }
     async getInviteOnlyMode(): Promise<boolean> {
@@ -717,6 +717,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async setAgLevelIndex(arg0: bigint): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setAgLevelIndex(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setAgLevelIndex(arg0);
+            return result;
+        }
+    }
     async setApproval(arg0: Principal, arg1: ApprovalStatus): Promise<void> {
         if (this.processError) {
             try {
@@ -728,20 +742,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n68(this._uploadFile, this._downloadFile, arg1));
-            return result;
-        }
-    }
-    async setCurrentObjectBallCount(arg0: bigint): Promise<bigint> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.setCurrentObjectBallCount(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.setCurrentObjectBallCount(arg0);
             return result;
         }
     }

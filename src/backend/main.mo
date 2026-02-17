@@ -12,9 +12,8 @@ import Text "mo:core/Text";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
+ // Include migration module
 
-
-// Data migration, always define migration module and use with clause, see documentation for details.
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -22,8 +21,10 @@ actor {
 
   let approvalState = UserApproval.initState(accessControlState);
 
-
   var inviteOnlyMode : Bool = false;
+
+  // Use a single value to represent the current Accepting Gifts level index (0-11)
+  let agLevelIndices = Map.empty<Principal, Nat>();
 
   func hasAccess(caller : Principal) : Bool {
     if (not inviteOnlyMode) {
@@ -419,10 +420,6 @@ actor {
     defensiveShots : Nat;
   };
 
-  type AGSession = {
-    currentObjectBallCount : Nat;
-  };
-
   type MatchOwnerPattern = {
     #practice : PracticeMatch;
     #acceptingGifts : AcceptingGiftsMatch;
@@ -433,7 +430,6 @@ actor {
   let matchHistory = Map.empty<Text, MatchLogRecord>();
   let apaBallState = Map.empty<Int, BallState>();
   var apaStartingPlayer : ?Text = null;
-  let agSessions = Map.empty<Principal, AGSession>();
 
   func getPointsToWin(skillLevel : Nat) : Nat {
     switch (skillLevel) {
@@ -983,39 +979,38 @@ actor {
     };
   };
 
-  func internalSetCurrentObjectBallCount(caller : Principal, newCount : Nat) : Nat {
-    if (newCount < 2 or newCount > 7) {
-      Runtime.trap("Invalid value. Only the range 2–7 is allowed");
-    };
-    let newState : AGSession = {
-      currentObjectBallCount = newCount;
-    };
-    agSessions.add(caller, newState);
-    newCount;
-  };
-
-  public shared ({ caller }) func setCurrentObjectBallCount(newCount : Nat) : async Nat {
-    if (not hasAccess(caller)) {
-      Runtime.trap("Unauthorized: Only approved users can modify state");
-    };
-    internalSetCurrentObjectBallCount(caller, newCount);
-  };
-
-  public shared ({ caller }) func completeSession(finalCount : Nat) : async Nat {
-    if (not hasAccess(caller)) {
-      Runtime.trap("Unauthorized: Only approved users can modify state");
-    };
-    internalSetCurrentObjectBallCount(caller, finalCount);
-  };
-
-  public query ({ caller }) func getCurrentObjectBallCount() : async Nat {
+  // Get the current Accepting Gifts level index (0-11)
+  public query ({ caller }) func getAgLevelIndex() : async Nat {
     if (not hasAccess(caller)) {
       Runtime.trap("Unauthorized: Only approved users can fetch state");
     };
-    switch (agSessions.get(caller)) {
-      case (null) { 2 };
-      case (?session) { session.currentObjectBallCount };
+    switch (agLevelIndices.get(caller)) {
+      case (null) { 0 }; // Default to level 0 (2+8 drill)
+      case (?level) { level };
     };
   };
-};
 
+  // Set the current Accepting Gifts level index (0-11)
+  public shared ({ caller }) func setAgLevelIndex(newLevel : Nat) : async Nat {
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can modify state");
+    };
+    if (newLevel >= 12) {
+      Runtime.trap("Invalid value. Only level indices 0-11 are allowed");
+    };
+    agLevelIndices.add(caller, newLevel);
+    newLevel;
+  };
+
+  // Complete a session and update the Accepting Gifts level index
+  public shared ({ caller }) func completeAgSession(finalLevel : Nat) : async Nat {
+    if (not hasAccess(caller)) {
+      Runtime.trap("Unauthorized: Only approved users can modify state");
+    };
+    if (finalLevel >= 12) {
+      Runtime.trap("Invalid value. Only level indices 0-11 are allowed");
+    };
+    agLevelIndices.add(caller, finalLevel);
+    finalLevel;
+  };
+};

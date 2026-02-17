@@ -1,58 +1,51 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function AcceptingGiftsRulesPanel() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Accepting Gifts Rules</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="space-y-4 pt-6">
         <div>
           <h3 className="mb-2 font-semibold">Objective</h3>
-          <p className="text-muted-foreground">
-            Practice "accepting gifts" from your opponent in 8-ball matches, when your opponent 
-            misses the 8 or one of their last balls. This drill was introduced by Andreas Huber, 
-            a professional pool player and instructor.
+          <p className="text-sm text-muted-foreground">
+            Practice running out racks with a fixed number of object balls. Progress through 12 levels from 2+8 to 7+9.
           </p>
         </div>
 
         <div>
-          <h3 className="mb-2 font-semibold">Setup</h3>
-          <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-            <li>Start with a configurable number of object balls (2-7, default 3) plus the 8-ball</li>
-            <li>Rack the balls in a diamond or triangle formation</li>
-            <li>You play against a "ghost" opponent in a race to 7 sets</li>
-          </ul>
+          <h3 className="mb-2 font-semibold">Level System</h3>
+          <p className="text-sm text-muted-foreground">
+            The drill uses a fixed 12-level progression: 2+8 → 3+8 → 2+9 → 3+9 → 4+8 → 4+9 → 5+8 → 5+9 → 6+8 → 6+9 → 7+8 → 7+9.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            "+8" levels: run balls in any order; the 8-ball must be called to finish.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            "+9" levels: run balls in strict ascending order; the 9-ball ends the rack.
+          </p>
         </div>
 
         <div>
-          <h3 className="mb-2 font-semibold">Scoring</h3>
-          <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-            <li>Each set is a race to 7 points</li>
-            <li>Run out all balls successfully = 1 point for you</li>
-            <li>Miss or fail to run out = 1 point for the ghost</li>
-            <li>First to 7 points wins the set</li>
-          </ul>
+          <h3 className="mb-2 font-semibold">Match Format</h3>
+          <p className="text-sm text-muted-foreground">
+            Each match is a race to 7 against a ghost opponent. Each rack is one attempt. If you run out all balls, you get the point. Otherwise, the ghost gets the point.
+          </p>
         </div>
 
         <div>
-          <h3 className="mb-2 font-semibold">Ball Count Progression</h3>
-          <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-            <li>Win a set: Add 1 object ball for the next set</li>
-            <li>Lose a set: Remove 1 object ball for the next set</li>
-            <li>Ball count is clamped between 2 and 7 object balls</li>
-            <li>Your progress is saved and continues across sessions</li>
-          </ul>
+          <h3 className="mb-2 font-semibold">Progression Rules</h3>
+          <p className="text-sm text-muted-foreground">
+            <strong>Win:</strong> Move up to the next level in the sequence.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <strong>Loss:</strong> If you skipped ahead, stay at your baseline level. If you played at your baseline level, move down one level.
+          </p>
         </div>
 
         <div>
-          <h3 className="mb-2 font-semibold">Tips</h3>
-          <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-            <li>Focus on position play and pattern recognition</li>
-            <li>Practice different break patterns and layouts</li>
-            <li>Track your progress over multiple sessions</li>
-            <li>Challenge yourself to maintain higher ball counts</li>
-          </ul>
+          <h3 className="mb-2 font-semibold">Progress Tracking</h3>
+          <p className="text-sm text-muted-foreground">
+            Your current level is saved across sessions. You can skip ahead to any level when starting a new match.
+          </p>
         </div>
       </CardContent>
     </Card>

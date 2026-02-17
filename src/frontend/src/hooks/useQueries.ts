@@ -311,59 +311,68 @@ export function useAssignCallerUserRole() {
   });
 }
 
-export function useGetCurrentObjectBallCount() {
+/**
+ * Get the current Accepting Gifts baseline level index (0–11).
+ */
+export function useGetAgLevelIndex() {
   const { actor } = useActor();
 
   return useQuery<bigint>({
-    queryKey: ['currentObjectBallCount'],
+    queryKey: ['agLevelIndex'],
     queryFn: async () => {
-      if (!actor) return BigInt(2);
-      return actor.getCurrentObjectBallCount();
+      if (!actor) return BigInt(0);
+      return actor.getAgLevelIndex();
     },
     enabled: !!actor,
   });
 }
 
-export function useSetCurrentObjectBallCount() {
+/**
+ * Set the current Accepting Gifts baseline level index (0–11).
+ */
+export function useSetAgLevelIndex() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (newCount: bigint) => {
+    mutationFn: async (newLevel: bigint) => {
       if (!actor) {
         throw new Error('Backend connection not ready. Please wait and try again.');
       }
       try {
-        return await actor.setCurrentObjectBallCount(newCount);
+        return await actor.setAgLevelIndex(newLevel);
       } catch (error) {
         const errorText = extractErrorText(error);
-        throw new Error(`Failed to set ball count: ${errorText}`);
+        throw new Error(`Failed to set level index: ${errorText}`);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
+      queryClient.invalidateQueries({ queryKey: ['agLevelIndex'] });
     },
   });
 }
 
-export function useCompleteSession() {
+/**
+ * Complete an Accepting Gifts session and update the baseline level index.
+ */
+export function useCompleteAgSession() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (finalCount: bigint) => {
+    mutationFn: async (finalLevel: bigint) => {
       if (!actor) {
         throw new Error('Backend connection not ready. Please wait and try again.');
       }
       try {
-        return await actor.completeSession(finalCount);
+        return await actor.completeAgSession(finalLevel);
       } catch (error) {
         const errorText = extractErrorText(error);
         throw new Error(`Failed to complete session: ${errorText}`);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentObjectBallCount'] });
+      queryClient.invalidateQueries({ queryKey: ['agLevelIndex'] });
     },
   });
 }

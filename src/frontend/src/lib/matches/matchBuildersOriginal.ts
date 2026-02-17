@@ -1,81 +1,59 @@
-import { MatchLogRecord, MatchMode } from '../../backend';
 import type { Identity } from '@dfinity/agent';
-import type { RackData } from '../apa/apaScoring';
-import type { MatchOutcomeResult } from '../apa/apaPracticeMatchOutcome';
+import type { MatchLogRecord, Player } from '../../backend';
+import { MatchMode } from '../../backend';
+import { computeApaPracticeMatchOutcome } from '../apa/apaPracticeMatchOutcome';
 
-export function buildApaNineBallMatch({
-  player1,
-  player2,
-  player1SL,
-  player2SL,
-  player1Target,
-  player2Target,
-  player1Points,
-  player2Points,
-  player1Innings,
-  player2Innings,
-  player1DefensiveShots,
-  player2DefensiveShots,
-  racks,
-  notes,
-  identity,
-  matchOutcome,
-}: {
-  player1: string;
-  player2: string;
-  player1SL: number;
-  player2SL: number;
-  player1Target: number;
-  player2Target: number;
-  player1Points: number;
-  player2Points: number;
-  player1Innings: number;
-  player2Innings: number;
-  player1DefensiveShots: number;
-  player2DefensiveShots: number;
-  racks: RackData[];
+function generateUuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+export function buildApaNineBallMatch(params: {
+  playerOneName: string;
+  playerOneSkillLevel: number;
+  playerTwoName: string;
+  playerTwoSkillLevel: number;
+  playerOneScore: number;
+  playerTwoScore: number;
+  playerOneDefensiveShots: number;
+  playerTwoDefensiveShots: number;
+  playerOneInnings: number;
+  playerTwoInnings: number;
+  playerOnePpi: number;
+  playerTwoPpi: number;
   notes?: string;
   identity: Identity;
-  matchOutcome: MatchOutcomeResult;
+  existingMatchId?: string;
 }): { matchId: string; matchRecord: MatchLogRecord } {
-  const matchId = `apa-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  const dateTime = BigInt(Date.now() * 1_000_000);
+  const matchId = params.existingMatchId || generateUuid();
+  const principal = params.identity.getPrincipal();
 
-  const player1Won = matchOutcome.player1Won;
-  const player1PPI = player1Innings > 0 ? player1Points / player1Innings : 0;
-  const player2PPI = player2Innings > 0 ? player2Points / player2Innings : 0;
-
-  const player1Stats = {
-    playerId: identity.getPrincipal(),
-    skillLevel: BigInt(player1SL),
-    pointsNeeded: BigInt(player1Target),
-    defensiveShots: BigInt(player1DefensiveShots),
-    innings: BigInt(player1Innings),
-    ppi: player1PPI,
-    matchBehaviorPhase: 'completed',
-    racks: [],
-    totalScore: BigInt(player1Points),
-    winPercentage: player1Won ? 1.0 : 0.0,
-    isPlayerOfMatch: player1Won,
-    pointsWonConverted: BigInt(matchOutcome.player1MatchPoints),
-    pointsEarnedRunningTotal: BigInt(player1Points),
+  const playerOne: Player = {
+    id: principal,
+    name: params.playerOneName,
+    skillLevel: BigInt(params.playerOneSkillLevel),
   };
 
-  const player2Stats = {
-    playerId: identity.getPrincipal(),
-    skillLevel: BigInt(player2SL),
-    pointsNeeded: BigInt(player2Target),
-    defensiveShots: BigInt(player2DefensiveShots),
-    innings: BigInt(player2Innings),
-    ppi: player2PPI,
-    matchBehaviorPhase: 'completed',
-    racks: [],
-    totalScore: BigInt(player2Points),
-    winPercentage: player1Won ? 0.0 : 1.0,
-    isPlayerOfMatch: !player1Won,
-    pointsWonConverted: BigInt(matchOutcome.player2MatchPoints),
-    pointsEarnedRunningTotal: BigInt(player2Points),
+  const playerTwo: Player = {
+    id: principal,
+    name: params.playerTwoName,
+    skillLevel: BigInt(params.playerTwoSkillLevel),
   };
+
+  const playerOnePointsNeeded = getPointsToWin(params.playerOneSkillLevel);
+  const playerTwoPointsNeeded = getPointsToWin(params.playerTwoSkillLevel);
+
+  const outcome = computeApaPracticeMatchOutcome({
+    player1Points: params.playerOneScore,
+    player2Points: params.playerTwoScore,
+    player1SL: params.playerOneSkillLevel,
+    player2SL: params.playerTwoSkillLevel,
+    player1Target: playerOnePointsNeeded,
+    player2Target: playerTwoPointsNeeded,
+  });
 
   const matchRecord: MatchLogRecord = {
     __kind__: 'apaNineBall',
@@ -83,26 +61,46 @@ export function buildApaNineBallMatch({
       base: {
         matchId,
         mode: MatchMode.apaPractice,
-        dateTime,
-        players: [
-          {
-            id: identity.getPrincipal(),
-            name: player1,
-            skillLevel: BigInt(player1SL),
-          },
-          {
-            id: identity.getPrincipal(),
-            name: player2,
-            skillLevel: BigInt(player2SL),
-          },
-        ],
-        notes: notes || undefined,
-        owner: identity.getPrincipal(),
+        dateTime: BigInt(Date.now() * 1_000_000),
+        players: [playerOne, playerTwo],
+        notes: params.notes ? params.notes : undefined,
+        owner: principal,
       },
-      seasonType: 'practice',
-      matchType: 'singles',
-      playerStats: [player1Stats, player2Stats],
-      winner: identity.getPrincipal(),
+      seasonType: 'Practice',
+      matchType: '9-Ball',
+      playerStats: [
+        {
+          playerId: playerOne.id,
+          skillLevel: BigInt(params.playerOneSkillLevel),
+          pointsNeeded: BigInt(playerOnePointsNeeded),
+          defensiveShots: BigInt(params.playerOneDefensiveShots),
+          innings: BigInt(params.playerOneInnings),
+          ppi: params.playerOnePpi,
+          matchBehaviorPhase: 'completed',
+          racks: [],
+          totalScore: BigInt(params.playerOneScore),
+          winPercentage: 0,
+          isPlayerOfMatch: outcome.player1Won,
+          pointsWonConverted: BigInt(outcome.player1MatchPoints),
+          pointsEarnedRunningTotal: BigInt(params.playerOneScore),
+        },
+        {
+          playerId: playerTwo.id,
+          skillLevel: BigInt(params.playerTwoSkillLevel),
+          pointsNeeded: BigInt(playerTwoPointsNeeded),
+          defensiveShots: BigInt(params.playerTwoDefensiveShots),
+          innings: BigInt(params.playerTwoInnings),
+          ppi: params.playerTwoPpi,
+          matchBehaviorPhase: 'completed',
+          racks: [],
+          totalScore: BigInt(params.playerTwoScore),
+          winPercentage: 0,
+          isPlayerOfMatch: !outcome.player1Won,
+          pointsWonConverted: BigInt(outcome.player2MatchPoints),
+          pointsEarnedRunningTotal: BigInt(params.playerTwoScore),
+        },
+      ],
+      winner: outcome.player1Won ? playerOne.id : playerTwo.id,
       umpire: undefined,
       teamStats: [],
     },
@@ -111,19 +109,28 @@ export function buildApaNineBallMatch({
   return { matchId, matchRecord };
 }
 
-export function buildAcceptingGiftsMatch({
-  playerName,
-  notes,
-  startingObjectBallCount,
-  endingObjectBallCount,
-  totalAttempts,
-  setsCompleted,
-  finalSetScorePlayer,
-  finalSetScoreGhost,
-  completionStatus,
-  score,
-  identity,
-}: {
+function getPointsToWin(skillLevel: number): number {
+  switch (skillLevel) {
+    case 1:
+      return 14;
+    case 2:
+      return 19;
+    case 3:
+      return 25;
+    case 4:
+      return 31;
+    case 5:
+      return 38;
+    case 6:
+      return 46;
+    case 7:
+      return 55;
+    default:
+      return 1;
+  }
+}
+
+export function buildAcceptingGiftsMatch(params: {
   playerName: string;
   notes?: string;
   startingObjectBallCount: number;
@@ -136,8 +143,14 @@ export function buildAcceptingGiftsMatch({
   score: number;
   identity: Identity;
 }): { matchId: string; matchRecord: MatchLogRecord } {
-  const matchId = `ag-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  const dateTime = BigInt(Date.now() * 1_000_000);
+  const matchId = generateUuid();
+  const principal = params.identity.getPrincipal();
+
+  const player: Player = {
+    id: principal,
+    name: params.playerName,
+    skillLevel: undefined,
+  };
 
   const matchRecord: MatchLogRecord = {
     __kind__: 'acceptingGifts',
@@ -145,61 +158,40 @@ export function buildAcceptingGiftsMatch({
       base: {
         matchId,
         mode: MatchMode.acceptingGifts,
-        dateTime,
-        players: [
-          {
-            id: identity.getPrincipal(),
-            name: playerName,
-            skillLevel: undefined,
-          },
-        ],
-        notes: notes || undefined,
-        owner: identity.getPrincipal(),
+        dateTime: BigInt(Date.now() * 1_000_000),
+        players: [player],
+        notes: params.notes ? params.notes : undefined,
+        owner: principal,
       },
       rulesReference: 'Accepting Gifts Drill',
-      completionStatus,
-      score: BigInt(score),
-      startingObjectBallCount: BigInt(startingObjectBallCount),
-      endingObjectBallCount: BigInt(endingObjectBallCount),
-      totalAttempts: BigInt(totalAttempts),
-      setsCompleted: BigInt(setsCompleted),
-      finalSetScorePlayer: BigInt(finalSetScorePlayer),
-      finalSetScoreGhost: BigInt(finalSetScoreGhost),
+      completionStatus: params.completionStatus,
+      score: BigInt(params.score),
+      startingObjectBallCount: BigInt(params.startingObjectBallCount),
+      endingObjectBallCount: BigInt(params.endingObjectBallCount),
+      totalAttempts: BigInt(params.totalAttempts),
+      setsCompleted: BigInt(params.setsCompleted),
+      finalSetScorePlayer: BigInt(params.finalSetScorePlayer),
+      finalSetScoreGhost: BigInt(params.finalSetScoreGhost),
     },
   };
 
   return { matchId, matchRecord };
 }
 
-export function buildStraightShotMatch({
-  playerName,
-  notes,
-  strokes,
-  scratchStrokes,
-  shots,
-  ballsMade,
-  firstShotScore,
-  secondShotScore,
-  thirdShotScore,
-  fourthShotScore,
-  totalScore,
-  identity,
-}: {
+export function buildStraightShotMatch(params: {
   playerName: string;
   notes?: string;
-  strokes: number[];
-  scratchStrokes: number[];
-  shots: number;
-  ballsMade: number;
-  firstShotScore: number;
-  secondShotScore: number;
-  thirdShotScore: number;
-  fourthShotScore: number;
-  totalScore: number;
+  totalShots: number;
   identity: Identity;
 }): { matchId: string; matchRecord: MatchLogRecord } {
-  const matchId = `ss-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  const dateTime = BigInt(Date.now() * 1_000_000);
+  const matchId = generateUuid();
+  const principal = params.identity.getPrincipal();
+
+  const player: Player = {
+    id: principal,
+    name: params.playerName,
+    skillLevel: undefined,
+  };
 
   const matchRecord: MatchLogRecord = {
     __kind__: 'straightShot',
@@ -207,28 +199,22 @@ export function buildStraightShotMatch({
       base: {
         matchId,
         mode: MatchMode.straightShot,
-        dateTime,
-        players: [
-          {
-            id: identity.getPrincipal(),
-            name: playerName,
-            skillLevel: undefined,
-          },
-        ],
-        notes: notes || undefined,
-        owner: identity.getPrincipal(),
+        dateTime: BigInt(Date.now() * 1_000_000),
+        players: [player],
+        notes: params.notes ? params.notes : undefined,
+        owner: principal,
       },
-      strokes: strokes.map((s) => BigInt(s)),
-      scratchStrokes: scratchStrokes.map((s) => BigInt(s)),
+      strokes: [BigInt(params.totalShots)],
+      scratchStrokes: [],
       time: undefined,
-      shots: BigInt(shots),
-      ballsMade: BigInt(ballsMade),
+      shots: BigInt(params.totalShots),
+      ballsMade: BigInt(0),
       score: {
-        firstShot: BigInt(firstShotScore),
-        secondShot: BigInt(secondShotScore),
-        thirdShot: BigInt(thirdShotScore),
-        fourthShot: BigInt(fourthShotScore),
-        total: BigInt(totalScore),
+        firstShot: BigInt(0),
+        secondShot: BigInt(0),
+        thirdShot: BigInt(0),
+        fourthShot: BigInt(0),
+        total: BigInt(params.totalShots),
       },
     },
   };

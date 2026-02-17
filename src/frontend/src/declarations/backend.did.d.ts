@@ -311,16 +311,16 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearHistory' : ActorMethod<[], undefined>,
-  'completeSession' : ActorMethod<[bigint], bigint>,
+  'completeAgSession' : ActorMethod<[bigint], bigint>,
   'computeAPASummary' : ActorMethod<
     [string, Array<BallState>],
     APADetailedInnningSummary
   >,
   'deleteMatch' : ActorMethod<[string], undefined>,
+  'getAgLevelIndex' : ActorMethod<[], bigint>,
   'getAllMatches' : ActorMethod<[], Array<ApiMatch>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getCurrentObjectBallCount' : ActorMethod<[], bigint>,
   'getInviteOnlyMode' : ActorMethod<[], boolean>,
   'getMatch' : ActorMethod<[string], [] | [ApiMatch]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
@@ -330,8 +330,8 @@ export interface _SERVICE {
   'requestApproval' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveMatch' : ActorMethod<[string, MatchLogRecord], undefined>,
+  'setAgLevelIndex' : ActorMethod<[bigint], bigint>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
-  'setCurrentObjectBallCount' : ActorMethod<[bigint], bigint>,
   'setInviteOnlyMode' : ActorMethod<[boolean], undefined>,
   'updateMatch' : ActorMethod<[string, MatchLogRecord], undefined>,
 }

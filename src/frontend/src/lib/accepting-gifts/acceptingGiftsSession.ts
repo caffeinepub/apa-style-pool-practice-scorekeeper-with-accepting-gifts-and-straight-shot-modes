@@ -1,8 +1,13 @@
-interface GameState {
+import { getLevelByIndex, getMaxAttemptForLevel } from './acceptingGiftsLevels';
+
+/**
+ * Accepting Gifts session state using the 12-level progression system.
+ */
+export interface GameState {
   playerName: string;
   notes?: string;
-  startingObjectBallCount: number;
-  currentObjectBallCount: number;
+  baselineLevelIndex: number; // Level index at match start (0–11)
+  levelPlayedIndex: number; // Level index selected for this match (0–11)
   playerSetScore: number;
   ghostSetScore: number;
   totalAttempts: number;
@@ -10,12 +15,15 @@ interface GameState {
   completed: boolean;
 }
 
-export function clampObjectBallCount(count: number): number {
-  return Math.max(2, Math.min(7, count));
-}
+/**
+ * Apply an attempt result to the game state.
+ * Player scores a point if attemptInput equals the max value for the current level.
+ * Otherwise, ghost scores a point.
+ */
+export function applyAttemptResult(state: GameState, attemptInput: number): GameState {
+  const maxForLevel = getMaxAttemptForLevel(state.levelPlayedIndex);
+  const playerScored = attemptInput === maxForLevel;
 
-export function applyAttemptResult(state: GameState, ballsCleared: number): GameState {
-  const playerScored = ballsCleared === 3;
   return {
     ...state,
     totalAttempts: state.totalAttempts + 1,
@@ -24,13 +32,14 @@ export function applyAttemptResult(state: GameState, ballsCleared: number): Game
   };
 }
 
-export function prepareNextSet(state: GameState, playerWonSet: boolean): GameState {
-  const adjustment = playerWonSet ? 1 : -1;
-  const nextObjectBallCount = clampObjectBallCount(state.currentObjectBallCount + adjustment);
-
+/**
+ * Prepare the next set after a set completes (race-to-7).
+ * This does NOT update the baseline level (that happens only on match save).
+ * It only resets the set scores and increments setsCompleted.
+ */
+export function prepareNextSet(state: GameState): GameState {
   return {
     ...state,
-    currentObjectBallCount: nextObjectBallCount,
     playerSetScore: 0,
     ghostSetScore: 0,
     setsCompleted: state.setsCompleted + 1,

@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T12:38:34.816Z",
+  "generatedAt": "2026-02-17T03:14:19.963Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-215",
-        "summary": "Update the Stats → Official APA tab chart rendering so the PPI Trend chart always renders when any Official/APA datapoints contain a valid numeric PPI or aPPI value by generating two separate chart datasets: (1) a PPI-only dataset containing only matches with numeric PPI, and (2) an aPPI-only dataset containing only matches with numeric aPPI. Do not allow missing values in one series to suppress rendering of the other series.",
+        "id": "REQ-233",
+        "summary": "Fix the Official APA Performance Charts so they render reliably (not blank) by removing the current merged `dateMap`/single-dataset approach in `frontend/src/components/players/ApaAggregateCharts.tsx` and instead building five fully independent per-series datasets (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Each series must include only entries that have (1) a valid x-axis date derived from the datapoint timestamp and (2) a valid numeric value for that specific series. Render each series as its own `<Line>` such that missing/invalid values for one metric never suppress the other lines. Preserve the existing chart sections and English legend labels: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/players/ApaAggregateCharts.tsx"
@@ -22,8 +22,8 @@
         ]
       },
       {
-        "id": "REQ-216",
-        "summary": "Update the Stats → Official APA tab Match Results chart rendering so each plotted series is built from its own filtered dataset: (1) Your Points-only dataset, (2) Opponent Points-only dataset, and (3) Defensive Shots-only dataset. Do not allow missing values in any one series to suppress rendering of the other series.",
+        "id": "REQ-234",
+        "summary": "Add console-only debug taps in `frontend/src/components/players/ApaAggregateCharts.tsx` immediately before the data is fed into each `<Line>` so it is possible to see the exact per-series arrays being passed to Recharts. Keep any existing debug tap(s) earlier in the pipeline (e.g., in `frontend/src/lib/apa/apaAggregateStats.ts`) unchanged, and do not add any on-screen debug UI.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/players/ApaAggregateCharts.tsx"
@@ -31,26 +31,6 @@
         "matchedFiles": [
           "frontend/src/components/players/ApaAggregateCharts.tsx"
         ]
-      },
-      {
-        "id": "REQ-217",
-        "summary": "Ensure both Official APA charts display a visible legend with exactly these English labels for the plotted lines: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/players/ApaAggregateCharts.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/players/ApaAggregateCharts.tsx"
-        ]
-      },
-      {
-        "id": "REQ-218",
-        "summary": "Keep `extractPlayerApaMatches(...)` producing clean numeric values (or null) for chart-consumed fields for both APA Practice and Official APA matches, and adjust any remaining parsing/coercion so values the user entered in the Official APA match log (scores and defensive shots) reliably reach the chart datasets as numbers when valid.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/lib/apa/apaAggregateStats.ts"
-        ],
-        "matchedFiles": []
       }
     ]
   },

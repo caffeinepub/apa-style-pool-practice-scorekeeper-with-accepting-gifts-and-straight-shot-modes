@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { useSaveMatch, useSetCurrentObjectBallCount } from '../../hooks/useQueries';
+import { useSaveMatch, useSetAgLevelIndex } from '../../hooks/useQueries';
 import { buildAcceptingGiftsMatch } from '../../lib/matches/matchBuilders';
-import { applyAttemptResult, prepareNextSet } from '../../lib/accepting-gifts/acceptingGiftsSession';
+import { applyAttemptResult, prepareNextSet, GameState } from '../../lib/accepting-gifts/acceptingGiftsSession';
+import { getLevelByIndex, getMaxAttemptForLevel, computeNextBaselineLevel } from '../../lib/accepting-gifts/acceptingGiftsLevels';
 import EndMatchDialog from '../../components/matches/EndMatchDialog';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useActor } from '../../hooks/useActor';
@@ -14,18 +15,7 @@ import { useActorRetry } from '../../hooks/useActorRetry';
 import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
 import { SESSION_KEYS } from '@/lib/session/inProgressSessions';
-
-interface GameState {
-  playerName: string;
-  notes?: string;
-  startingObjectBallCount: number;
-  currentObjectBallCount: number;
-  playerSetScore: number;
-  ghostSetScore: number;
-  totalAttempts: number;
-  setsCompleted: number;
-  completed: boolean;
-}
+import React from 'react';
 
 type GamePhase = 'playing' | 'setComplete';
 
@@ -35,7 +25,7 @@ export default function AcceptingGiftsGamePage() {
   const { actor } = useActor();
   const { retryConnection } = useActorRetry();
   const saveMatch = useSaveMatch();
-  const setCurrentObjectBallCount = useSetCurrentObjectBallCount();
+  const setAgLevelIndex = useSetAgLevelIndex();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [gamePhase, setGamePhase] = useState<GamePhase>('playing');
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -48,10 +38,10 @@ export default function AcceptingGiftsGamePage() {
       const migratedState: GameState = {
         playerName: parsed.playerName,
         notes: parsed.notes,
-        startingObjectBallCount: parsed.startingObjectBallCount,
-        currentObjectBallCount: parsed.currentObjectBallCount,
-        playerSetScore: parsed.playerSetScore ?? parsed.finalSetScorePlayer ?? 0,
-        ghostSetScore: parsed.ghostSetScore ?? parsed.finalSetScoreGhost ?? 0,
+        baselineLevelIndex: parsed.baselineLevelIndex ?? 0,
+        levelPlayedIndex: parsed.levelPlayedIndex ?? parsed.baselineLevelIndex ?? 0,
+        playerSetScore: parsed.playerSetScore ?? 0,
+        ghostSetScore: parsed.ghostSetScore ?? 0,
         totalAttempts: parsed.totalAttempts ?? 0,
         setsCompleted: parsed.setsCompleted ?? 0,
         completed: parsed.completed ?? false,
@@ -91,30 +81,32 @@ export default function AcceptingGiftsGamePage() {
     );
   }
 
-  const handleAttemptInput = (ballsCleared: number) => {
-    setGameState(prev => {
+  const currentLevel = getLevelByIndex(gameState.levelPlayedIndex);
+  const maxAttempt = getMaxAttemptForLevel(gameState.levelPlayedIndex);
+
+  const handleAttemptInput = (attemptInput: number) => {
+    setGameState((prev) => {
       if (!prev) return prev;
-      const updated = applyAttemptResult(prev, ballsCleared);
-      
+      const updated = applyAttemptResult(prev, attemptInput);
+
       if (updated.playerSetScore === 7 || updated.ghostSetScore === 7) {
         setGamePhase('setComplete');
       }
-      
+
       return updated;
     });
   };
 
   const handleStartNextSet = () => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev) return prev;
-      const playerWonSet = prev.playerSetScore === 7;
-      const nextSet = prepareNextSet(prev, playerWonSet);
+      const nextSet = prepareNextSet(prev);
       return nextSet;
     });
     setGamePhase('playing');
   };
 
-  const handleEndSession = async () => {
+  const handleSaveAndStartNext = async () => {
     if (!identity) {
       toast.error('Please log in to save sessions');
       return;
@@ -126,22 +118,83 @@ export default function AcceptingGiftsGamePage() {
     }
 
     try {
+      const playerWonMatch = gameState.playerSetScore === 7;
+      const nextBaselineIndex = computeNextBaselineLevel(
+        gameState.baselineLevelIndex,
+        gameState.levelPlayedIndex,
+        playerWonMatch
+      );
+
+      const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
+      const levelPlayed = getLevelByIndex(gameState.levelPlayedIndex);
+      const result = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
+      const noteSummary = `${levelPlayed.label} | ${baselineLevel.label} | ${result}`;
+
       const { matchId, matchRecord } = buildAcceptingGiftsMatch({
         playerName: gameState.playerName,
-        notes: gameState.notes,
-        startingObjectBallCount: gameState.startingObjectBallCount,
-        endingObjectBallCount: gameState.currentObjectBallCount,
+        notes: noteSummary + (gameState.notes ? `\n${gameState.notes}` : ''),
+        startingObjectBallCount: baselineLevel.objectBallCount,
+        endingObjectBallCount: levelPlayed.objectBallCount,
         totalAttempts: gameState.totalAttempts,
-        setsCompleted: gameState.setsCompleted,
+        setsCompleted: gameState.setsCompleted + 1,
         finalSetScorePlayer: gameState.playerSetScore,
         finalSetScoreGhost: gameState.ghostSetScore,
         completionStatus: true,
-        score: gameState.setsCompleted,
+        score: gameState.setsCompleted + 1,
         identity,
       });
 
       await saveMatch.mutateAsync({ matchId, matchRecord });
-      await setCurrentObjectBallCount.mutateAsync(BigInt(gameState.currentObjectBallCount));
+      await setAgLevelIndex.mutateAsync(BigInt(nextBaselineIndex));
+      toast.success('Session saved successfully!');
+      sessionStorage.removeItem(SESSION_KEYS.ACCEPTING_GIFTS);
+      navigate({ to: '/accepting-gifts/start' });
+    } catch (error) {
+      const errorMessage = extractErrorText(error);
+      toast.error(`Failed to save session: ${errorMessage}`);
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    if (!identity) {
+      toast.error('Please log in to save sessions');
+      return;
+    }
+
+    if (!actor) {
+      toast.error('Backend connection not ready. Please wait or retry connection.');
+      return;
+    }
+
+    try {
+      const playerWonMatch = gameState.playerSetScore === 7;
+      const nextBaselineIndex = computeNextBaselineLevel(
+        gameState.baselineLevelIndex,
+        gameState.levelPlayedIndex,
+        playerWonMatch
+      );
+
+      const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
+      const levelPlayed = getLevelByIndex(gameState.levelPlayedIndex);
+      const result = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
+      const noteSummary = `${levelPlayed.label} | ${baselineLevel.label} | ${result}`;
+
+      const { matchId, matchRecord } = buildAcceptingGiftsMatch({
+        playerName: gameState.playerName,
+        notes: noteSummary + (gameState.notes ? `\n${gameState.notes}` : ''),
+        startingObjectBallCount: baselineLevel.objectBallCount,
+        endingObjectBallCount: levelPlayed.objectBallCount,
+        totalAttempts: gameState.totalAttempts,
+        setsCompleted: gameState.setsCompleted + 1,
+        finalSetScorePlayer: gameState.playerSetScore,
+        finalSetScoreGhost: gameState.ghostSetScore,
+        completionStatus: true,
+        score: gameState.setsCompleted + 1,
+        identity,
+      });
+
+      await saveMatch.mutateAsync({ matchId, matchRecord });
+      await setAgLevelIndex.mutateAsync(BigInt(nextBaselineIndex));
       toast.success('Session saved successfully!');
       sessionStorage.removeItem(SESSION_KEYS.ACCEPTING_GIFTS);
       navigate({ to: '/history' });
@@ -169,6 +222,22 @@ export default function AcceptingGiftsGamePage() {
   const isAuthenticated = !!identity;
   const setIsComplete = gameState.playerSetScore === 7 || gameState.ghostSetScore === 7;
 
+  // Generate attempt buttons dynamically (0 to maxAttempt)
+  const attemptButtons: React.ReactElement[] = [];
+  for (let i = 0; i <= maxAttempt; i++) {
+    attemptButtons.push(
+      <Button
+        key={i}
+        onClick={() => handleAttemptInput(i)}
+        className="w-full"
+        size="lg"
+        variant={i === maxAttempt ? 'default' : 'outline'}
+      >
+        {i}
+      </Button>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4">
       <div className="flex items-center justify-between">
@@ -191,8 +260,8 @@ export default function AcceptingGiftsGamePage() {
               <div className="text-lg font-semibold">{gameState.playerName}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Object Balls</div>
-              <div className="text-lg font-semibold">{gameState.currentObjectBallCount}</div>
+              <div className="text-sm text-muted-foreground">Level</div>
+              <div className="text-lg font-semibold">{currentLevel.label}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Total Attempts</div>
@@ -231,43 +300,10 @@ export default function AcceptingGiftsGamePage() {
             <CardTitle>Record Attempt</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground mb-4">
-              How many balls did you clear before missing? (3 = runout)
+            <p className="mb-4 text-sm text-muted-foreground">
+              How many balls did you clear before missing? ({maxAttempt} = runout for {currentLevel.label})
             </p>
-            <div className="grid grid-cols-4 gap-3">
-              <Button
-                onClick={() => handleAttemptInput(0)}
-                className="w-full"
-                size="lg"
-                variant="outline"
-              >
-                0
-              </Button>
-              <Button
-                onClick={() => handleAttemptInput(1)}
-                className="w-full"
-                size="lg"
-                variant="outline"
-              >
-                1
-              </Button>
-              <Button
-                onClick={() => handleAttemptInput(2)}
-                className="w-full"
-                size="lg"
-                variant="outline"
-              >
-                2
-              </Button>
-              <Button
-                onClick={() => handleAttemptInput(3)}
-                className="w-full"
-                size="lg"
-                variant="default"
-              >
-                3
-              </Button>
-            </div>
+            <div className="grid grid-cols-4 gap-3">{attemptButtons}</div>
           </CardContent>
         </Card>
       )}
@@ -285,26 +321,15 @@ export default function AcceptingGiftsGamePage() {
                 <span className="font-semibold text-orange-600">Ghost won this set</span>
               )}
             </p>
-            <p className="text-center text-sm text-muted-foreground">
-              {gameState.playerSetScore === 7
-                ? `Next set will use ${Math.min(gameState.currentObjectBallCount + 1, 7)} balls`
-                : `Next set will use ${Math.max(gameState.currentObjectBallCount - 1, 2)} balls`}
-            </p>
-            <div className="flex gap-3">
-              <Button
-                onClick={handleStartNextSet}
-                className="flex-1"
-                size="lg"
-              >
-                Start Next Set
+            <div className="flex flex-col gap-3">
+              <Button onClick={handleSaveAndStartNext} className="w-full" size="lg" disabled={saveMatch.isPending || !isAuthenticated}>
+                {saveMatch.isPending ? 'Saving...' : 'Save & Start Next Match'}
               </Button>
-              <Button
-                onClick={() => setShowEndDialog(true)}
-                variant="outline"
-                className="flex-1"
-                size="lg"
-              >
-                End & Save Session
+              <Button onClick={handleSaveAndExit} variant="outline" className="w-full" size="lg" disabled={saveMatch.isPending || !isAuthenticated}>
+                {saveMatch.isPending ? 'Saving...' : 'Save & Exit'}
+              </Button>
+              <Button onClick={handleEndWithoutSaving} variant="ghost" className="w-full" size="lg">
+                Exit Without Saving
               </Button>
             </div>
           </CardContent>
@@ -315,36 +340,28 @@ export default function AcceptingGiftsGamePage() {
         <Alert>
           <AlertDescription className="flex items-center justify-between">
             <span>Still connecting to backend. Retry to save your session.</span>
-            <Button size="sm" variant="outline" onClick={handleRetryConnection}>
-              <RefreshCw className="mr-2 h-4 w-4" />
+            <Button onClick={handleRetryConnection} variant="outline" size="sm" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
               Retry Connection
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {!setIsComplete && (
-        <div className="space-y-2">
-          <Button
-            onClick={handleEndWithoutSaving}
-            variant="outline"
-            className="w-full"
-            size="lg"
-          >
-            End Session Without Saving
-          </Button>
-        </div>
+      {!isAuthenticated && (
+        <Alert>
+          <AlertDescription>Please log in to save your session.</AlertDescription>
+        </Alert>
       )}
 
       <EndMatchDialog
         open={showEndDialog}
         onOpenChange={setShowEndDialog}
-        onConfirm={handleEndSession}
-        title="End Accepting Gifts Session?"
-        description="Your session will be saved to history and your progress will be preserved."
-        confirmText="Save Session"
-        isPending={saveMatch.isPending}
-        disabled={!isAuthenticated}
+        onConfirm={handleEndWithoutSaving}
+        title="End Session Without Saving?"
+        description="Are you sure you want to end this session without saving? All progress will be lost."
+        confirmText="End Without Saving"
+        disabled={false}
       />
     </div>
   );

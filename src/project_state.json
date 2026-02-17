@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 117,
-  "summary": "Next build scope is a surgical stats/display update (no broader refactors): (1) ensure Official/Real APA Match Log aPPI displays for wins even when innings/PPI are unavailable (do not show “—” when expectedPPI can be used), (2) fix Stats → Official APA tab PPI Trend graph to plot two lines (PPI and aPPI) by match date with proper numeric chart data + legend, (3) fix Stats → Official APA tab Match Results graph to plot three lines (My Points, Opponent Points, Defensive Shots) by match date with proper numeric chart data + legend, and (4) remove the incorrect Straight Shot summary box from the Stats → Straight Shot tab. User explicitly requests these changes be tightly scoped and not overwrite other working components.",
+  "projectStateVersion": 125,
+  "summary": "Next build scope expanded to include a surgical Accepting Gifts overhaul: replace the old Accepting Gifts gameplay/progression with a fixed 12-level sequence (2+8, 3+8, 2+9, 3+9, 4+8, 4+9, 5+8, 5+9, 6+8, 6+9, 7+8, 7+9), dynamic per-level attempt input ranges, baseline/levelPlayed tracking with win/lose progression/rollback rules, and Match History table note formatting to include levelPlayed | baselineLevel | final score (e.g., \"3+9 | 3+9 | 7-4\"), while keeping changes isolated from other app areas.",
   "architectural_notes": [
     "Straight Shot is a drill scored by total strokes/shots (goal: 20 or under) with mode-specific stats including scratches (+2) and a moving average across sessions; ensure UI copy avoids calling it 'straight pool'.",
     "APA mode must be APA 9-ball (Equalizer points), not an 8-ball-style race; remove/avoid any 'race to X' concepts in UI and logic.",
@@ -24,7 +24,7 @@
     "Stats (Official APA): win% windowing appears to use last-10 (or other smaller window) instead of last-20 matches (ordered by match date).",
     "Stats → Official APA tab: PPI Trend chart renders blank (should plot PPI and aPPI lines by match date with a legend).",
     "Stats → Official APA tab: Match Results chart renders blank (should plot My Points, Opponent Points, Defensive Shots lines by match date with a legend).",
-    "Stats → Straight Shot tab: an incorrect/unused Straight Shot summary box is shown and should be removed."
+    "Deployed build still shows Official APA charts not rendering; user requests fixing graphs and adding console debug taps immediately before data is passed into Recharts <Line> components to verify the final datasets."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -1611,6 +1611,118 @@
         "REQ-217"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-extractplayerapamatches-in-frontend-src-lib-apa-apaaggregatestats-ts-so-that-it-independently-cleans-the-five-chart-consumed-fields-ppi-appi-yourpoints-opponentpoints-defensiveshots-per-match-without-dropping-the-entire-row-when-one-field-is-invalid-for-each-match-coerce-each-field-to-a-clean-number-when-possible-otherwise-set-only-that-field-to-null-do-not-mutate-the-raw-apimatch-objects-and-do-not-change-any-ppi-appi-math",
+      "title": "Update `extractPlayerApaMatches(...)` in `frontend/src/lib/apa/apaAggregateStats.ts` so that it independently cleans the five chart-consumed fields (`ppi`, `appi`, `yourPoints`, `opponentPoints`, `defensiveShots`) per match without dropping the entire row when one field is invalid. For each match, coerce each field to a clean `number` when possible; otherwise set only that field to `null`. Do not mutate the raw `ApiMatch` objects and do not change any PPI/aPPI math.",
+      "reqIds": [
+        "REQ-219"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-components-players-apaaggregatecharts-tsx-so-that-it-builds-and-renders-five-fully-independent-chart-series-arrays-ppiseries-appiseries-yourpointsseries-opponentpointsseries-defensiveshotsseries-where-each-series-contains-only-entries-that-have-1-a-valid-effective-match-date-for-the-x-axis-and-2-a-valid-numeric-value-for-that-specific-series-the-ppi-trend-chart-must-render-ppi-and-appi-as-two-separate-line-series-that-do-not-suppress-each-other-the-match-results-chart-must-render-your-points-opponent-points-and-defensive-shots-as-three-separate-line-series-that-do-not-suppress-each-other",
+      "title": "Update `frontend/src/components/players/ApaAggregateCharts.tsx` so that it builds and renders five fully independent chart series arrays—`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`—where each series contains only entries that have (1) a valid effective match date for the x-axis and (2) a valid numeric value for that specific series. The PPI Trend chart must render PPI and aPPI as two separate line series that do not suppress each other; the Match Results chart must render Your Points, Opponent Points, and Defensive Shots as three separate line series that do not suppress each other.",
+      "reqIds": [
+        "REQ-220"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-keep-this-build-tightly-scoped-to-the-official-apa-stats-chart-pipeline-by-modifying-only-these-two-files-frontend-src-lib-apa-apaaggregatestats-ts-and-frontend-src-components-players-apaaggregatecharts-tsx-do-not-change-match-history-code-routing-or-any-other-components-pages",
+      "title": "Keep this build tightly scoped to the Official APA stats/chart pipeline by modifying only these two files: `frontend/src/lib/apa/apaAggregateStats.ts` and `frontend/src/components/players/ApaAggregateCharts.tsx`. Do not change Match History code, routing, or any other components/pages.",
+      "reqIds": [
+        "REQ-221"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-current-accepting-gifts-drill-progression-model-2-7-object-ball-progression-with-hard-coded-runout-3-with-a-fixed-12-level-ordered-progression-sequence-index-0-11-used-everywhere-accepting-gifts-determines-rules-progression-2-8-3-8-2-9-3-9-4-8-4-9-5-8-5-9-6-8-6-9-7-8-7-9",
+      "title": "Replace the current Accepting Gifts drill progression model (2–7 object-ball progression with hard-coded runout=3) with a fixed 12-level ordered progression sequence (index 0–11) used everywhere Accepting Gifts determines rules/progression: 2+8, 3+8, 2+9, 3+9, 4+8, 4+9, 5+8, 5+9, 6+8, 6+9, 7+8, 7+9.",
+      "reqIds": [
+        "REQ-222"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-accepting-gifts-start-screen-frontend-src-pages-accepting-gifts-acceptinggiftsstartpage-tsx-to-select-a-level-from-the-12-level-sequence-and-persist-the-chosen-level-into-the-in-progress-session-state-as-levelplayed-while-also-recording-baselinelevel-as-the-current-saved-baseline-level-at-the-moment-the-match-starts",
+      "title": "Update Accepting Gifts Start screen (frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx) to select a level from the 12-level sequence and persist the chosen level into the in-progress session state as levelPlayed, while also recording baselineLevel as the current saved baseline level at the moment the match starts.",
+      "reqIds": [
+        "REQ-223"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-new-per-level-attempt-input-rules-on-the-accepting-gifts-game-screen-frontend-src-pages-accepting-gifts-acceptinggiftsgamepage-tsx-the-attempt-input-must-allow-integer-values-from-0-up-to-objectballcount-1-based-on-the-selected-level-and-must-update-dynamically-if-the-level-changes-2-8-2-9-0-3-3-8-3-9-0-4-7-8-7-9-0-8",
+      "title": "Implement new per-level attempt input rules on the Accepting Gifts Game screen (frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx): the attempt input must allow integer values from 0 up to (objectBallCount + 1) based on the selected level, and must update dynamically if the level changes (2+8/2+9 → 0–3, 3+8/3+9 → 0–4, …, 7+8/7+9 → 0–8).",
+      "reqIds": [
+        "REQ-224"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-accepting-gifts-win-loss-attempt-logic-so-it-no-longer-treats-ballscleared-3-as-a-universal-win-instead-a-player-wins-the-attempt-earns-1-point-only-when-the-attempt-input-equals-the-maximum-value-for-the-current-level-objectballcount-1-otherwise-the-ghost-earns-1-point-update-the-shared-helpers-in-frontend-src-lib-accepting-gifts-acceptinggiftssession-ts-accordingly-and-ensure-acceptinggiftsgamepage-uses-the-updated-helper-s",
+      "title": "Replace Accepting Gifts win/loss attempt logic so it no longer treats ballsCleared===3 as a universal win. Instead, a player wins the attempt (earns 1 point) only when the attempt input equals the maximum value for the current level (objectBallCount + 1); otherwise the ghost earns 1 point. Update the shared helpers in frontend/src/lib/accepting-gifts/acceptingGiftsSession.ts accordingly and ensure AcceptingGiftsGamePage uses the updated helper(s).",
+      "reqIds": [
+        "REQ-225"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-accepting-gifts-progression-persistence-from-current-object-ball-count-to-a-baseline-level-index-0-11-persisted-per-authenticated-user-on-the-backend-and-update-the-existing-react-query-hooks-currently-named-usegetcurrentobjectballcount-usesetcurrentobjectballcount-to-use-new-backend-apis-that-get-set-the-baseline-accepting-gifts-level-index-keep-behavior-consistent-with-existing-persistence-expectations-restored-after-logout-login-and-reload",
+      "title": "Replace Accepting Gifts progression persistence from ‘current object ball count’ to a ‘baseline level index’ (0–11) persisted per authenticated user on the backend, and update the existing React Query hooks currently named useGetCurrentObjectBallCount/useSetCurrentObjectBallCount to use new backend APIs that get/set the baseline Accepting Gifts level index. Keep behavior consistent with existing persistence expectations (restored after logout/login and reload).",
+      "reqIds": [
+        "REQ-226"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-the-accepting-gifts-end-of-match-baseline-progression-rules-when-the-user-ends-a-session-save-keep-race-to-7-set-logic-unchanged-but-update-the-stored-baseline-level-after-the-final-set-outcome-using-1-on-win-baseline-moves-up-exactly-1-level-in-the-fixed-sequence-2-on-loss-if-levelplayed-baselinelevel-at-match-start-then-baseline-remains-unchanged-if-levelplayed-baselinelevel-at-match-start-then-baseline-moves-down-exactly-1-level-this-logic-must-use-the-fixed-12-level-ordering-and-must-clamp-to-the-bounds-0-11",
+      "title": "Implement the Accepting Gifts end-of-match baseline progression rules when the user ends a session (save): keep race-to-7 set logic unchanged, but update the stored baseline level after the final set outcome using: (1) on WIN → baseline moves up exactly 1 level in the fixed sequence; (2) on LOSS → if levelPlayed > baselineLevel at match start then baseline remains unchanged; if levelPlayed == baselineLevel at match start then baseline moves down exactly 1 level. This logic must use the fixed 12-level ordering and must clamp to the bounds (0..11).",
+      "reqIds": [
+        "REQ-227"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-accepting-gifts-post-set-completion-ui-in-frontend-src-pages-accepting-gifts-acceptinggiftsgamepage-tsx-to-provide-three-explicit-actions-after-the-current-set-completes-7-x-or-x-7-save-start-next-match-save-exit-and-exit-without-saving-exit-without-saving-must-clear-sessionstorage-session-keys-accepting-gifts-and-not-call-any-save-update-mutations-saving-must-persist-the-match-and-update-the-stored-baseline-level-per-req-227",
+      "title": "Update Accepting Gifts post-set completion UI in frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx to provide three explicit actions after the current set completes (7–X or X–7): “Save & Start Next Match”, “Save & Exit”, and “Exit Without Saving”. “Exit Without Saving” must clear sessionStorage[SESSION_KEYS.ACCEPTING_GIFTS] and not call any save/update mutations. Saving must persist the match and update the stored baseline level per REQ-227.",
+      "reqIds": [
+        "REQ-228"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-each-saved-accepting-gifts-match-includes-a-match-history-note-string-containing-levelplayed-baselinelevel-and-final-set-score-and-render-it-in-the-match-history-table-match-results-note-area-in-this-exact-format-level-played-baseline-level-7-4-example-3-9-3-9-7-4-implement-this-by-setting-the-saved-match-base-notes-to-include-this-summary-and-update-frontend-src-lib-history-matchhistoryrowmodel-ts-to-display-this-summary-for-accepting-gifts",
+      "title": "Ensure each saved Accepting Gifts match includes a Match History note string containing levelPlayed, baselineLevel, and final set score, and render it in the Match History table “Match Results”/note area in this exact format: “LEVEL_PLAYED | BASELINE_LEVEL | 7-4” (example: “3+9 | 3+9 | 7-4”). Implement this by setting the saved match base.notes to include this summary (and update frontend/src/lib/history/matchHistoryRowModel.ts to display this summary for Accepting Gifts).",
+      "reqIds": [
+        "REQ-229"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-components-players-apaaggregatecharts-tsx-so-the-official-apa-charts-render-using-five-fully-independent-series-arrays-ppiseries-appiseries-yourpointsseries-opponentpointsseries-defensiveshotsseries-each-series-must-include-only-entries-with-1-a-valid-x-axis-date-derived-from-the-datapoint-timestamp-and-2-a-valid-numeric-value-for-that-series-render-each-series-as-its-own-line-so-missing-values-in-one-metric-never-suppress-rendering-of-another-metric-preserve-existing-english-labels-and-overall-chart-sections-ppi-appi-trend-match-results",
+      "title": "Update `frontend/src/components/players/ApaAggregateCharts.tsx` so the Official APA charts render using five fully independent series arrays (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Each series must include only entries with (1) a valid x-axis date derived from the datapoint timestamp and (2) a valid numeric value for that series. Render each series as its own `<Line>` so missing values in one metric never suppress rendering of another metric. Preserve existing English labels and overall chart sections (PPI & aPPI Trend; Match Results).",
+      "reqIds": [
+        "REQ-232"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-official-apa-performance-charts-so-they-render-reliably-not-blank-by-removing-the-current-merged-datemap-single-dataset-approach-in-frontend-src-components-players-apaaggregatecharts-tsx-and-instead-building-five-fully-independent-per-series-datasets-ppiseries-appiseries-yourpointsseries-opponentpointsseries-defensiveshotsseries-each-series-must-include-only-entries-that-have-1-a-valid-x-axis-date-derived-from-the-datapoint-timestamp-and-2-a-valid-numeric-value-for-that-specific-series-render-each-series-as-its-own-line-such-that-missing-invalid-values-for-one-metric-never-suppress-the-other-lines-preserve-the-existing-chart-sections-and-english-legend-labels-ppi-appi-your-points-opponent-points-defensive-shots",
+      "title": "Fix the Official APA Performance Charts so they render reliably (not blank) by removing the current merged `dateMap`/single-dataset approach in `frontend/src/components/players/ApaAggregateCharts.tsx` and instead building five fully independent per-series datasets (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Each series must include only entries that have (1) a valid x-axis date derived from the datapoint timestamp and (2) a valid numeric value for that specific series. Render each series as its own `<Line>` such that missing/invalid values for one metric never suppress the other lines. Preserve the existing chart sections and English legend labels: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
+      "reqIds": [
+        "REQ-233"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-console-only-debug-taps-in-frontend-src-components-players-apaaggregatecharts-tsx-immediately-before-the-data-is-fed-into-each-line-so-it-is-possible-to-see-the-exact-per-series-arrays-being-passed-to-recharts-keep-any-existing-debug-tap-s-earlier-in-the-pipeline-e-g-in-frontend-src-lib-apa-apaaggregatestats-ts-unchanged-and-do-not-add-any-on-screen-debug-ui",
+      "title": "Add console-only debug taps in `frontend/src/components/players/ApaAggregateCharts.tsx` immediately before the data is fed into each `<Line>` so it is possible to see the exact per-series arrays being passed to Recharts. Keep any existing debug tap(s) earlier in the pipeline (e.g., in `frontend/src/lib/apa/apaAggregateStats.ts`) unchanged, and do not add any on-screen debug UI.",
+      "reqIds": [
+        "REQ-234"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -2145,8 +2257,37 @@
         "REQ-218"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-114",
+      "summary": "Accepting Gifts overhaul (replace existing implementation): implement fixed 12-level progression (2+8, 3+8, 2+9, 3+9, 4+8, 4+9, 5+8, 5+9, 6+8, 6+9, 7+8, 7+9), meaning +8=run any order with called 8-ball finish and +9=strict ascending with 9-ball ending rack; Start screen level selector defaulting to saved currentLevel with optional skipping + resume support; Game screen attempt input range must be 0..(ballCount+1) per user’s latest spec (2+*=0..3, 3+*=0..4, …, 7+*=0..8) and remove old '3 is victory' logic; persist currentLevel (0–11), baselineLevel at match start, and active match for resume; on match end (race-to-7) advance one level on win, and on loss apply baseline/rollback rule (if levelPlayed>baselineLevel keep baseline; if levelPlayed==baselineLevel move baseline down one); add post-match actions Save & Start Next, Save & Exit, Exit Without Saving; Match History table Note column must show \"levelPlayed | baselineLevel | 7-4\" with other non-applicable columns as “—”.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-123",
+      "summary": "Update backend/main.mo Accepting Gifts session progression storage so it stores and returns the persisted baseline Accepting Gifts level index per user (0–11) (replacing the meaning of the existing AGSession.currentObjectBallCount). Add/adjust backend methods used by the frontend to get/set this baseline level index, and ensure access control behavior remains unchanged (requires authentication; respects inviteOnlyMode rules).",
+      "reqIds": [
+        "REQ-230"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-124",
+      "summary": "Update `frontend/src/lib/apa/apaAggregateStats.ts` `extractPlayerApaMatches(...)` so that for Official APA match-log datapoints (and APA practice datapoints), each chart-consumed numeric field (`ppi`, `appi`, `yourPoints`, `opponentPoints`, `defensiveShots`) is independently cleaned to a `number` when valid and `null` when invalid/unparseable, without dropping the entire datapoint/row. Do not change any underlying PPI/aPPI math, and do not change any date/effective-date logic.",
+      "reqIds": [
+        "REQ-231"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-125",
+      "summary": "Add console-only debug taps in ApaAggregateCharts.tsx immediately before each <Line> receives its data prop, logging the final per-series arrays (ppiSeries, appiSeries, yourPointsSeries, opponentPointsSeries, defensiveShotsSeries); keep the existing debug tap in extractPlayerApaMatches unchanged.",
+      "reqIds": [],
+      "status": "pending"
     }
   ],
+  "gameProjectType": "none",
   "projectName": "APA-style pool practice scorekeeper with Accepting Gifts and Straight Shot modes",
   "clarification_mode": "instant",
   "clarification_rounds": 0

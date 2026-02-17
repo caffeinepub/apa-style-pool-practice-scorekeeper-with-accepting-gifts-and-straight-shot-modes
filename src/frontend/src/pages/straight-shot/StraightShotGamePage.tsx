@@ -107,15 +107,7 @@ export default function StraightShotGamePage() {
       const { matchId, matchRecord } = buildStraightShotMatch({
         playerName: gameState.playerName,
         notes: gameState.notes,
-        strokes: [gameState.totalShots],
-        scratchStrokes: [],
-        shots: gameState.totalShots,
-        ballsMade: 15,
-        firstShotScore: 0,
-        secondShotScore: 0,
-        thirdShotScore: 0,
-        fourthShotScore: 0,
-        totalScore: gameState.totalShots,
+        totalShots: gameState.totalShots,
         identity,
       });
 

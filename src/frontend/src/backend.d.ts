@@ -344,13 +344,13 @@ export enum Variant_all_playerMatch_teamMatch_detailRack {
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearHistory(): Promise<void>;
-    completeSession(finalCount: bigint): Promise<bigint>;
+    completeAgSession(finalLevel: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
     deleteMatch(matchId: string): Promise<void>;
+    getAgLevelIndex(): Promise<bigint>;
     getAllMatches(): Promise<Array<ApiMatch>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getCurrentObjectBallCount(): Promise<bigint>;
     getInviteOnlyMode(): Promise<boolean>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
@@ -360,8 +360,8 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveMatch(matchId: string, matchRecord: MatchLogRecord): Promise<void>;
+    setAgLevelIndex(newLevel: bigint): Promise<bigint>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
-    setCurrentObjectBallCount(newCount: bigint): Promise<bigint>;
     setInviteOnlyMode(enabled: boolean): Promise<void>;
     updateMatch(matchId: string, updatedMatch: MatchLogRecord): Promise<void>;
 }

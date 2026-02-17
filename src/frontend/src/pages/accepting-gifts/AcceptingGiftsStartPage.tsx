@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Play, Info, ChevronDown, AlertCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Play, Info, ChevronDown, RotateCcw } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AcceptingGiftsRulesPanel from './AcceptingGiftsRulesPanel';
-import { useGetCurrentObjectBallCount } from '../../hooks/useQueries';
+import { useGetAgLevelIndex } from '../../hooks/useQueries';
 import { SESSION_KEYS, hasInProgressSession, clearInProgressSession } from '@/lib/session/inProgressSessions';
 import EndMatchDialog from '../../components/matches/EndMatchDialog';
+import { ACCEPTING_GIFTS_LEVELS } from '../../lib/accepting-gifts/acceptingGiftsLevels';
 
 export default function AcceptingGiftsStartPage() {
   const navigate = useNavigate();
@@ -20,14 +22,15 @@ export default function AcceptingGiftsStartPage() {
   const [rulesOpen, setRulesOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const { data: currentBallCount } = useGetCurrentObjectBallCount();
-  const startingBallCount = currentBallCount ? Number(currentBallCount) : 2;
+  const { data: baselineLevelIndex } = useGetAgLevelIndex();
+  const defaultLevelIndex = baselineLevelIndex ? Number(baselineLevelIndex) : 0;
+
+  const [selectedLevelIndex, setSelectedLevelIndex] = useState<number>(defaultLevelIndex);
 
   const hasInProgress = hasInProgressSession(SESSION_KEYS.ACCEPTING_GIFTS);
 
   const handleStartClick = () => {
     if (playerName.trim()) {
-      // Check if there's an in-progress game
       if (hasInProgress) {
         setShowConfirmDialog(true);
       } else {
@@ -40,12 +43,13 @@ export default function AcceptingGiftsStartPage() {
     const gameState = {
       playerName: playerName.trim(),
       notes: notes.trim() || undefined,
-      startingObjectBallCount: startingBallCount,
-      currentObjectBallCount: startingBallCount,
+      baselineLevelIndex: defaultLevelIndex,
+      levelPlayedIndex: selectedLevelIndex,
+      playerSetScore: 0,
+      ghostSetScore: 0,
       totalAttempts: 0,
       setsCompleted: 0,
-      finalSetScorePlayer: 0,
-      finalSetScoreGhost: 0,
+      completed: false,
     };
     sessionStorage.setItem(SESSION_KEYS.ACCEPTING_GIFTS, JSON.stringify(gameState));
     navigate({ to: '/accepting-gifts/game' });
@@ -60,6 +64,8 @@ export default function AcceptingGiftsStartPage() {
   const handleResume = () => {
     navigate({ to: '/accepting-gifts/game' });
   };
+
+  const selectedLevel = ACCEPTING_GIFTS_LEVELS[selectedLevelIndex];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -83,7 +89,7 @@ export default function AcceptingGiftsStartPage() {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              Starting with {startingBallCount} object balls. Your progress will be saved across sessions.
+              Your current level is {ACCEPTING_GIFTS_LEVELS[defaultLevelIndex].label}. Select a level below to start or skip ahead.
             </AlertDescription>
           </Alert>
 
@@ -96,6 +102,28 @@ export default function AcceptingGiftsStartPage() {
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="level">Level</Label>
+              <Select
+                value={selectedLevelIndex.toString()}
+                onValueChange={(value) => setSelectedLevelIndex(parseInt(value, 10))}
+              >
+                <SelectTrigger id="level">
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACCEPTING_GIFTS_LEVELS.map((level) => (
+                    <SelectItem key={level.index} value={level.index.toString()}>
+                      {level.label} ({level.objectBallCount} balls, {level.gameType})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Selected: {selectedLevel.label} — {selectedLevel.objectBallCount} object balls, {selectedLevel.gameType}
+              </p>
             </div>
 
             <div className="space-y-2">

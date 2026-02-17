@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-stats-official-apa-tab-chart-rendering-so-the-ppi-trend-chart-always-renders-when-any-official-apa-datapoints-contain-a-valid-numeric-ppi-or-appi-value-by-generating-two-separate-chart-datasets-1-a-ppi-only-dataset-containing-only-matches-with-numeric-ppi-and-2-an-appi-only-dataset-containing-only-matches-with-numeric-appi-do-not-allow-missing-values-in-one-series-to-suppress-rendering-of-the-other-series",
-      "featureTitle": "Update the Stats → Official APA tab chart rendering so the PPI Trend chart always renders when any Official/APA datapoints contain a valid numeric PPI or aPPI value by generating two separate chart datasets: (1) a PPI-only dataset containing only matches with numeric PPI, and (2) an aPPI-only dataset containing only matches with numeric aPPI. Do not allow missing values in one series to suppress rendering of the other series.",
+      "featureId": "feature-fix-the-official-apa-performance-charts-so-they-render-reliably-not-blank-by-removing-the-current-merged-datemap-single-dataset-approach-in-frontend-src-components-players-apaaggregatecharts-tsx-and-instead-building-five-fully-independent-per-series-datasets-ppiseries-appiseries-yourpointsseries-opponentpointsseries-defensiveshotsseries-each-series-must-include-only-entries-that-have-1-a-valid-x-axis-date-derived-from-the-datapoint-timestamp-and-2-a-valid-numeric-value-for-that-specific-series-render-each-series-as-its-own-line-such-that-missing-invalid-values-for-one-metric-never-suppress-the-other-lines-preserve-the-existing-chart-sections-and-english-legend-labels-ppi-appi-your-points-opponent-points-defensive-shots",
+      "featureTitle": "Fix the Official APA Performance Charts so they render reliably (not blank) by removing the current merged `dateMap`/single-dataset approach in `frontend/src/components/players/ApaAggregateCharts.tsx` and instead building five fully independent per-series datasets (`ppiSeries`, `appiSeries`, `yourPointsSeries`, `opponentPointsSeries`, `defensiveShotsSeries`). Each series must include only entries that have (1) a valid x-axis date derived from the datapoint timestamp and (2) a valid numeric value for that specific series. Render each series as its own `<Line>` such that missing/invalid values for one metric never suppress the other lines. Preserve the existing chart sections and English legend labels: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
       "files": [
         "frontend/src/components/players/ApaAggregateCharts.tsx"
       ],
@@ -17,13 +17,13 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-215"
+        "REQ-233"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-stats-official-apa-tab-match-results-chart-rendering-so-each-plotted-series-is-built-from-its-own-filtered-dataset-1-your-points-only-dataset-2-opponent-points-only-dataset-and-3-defensive-shots-only-dataset-do-not-allow-missing-values-in-any-one-series-to-suppress-rendering-of-the-other-series",
-      "featureTitle": "Update the Stats → Official APA tab Match Results chart rendering so each plotted series is built from its own filtered dataset: (1) Your Points-only dataset, (2) Opponent Points-only dataset, and (3) Defensive Shots-only dataset. Do not allow missing values in any one series to suppress rendering of the other series.",
+      "featureId": "feature-add-console-only-debug-taps-in-frontend-src-components-players-apaaggregatecharts-tsx-immediately-before-the-data-is-fed-into-each-line-so-it-is-possible-to-see-the-exact-per-series-arrays-being-passed-to-recharts-keep-any-existing-debug-tap-s-earlier-in-the-pipeline-e-g-in-frontend-src-lib-apa-apaaggregatestats-ts-unchanged-and-do-not-add-any-on-screen-debug-ui",
+      "featureTitle": "Add console-only debug taps in `frontend/src/components/players/ApaAggregateCharts.tsx` immediately before the data is fed into each `<Line>` so it is possible to see the exact per-series arrays being passed to Recharts. Keep any existing debug tap(s) earlier in the pipeline (e.g., in `frontend/src/lib/apa/apaAggregateStats.ts`) unchanged, and do not add any on-screen debug UI.",
       "files": [
         "frontend/src/components/players/ApaAggregateCharts.tsx"
       ],
@@ -37,27 +37,7 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-216"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-both-official-apa-charts-display-a-visible-legend-with-exactly-these-english-labels-for-the-plotted-lines-ppi-appi-your-points-opponent-points-defensive-shots",
-      "featureTitle": "Ensure both Official APA charts display a visible legend with exactly these English labels for the plotted lines: PPI, aPPI, Your Points, Opponent Points, Defensive Shots.",
-      "files": [
-        "frontend/src/components/players/ApaAggregateCharts.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-217"
+        "REQ-234"
       ],
       "confidence": "high"
     }
