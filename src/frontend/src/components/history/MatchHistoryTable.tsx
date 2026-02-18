@@ -4,13 +4,13 @@ import type { ApiMatch } from '../../backend';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ArrowUpDown } from 'lucide-react';
 import { useDeleteMatches } from '../../hooks/useQueries';
 import { toast } from 'sonner';
 import { extractErrorText } from '../../utils/errorText';
 import { getEffectiveMatchTimestamp, formatEffectiveMatchDate } from '../../lib/matches/effectiveMatchDate';
 import { buildMatchResultsNarrative } from '../../lib/history/matchHistoryRowModel';
-import { classifyMatchBucket, deriveMatchOutcome } from '../../lib/history/matchWinLoss';
+import { classifyMatchBucket, deriveMatchOutcome, type BucketType } from '../../lib/history/matchWinLoss';
 import { calculatePPI } from '../../lib/apa/apaScoring';
 import { computeOfficialApaAppiWithContext, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
 
@@ -26,9 +26,10 @@ interface RunningWinLoss {
   winPercentage: number;
 }
 
-// Compute running W-L and Win% for each row
+// Compute per-mode running W-L and Win% for each row
 function computeRunningWinLoss(sortedMatches: ApiMatch[]): RunningWinLoss[] {
-  const bucketStats = {
+  // Track running stats per bucket
+  const bucketStats: Record<BucketType, { wins: number; losses: number }> = {
     officialApa: { wins: 0, losses: 0 },
     apaPractice: { wins: 0, losses: 0 },
     acceptingGifts: { wins: 0, losses: 0 },
@@ -41,6 +42,7 @@ function computeRunningWinLoss(sortedMatches: ApiMatch[]): RunningWinLoss[] {
     const bucket = classifyMatchBucket(match);
     const outcome = deriveMatchOutcome(match);
 
+    // Update running stats for this bucket only
     if (bucket && outcome !== 'unknown') {
       if (outcome === 'win') {
         bucketStats[bucket].wins++;
@@ -49,17 +51,28 @@ function computeRunningWinLoss(sortedMatches: ApiMatch[]): RunningWinLoss[] {
       }
     }
 
-    const totalWins = bucketStats.officialApa.wins + bucketStats.apaPractice.wins + bucketStats.acceptingGifts.wins + bucketStats.straightShot.wins;
-    const totalLosses = bucketStats.officialApa.losses + bucketStats.apaPractice.losses + bucketStats.acceptingGifts.losses + bucketStats.straightShot.losses;
-    const totalMatches = totalWins + totalLosses;
-    const winPercentage = totalMatches > 0 ? (totalWins / totalMatches) * 100 : 0;
+    // For this row, emit the running stats for its bucket only
+    if (bucket) {
+      const wins = bucketStats[bucket].wins;
+      const losses = bucketStats[bucket].losses;
+      const totalMatches = wins + losses;
+      const winPercentage = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
 
-    results.push({
-      wins: totalWins,
-      losses: totalLosses,
-      totalMatches,
-      winPercentage,
-    });
+      results.push({
+        wins,
+        losses,
+        totalMatches,
+        winPercentage,
+      });
+    } else {
+      // No bucket: emit zeros
+      results.push({
+        wins: 0,
+        losses: 0,
+        totalMatches: 0,
+        winPercentage: 0,
+      });
+    }
   }
 
   return results;
@@ -69,15 +82,16 @@ export default function MatchHistoryTable({ matches, allMatches }: MatchHistoryT
   const navigate = useNavigate();
   const deleteMatches = useDeleteMatches();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Sort by numeric timestamp using getEffectiveMatchTimestamp (descending, newest first)
+  // Sort by numeric timestamp using getEffectiveMatchTimestamp
   const sortedMatches = useMemo(() => {
     return [...matches].sort((a, b) => {
       const tsA = getEffectiveMatchTimestamp(a);
       const tsB = getEffectiveMatchTimestamp(b);
-      return tsB - tsA;
+      return sortDirection === 'desc' ? tsB - tsA : tsA - tsB;
     });
-  }, [matches]);
+  }, [matches, sortDirection]);
 
   // Precompute running W-L and Win% for each row
   const rowsWithRunningStats = useMemo(() => {
@@ -120,6 +134,10 @@ export default function MatchHistoryTable({ matches, allMatches }: MatchHistoryT
       const errorMessage = extractErrorText(error);
       toast.error(`Failed to delete matches: ${errorMessage}`);
     }
+  };
+
+  const toggleSortDirection = () => {
+    setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
   };
 
   const allSelected = sortedMatches.length > 0 && selectedIds.size === sortedMatches.length;
@@ -176,7 +194,16 @@ export default function MatchHistoryTable({ matches, allMatches }: MatchHistoryT
               <TableHead className="w-12">
                 <Checkbox checked={allSelected || someSelected} onCheckedChange={handleSelectAll} aria-label="Select all" />
               </TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>
+                <button
+                  onClick={toggleSortDirection}
+                  className="flex items-center gap-1 hover:text-foreground"
+                  aria-label="Toggle date sort"
+                >
+                  Date
+                  <ArrowUpDown className="h-4 w-4" />
+                </button>
+              </TableHead>
               <TableHead>Match Results</TableHead>
               <TableHead className="text-right">PPI</TableHead>
               <TableHead className="text-right">aPPI</TableHead>

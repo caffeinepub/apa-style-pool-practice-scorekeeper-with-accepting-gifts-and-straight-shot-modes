@@ -1,30 +1,22 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T00:06:03.053Z",
-  "summary": "Diff implements unified sorting using existing getEffectiveMatchTimestamp() in both the page-level match list and the table. It also introduces new running win/loss aggregation logic inside MatchHistoryTable, and adds imports for Official APA aPPI utilities, but the truncated diff does not show the aPPI cell wiring or definitive Official-APA-only gating behavior.",
+  "generatedAt": "2026-02-18T00:19:24.604Z",
+  "summary": "Diff adds per-bucket running W-L/Win% computation and introduces a date-sorting mechanism using getEffectiveMatchTimestamp, but the shown changes appear to always sort on render (potentially changing default ordering) and do not show the restored toggle wiring for the existing sort UI control due to truncation.",
   "missing_requirements": [
     {
       "id": "REQ-2",
-      "requirement": "Fix Match History table aPPI display so that aPPI is displayed for Official APA rows only using computeOfficialApaAppiWithContext + existing formatter (with full match list context), otherwise show \"—\"; and for all non-Official rows always show \"—\" with no computation attempted.",
-      "reason": "MatchHistoryTable.tsx imports computeOfficialApaAppiWithContext/formatOfficialAppi, but the provided diff is truncated before any table rendering logic that would prove: (1) Official-only detection, (2) passing full match list context (allMatches) into the util, and (3) displaying \"—\" when null/invalid or for non-Official rows.",
+      "requirement": "Restore toggleable “Sort by date” behavior without changing default ordering on initial render; sorting must only change when the user uses the table’s existing sort UI control.",
+      "reason": "In the visible diff, matches are always sorted by timestamp in a useMemo, with sortDirection defaulting to 'desc'. This likely changes the default ordering behavior on load and does not demonstrate that sorting only changes when the user interacts with an existing sort control (the toggle wiring is not shown in the truncated content).",
       "evidence": [
-        "frontend/src/components/history/MatchHistoryTable.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "Identify “Official APA match” rows using the existing discriminator logic already used elsewhere (matchWinLoss.ts / matchHistoryRowModel.ts / match builders) without adding new flags/fields.",
-      "reason": "While MatchHistoryTable.tsx uses classifyMatchBucket(match) (from matchWinLoss) for running W/L stats, the truncated diff does not show that the same discriminator mechanism is actually used to gate the aPPI column specifically (Official APA rows only).",
-      "evidence": [
-        "frontend/src/components/history/MatchHistoryTable.tsx (truncated)"
+        "frontend/src/components/history/MatchHistoryTable.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added new running win/loss and win-percentage computation for each table row (computeRunningWinLoss + rowsWithRunningStats).",
-      "reason": "The BuildRequest only asks for Official APA aPPI display wiring and unified effective-timestamp sorting; it does not request new running W-L/Win% calculations in the table logic.",
+      "description": "Always sorting MatchHistoryTable rows by effective match timestamp on render (date sort applied by default), rather than only applying/toggling sort when the user uses the existing sort UI control.",
+      "reason": "The diff shows sortedMatches is always computed by sorting a copy of matches using getEffectiveMatchTimestamp, and sortDirection is initialized to 'desc', implying a default enforced sort even before any user action.",
       "evidence": [
         "frontend/src/components/history/MatchHistoryTable.tsx"
       ]
@@ -34,7 +26,6 @@
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/history/MatchHistoryTable.tsx",
-    "frontend/src/pages/history/MatchHistoryPage.tsx",
     "project_state.json"
   ]
 }

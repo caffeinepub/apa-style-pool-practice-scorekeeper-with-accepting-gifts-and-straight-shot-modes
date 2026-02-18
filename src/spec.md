@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix Match History table logic so Official APA rows are detected using existing match-type/mode discrimination, aPPI displays correctly for Official APA only, and “All History” sorting uses a single unified effective timestamp key.
+**Goal:** Restore the Match History date sort toggle and correct per-row running W-L/Win% so it is computed per mode/bucket (excluding unknown outcomes) based on the currently displayed row order.
 
 **Planned changes:**
-- Reuse the existing match-type/mode discriminator (as used in matchWinLoss.ts, matchHistoryRowModel.ts, and match builders) to identify “Official APA match” rows without adding any new flags/fields.
-- Update MatchHistoryTable aPPI column logic to compute/display aPPI only for Official APA rows using the existing official APA aPPI utility with full match-list context; show "—" when aPPI cannot be computed or when the row is not Official APA.
-- Ensure the “All History” ordering (and the table view fed by it) sorts strictly by the numeric value from getEffectiveMatchTimestamp(match), descending (newest first), while keeping the Date column display date-only as it is now.
+- Update MatchHistoryTable running W-L and Win% calculations to accumulate only within the current row’s bucket (Official APA, APA Practice, Accepting Gifts, Straight Shot) across the displayed order, excluding unknown outcomes from wins/losses and Win% denominator.
+- Restore the existing “Sort by date” toggle behavior in MatchHistoryTable using getEffectiveMatchTimestamp(match), without changing the current default ordering on initial load and without adding new sort UI controls.
+- Keep the MatchHistoryTable layout/columns and date-only display unchanged; confine logic changes to frontend/src/components/history/MatchHistoryTable.tsx (plus minimal existing sort-control wiring if required).
 
-**User-visible outcome:** In Match History, only Official APA matches show an aPPI value (otherwise "—"), and the All tab history list is consistently ordered newest-first using the effective match timestamp while the Date column remains date-only.
+**User-visible outcome:** Users can toggle date sorting via the table’s existing sort control, and each row shows correct running W-L and Win% for its own mode/bucket (unknown outcomes excluded), reflecting the current displayed sort order.

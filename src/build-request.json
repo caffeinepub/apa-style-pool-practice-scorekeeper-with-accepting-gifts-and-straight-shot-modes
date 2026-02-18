@@ -1,79 +1,87 @@
 {
   "kind": "build_request",
-  "title": "Surgical Match History table logic: Official APA aPPI display + unified effective timestamp sorting",
+  "title": "Restore Match History date sort toggle and fix per-mode running W-L/Win% (exclude unknowns)",
   "projectName": "Match History",
-  "priority": "normal",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Identify “Official APA match” rows using the existing match-type/mode discriminator already used elsewhere in the codebase (same mechanism as in frontend/src/lib/history/matchWinLoss.ts, frontend/src/lib/history/matchHistoryRowModel.ts, and the match builders). Do not add any new flags/fields.",
+      "text": "Fix MatchHistoryTable running W-L and Win% so each row’s displayed W-L/Win% is computed only from matches of the same mode/bucket as that row (Official APA, APA Practice, Accepting Gifts, Straight Shot), using the current displayed sort order and counting from the start of that mode’s sequence up through the current row (i.e., running within mode regardless of adjacency).",
       "target": "frontend",
       "source": {
         "messageIds": [
+          "msg-3",
           "msg-5"
         ],
         "quotes": [
-          "Do not invent a new flag/field. Use the existing match-type/mode detection already used elsewhere (same mechanism used in matchWinLoss.ts / history row model / match builders)."
+          "In Match History Table “All” view, W-L and Win% continue accumulating across mode boundaries (Accepting Gifts → APA → Straight Shot) instead of resetting per mode.",
+          "Running totals are per-mode, regardless of adjacency."
         ]
       },
       "acceptanceCriteria": [
-        "No new properties/flags are added to ApiMatch or any saved match payloads to represent Official APA vs APA Practice.",
-        "Official APA rows are detected using the same discriminator logic already present in the referenced modules (i.e., reuse the existing pattern rather than introducing a new classifier)."
+        "Given a mixed-mode list, each row’s W-L/Win% only reflects prior rows (including itself) that are the same bucket as that row in the currently displayed order.",
+        "If a bucket appears, then other buckets, then the same bucket again later, the later row’s running totals include earlier same-bucket rows (i.e., not reset due to interleaving).",
+        "Unknown outcomes do not increment wins or losses and are excluded from the Win% denominator.",
+        "W-L column displays the per-row bucket running wins-losses (not a combined total across buckets).",
+        "Win% column displays the per-row bucket running win percentage based on wins/(wins+losses); when denominator is 0, Win% displays 0%."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix Match History table aPPI display so that aPPI is displayed for Official APA rows only, using the existing official APA aPPI computation utility (with full context), and show \"—\" for Official APA rows where aPPI cannot be computed due to missing inputs. For all non-Official rows (APA Practice / Accepting Gifts / Straight Shot), always display \"—\" in the aPPI column.",
+      "text": "Restore the missing toggleable “Sort by date” behavior in MatchHistoryTable using the existing getEffectiveMatchTimestamp(match) comparator, without changing the default ordering behavior that exists today; sorting must only change when the user uses the table’s existing sort UI control (do not add new controls).",
       "target": "frontend",
       "source": {
         "messageIds": [
+          "msg-3",
           "msg-5"
         ],
         "quotes": [
-          "aPPI should display for Official APA rows (and only those rows).",
-          "This is a display issue, not a “change the formula” request. Use the existing official APA aPPI computation/util (the same one used in the rest of the app).",
-          "If aPPI cannot be computed for a given Official APA row due to missing inputs, show — for that row (do not fake it)."
+          "Restore/implement the table “Sort by date” behavior.",
+          "Toggleable exactly as it behaved before it broke.\n\nDefault on load stays whatever it is today (do not change default ordering behavior).\n\nApply sort only through the existing UI control (whatever the table already had).\nDo not add new controls."
         ]
       },
       "acceptanceCriteria": [
-        "In frontend/src/components/history/MatchHistoryTable.tsx, Official APA rows compute aPPI via the existing official APA context-aware util (frontend/src/lib/apa/officialApaPpi.ts: computeOfficialApaAppiWithContext + existing formatter) using the full match list passed into the table.",
-        "For an Official APA row where the util returns invalid/null, the table displays \"—\" in the aPPI cell.",
-        "For any non-Official APA row, the aPPI cell is always \"—\" (no computation attempted).",
-        "No changes are made to the aPPI formula/logic in the util; only wiring/display in the table is updated."
+        "Sorting uses getEffectiveMatchTimestamp(match) as the single sort key (no new timestamp helpers).",
+        "Default ordering on initial render remains exactly as it is today (do not change default direction or default sorted/unsorted behavior).",
+        "User can toggle date sort direction via the existing sort UI control that the table already had (no additional/novel controls beyond restoring what was missing/broken).",
+        "Running W-L/Win% calculations are based on the currently displayed (post-toggle) row order."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Ensure the Match History “All History” ordering uses one unified sort key: sort strictly by the numeric value returned by the existing getEffectiveMatchTimestamp(match) (no new helper), newest first. Keep the Date display exactly as it is now (date-only).",
+      "text": "Keep MatchHistoryTable UI layout/columns and date display unchanged while implementing the logic fixes, limiting changes to frontend/src/components/history/MatchHistoryTable.tsx (plus any already-existing sort control wiring required).",
       "target": "frontend",
       "source": {
         "messageIds": [
+          "msg-3",
           "msg-5"
         ],
         "quotes": [
-          "There should be one unified sort key: Sort by the numeric value from the existing getEffectiveMatchTimestamp(match) (no new helper).",
-          "Keep Date display exactly as it is now (date-only)."
+          "Do not change layout or columns.",
+          "Proceed with the surgical update in MatchHistoryTable.tsx only (plus any already-existing sort control wiring required), no layout changes."
         ]
       },
       "acceptanceCriteria": [
-        "Match ordering in the All tab (and the table view fed by it) is determined solely by getEffectiveMatchTimestamp(match), descending (newest first), without introducing new sorting helpers.",
-        "Official APA matches sort based on the user-entered official APA match date as encoded by getEffectiveMatchTimestamp; drills/practice sort using their saved high-resolution timestamp (dateTime) as encoded by getEffectiveMatchTimestamp.",
-        "When multiple drills occur on the same calendar date, they appear in correct chronological order based on their high-resolution timestamps, without changing the date-only display formatting in the Date column (formatEffectiveMatchDate remains date-only)."
+        "No columns are added/removed/reordered; existing table layout remains unchanged.",
+        "Date display remains date-only (continues using formatEffectiveMatchDate(match)); hover title can remain as-is.",
+        "Code changes are confined to MatchHistoryTable.tsx except for minimal wiring needed to connect to an already-existing sort control if present elsewhere."
       ]
     }
   ],
   "constraints": [
-    "NO LAYOUT CHANGES. Surgical table logic only.",
-    "Do not invent/add new match flags/fields for Official APA detection; reuse existing discriminator logic already used in matchWinLoss.ts / matchHistoryRowModel.ts / match builders.",
-    "Do not create a new sorting helper; use the existing getEffectiveMatchTimestamp(match).",
-    "Keep the Date column display exactly as it is now (date-only).",
-    "Use English for any user-facing text."
+    "Frontend-only change focused on frontend/src/components/history/MatchHistoryTable.tsx (allow only minimal existing sort-control wiring if required).",
+    "Do not change default ordering behavior on load.",
+    "Do not add new UI controls for sorting; only restore the existing sort control behavior.",
+    "Do not change layout or columns.",
+    "Use existing getEffectiveMatchTimestamp(match) for date sorting; do not introduce new timestamp helper functions.",
+    "Use existing matchWinLoss.ts (deriveMatchOutcome/classifyMatchBucket) for win/loss/unknown; do not parse notes.",
+    "Unknown outcomes must be excluded from wins, losses, and Win% denominator."
   ],
   "nonGoals": [
-    "Do not change any page/table layout, styling, column order, spacing, or UI structure.",
-    "Do not change the aPPI formula, expected PPI table, or official APA calculation logic; only fix display wiring for the table.",
-    "Do not change how dates are formatted/displayed (no time shown in the Date column).",
-    "Do not add new backend fields, endpoints, or persistence changes."
+    "Changing date formatting beyond the current date-only display.",
+    "Changing any PPI/aPPI logic or display behavior beyond what is necessary to keep the table functioning.",
+    "Backend/canister changes, data migrations, or schema changes.",
+    "Adding new filters, tabs, columns, or additional sorting controls."
   ],
   "imageRequirements": {
     "required": [],

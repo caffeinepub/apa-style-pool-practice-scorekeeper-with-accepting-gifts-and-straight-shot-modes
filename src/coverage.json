@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T00:06:03.057Z",
+  "generatedAt": "2026-02-18T00:19:24.607Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,40 +12,34 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Identify “Official APA match” rows using the existing match-type/mode discriminator already used elsewhere in the codebase (same mechanism as in frontend/src/lib/history/matchWinLoss.ts, frontend/src/lib/history/matchHistoryRowModel.ts, and the match builders). Do not add any new flags/fields.",
+        "summary": "Fix MatchHistoryTable running W-L and Win% so each row’s displayed W-L/Win% is computed only from matches of the same mode/bucket as that row (Official APA, APA Practice, Accepting Gifts, Straight Shot), using the current displayed sort order and counting from the start of that mode’s sequence up through the current row (i.e., running within mode regardless of adjacency).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx",
-          "frontend/src/pages/history/MatchHistoryPage.tsx"
+          "frontend/src/components/history/MatchHistoryTable.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx",
-          "frontend/src/pages/history/MatchHistoryPage.tsx"
+          "frontend/src/components/history/MatchHistoryTable.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix Match History table aPPI display so that aPPI is displayed for Official APA rows only, using the existing official APA aPPI computation utility (with full context), and show \"—\" for Official APA rows where aPPI cannot be computed due to missing inputs. For all non-Official rows (APA Practice / Accepting Gifts / Straight Shot), always display \"—\" in the aPPI column.",
+        "summary": "Restore the missing toggleable “Sort by date” behavior in MatchHistoryTable using the existing getEffectiveMatchTimestamp(match) comparator, without changing the default ordering behavior that exists today; sorting must only change when the user uses the table’s existing sort UI control (do not add new controls).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx",
-          "frontend/src/pages/history/MatchHistoryPage.tsx"
+          "frontend/src/components/history/MatchHistoryTable.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx",
-          "frontend/src/pages/history/MatchHistoryPage.tsx"
+          "frontend/src/components/history/MatchHistoryTable.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Ensure the Match History “All History” ordering uses one unified sort key: sort strictly by the numeric value returned by the existing getEffectiveMatchTimestamp(match) (no new helper), newest first. Keep the Date display exactly as it is now (date-only).",
+        "summary": "Keep MatchHistoryTable UI layout/columns and date display unchanged while implementing the logic fixes, limiting changes to frontend/src/components/history/MatchHistoryTable.tsx (plus any already-existing sort control wiring required).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/history/MatchHistoryPage.tsx",
           "frontend/src/components/history/MatchHistoryTable.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/history/MatchHistoryPage.tsx",
           "frontend/src/components/history/MatchHistoryTable.tsx"
         ]
       }
@@ -57,7 +51,6 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/history/MatchHistoryTable.tsx",
-    "frontend/src/pages/history/MatchHistoryPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
