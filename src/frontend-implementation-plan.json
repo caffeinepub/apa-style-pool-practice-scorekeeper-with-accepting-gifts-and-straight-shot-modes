@@ -1,127 +1,68 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Pool Practice Tracker — drill navigation fixes, match table cleanup, locked drill names, and multi-select delete",
+  "title": "Match History: Official APA aPPI display + unified effective timestamp sorting",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Accepting Gifts: make the existing “Save & Start Next Match” save and immediately start the next match at the next computed level (no other button behavior changes).",
+      "summary": "Detect “Official APA match” rows using the existing match-type/mode discriminator logic already used in history modules, without adding new flags/fields.",
       "acceptanceCriteria": [
-        "When a set is complete, clicking “Save & Start Next Match” saves the match successfully and then navigates directly into the next Accepting Gifts match without taking the user to Home/History/Start screen.",
-        "The next match starts at the next baseline/level computed by existing progression logic (no new progression rules introduced).",
-        "“Save & Exit”, “Exit Without Saving”, “Back to Home”, and any other buttons retain their current navigation and behavior unchanged."
+        "No new properties/flags are added to ApiMatch or any saved match payloads to represent Official APA vs APA Practice.",
+        "Official APA rows are detected using the same discriminator logic already present in the referenced modules (i.e., reuse the existing pattern rather than introducing a new classifier)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "path": "frontend/src/components/history/MatchHistoryTable.tsx",
           "operation": "modify",
-          "description": "Update ONLY the “Save & Start Next Match” handler to (1) reuse existing progression logic to compute the next baseline/level, (2) save the completed match, (3) clear the prior Accepting Gifts in-progress session state, (4) write a fresh in-progress session state for the next match using the computed next baseline/level, and (5) navigate directly to the Accepting Gifts game page. Keep all other button handlers and navigation unchanged."
+          "description": "Replace any direct Official APA detection checks with the existing discriminator used elsewhere (e.g., reuse classifyMatchBucket(match) === 'officialApa') so the table uses the same mechanism as matchWinLoss.ts/matchHistoryRowModel.ts and match builders; do not add new match flags/fields."
         },
         {
-          "path": "frontend/src/lib/session/inProgressSessions.ts",
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
           "operation": "modify",
-          "description": "If needed for clarity/safety, add or adjust a small helper for replacing (clear + set) the Accepting Gifts sessionStorage state used when chaining into the next match, without affecting other modes’ session keys or behavior."
+          "description": "Update APA tab filtering logic to rely on the same existing discriminator pattern for identifying Official APA vs APA Practice (consistent with matchWinLoss.ts/matchHistoryRowModel.ts), without introducing new classifier helpers or fields."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Straight Shot: add a “Save & Start Next Match” action that saves then immediately starts a new Straight Shot session (no other button behavior changes).",
+      "summary": "Show aPPI only for Official APA rows by wiring the existing official APA aPPI context utility into the Match History table; show “—” otherwise.",
       "acceptanceCriteria": [
-        "A “Save & Start Next Match” button is available at the end-of-session flow for Straight Shot.",
-        "Clicking it saves the current match successfully, clears the prior in-progress session state, and navigates directly into a new Straight Shot match.",
-        "All pre-existing Straight Shot buttons (e.g., save/end, exit without saving, back) continue to behave exactly as before."
+        "In frontend/src/components/history/MatchHistoryTable.tsx, Official APA rows compute aPPI via the existing official APA context-aware util (frontend/src/lib/apa/officialApaPpi.ts: computeOfficialApaAppiWithContext + existing formatter) using the full match list passed into the table.",
+        "For an Official APA row where the util returns invalid/null, the table displays \"—\" in the aPPI cell.",
+        "For any non-Official APA row, the aPPI cell is always \"—\" (no computation attempted).",
+        "No changes are made to the aPPI formula/logic in the util; only wiring/display in the table is updated."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/straight-shot/StraightShotGamePage.tsx",
+          "path": "frontend/src/components/history/MatchHistoryTable.tsx",
           "operation": "modify",
-          "description": "Add a new “Save & Start Next Match” button to the end-of-session button area. Implement a new save-then-restart flow that reuses existing save logic, clears the existing Straight Shot sessionStorage state, initializes a new Straight Shot session state, and navigates directly back into the Straight Shot game page. Do not alter existing button labels, placement (beyond inserting the new button), or behaviors."
+          "description": "Wire Official APA aPPI display to computeOfficialApaAppiWithContext(match, allMatches) and formatOfficialAppi for Official APA rows only; for non-Official rows always render \"—\" and avoid calling the util. Keep existing date-only display behavior intact."
         },
         {
-          "path": "frontend/src/lib/session/inProgressSessions.ts",
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
           "operation": "modify",
-          "description": "If needed, add or adjust a small helper for replacing (clear + set) the Straight Shot sessionStorage state used when starting the next match, without impacting other modes’ session behavior."
+          "description": "Pass the full match list (sorted full history) into MatchHistoryTable as an additional context prop used exclusively for Official APA aPPI computation, while still passing the filtered list for rows to render (no layout/styling changes)."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Accepting Gifts: ensure saved match notes first line is exactly “level played | result” and does not duplicate baseline/level text, while preserving any user-entered notes on later lines.",
+      "summary": "Ensure All History ordering uses a single unified sort key: getEffectiveMatchTimestamp(match) numeric value, newest first, without changing date-only display formatting.",
       "acceptanceCriteria": [
-        "Newly saved Accepting Gifts matches store a first-line summary in notes formatted exactly as: \"<levelPlayedLabel> | <playerScore>-<ghostScore>\".",
-        "The stored summary no longer includes baseline level or any duplicated level text.",
-        "If the user entered additional notes during the session, they remain appended after the summary on a new line."
+        "Match ordering in the All tab (and the table view fed by it) is determined solely by getEffectiveMatchTimestamp(match), descending (newest first), without introducing new sorting helpers.",
+        "Official APA matches sort based on the user-entered official APA match date as encoded by getEffectiveMatchTimestamp; drills/practice sort using their saved high-resolution timestamp (dateTime) as encoded by getEffectiveMatchTimestamp.",
+        "When multiple drills occur on the same calendar date, they appear in correct chronological order based on their high-resolution timestamps, without changing the date-only display formatting in the Date column (formatEffectiveMatchDate remains date-only)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx",
+          "path": "frontend/src/pages/history/MatchHistoryPage.tsx",
           "operation": "modify",
-          "description": "Adjust Accepting Gifts match saving (both “Save & Start Next Match” and “Save & Exit”) to construct the notes first line as exactly “<levelPlayedLabel> | <playerScore>-<ghostScore>” (no baseline label, no duplicates), and append existing user-entered notes after a newline when present."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Match History table: rename “Adjusted PPI” header to “aPPI” and remove the “Rolling 10/20” column (header and cells) without changing other columns’ meaning/order.",
-      "acceptanceCriteria": [
-        "The Match History table header shows “aPPI” instead of “Adjusted PPI”.",
-        "The “Rolling 10/20” column is removed from the table, and all rows align correctly with the remaining headers.",
-        "No other table columns change meaning or ordering beyond removing “Rolling 10/20”."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/history/MatchHistoryTable.tsx",
-          "operation": "modify",
-          "description": "Rename the table header “Adjusted PPI” to “aPPI”. Remove the “Rolling 10/20” column entirely (header + corresponding per-row cell output) and update any affected colSpan/alignment so rows render correctly with remaining columns unchanged."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Accepting Gifts and Straight Shot start pages: lock player name to the logged-in user’s profile name (not editable) and ensure sessions store playerName as the profile name.",
-      "acceptanceCriteria": [
-        "On Accepting Gifts Start and Straight Shot Start pages, the player name is displayed using the current caller’s saved profile name and cannot be edited.",
-        "Starting a session in either mode uses the profile name as the stored session playerName.",
-        "No other modes’ player naming behavior is changed."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-          "operation": "modify",
-          "description": "Replace the editable player name input with a non-editable display bound to the current caller’s saved profile name (use the existing profile query hook that relies on the authorization component). Starting a new Accepting Gifts session must write playerName from the profile name, not from user input. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/straight-shot/StraightShotStartPage.tsx",
-          "operation": "modify",
-          "description": "Replace the editable player name input with a non-editable display bound to the current caller’s saved profile name (use the existing profile query hook that relies on the authorization component). Starting a new Straight Shot session must write playerName from the profile name, not from user input. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "If needed to support the start pages cleanly, ensure the existing get-caller-profile query hook is used consistently for retrieving the logged-in user’s profile name and that start pages can safely depend on it (no changes to unrelated queries/mutations). Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Match History table: add multi-select row selection with a discrete “Delete selected” action and confirmation, using existing bulk delete capability, while keeping per-row “View” intact.",
-      "acceptanceCriteria": [
-        "Users can select multiple match rows in the Match History table (including a select-all control for the current list view).",
-        "A “Delete selected” action is shown in a discrete way (e.g., only when one or more rows are selected) and requires confirmation before deleting.",
-        "Confirmed deletion permanently removes the selected matches from backend storage and the UI refreshes to reflect the removals.",
-        "The existing per-row “View” button continues to work as before and does not require selection."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a new React Query mutation hook for bulk deletion that calls the existing backend capability to delete multiple matches at once, and invalidates the matches query on success."
+          "description": "Centralize and confirm sorting for match history views uses only getEffectiveMatchTimestamp(match) (descending) as the sole ordering key for the All tab data and the data passed down to the table/cards (no new sorting helper introduced)."
         },
         {
           "path": "frontend/src/components/history/MatchHistoryTable.tsx",
           "operation": "modify",
-          "description": "Add a leading multi-select checkbox column with per-row selection and a select-all control for the current matches prop. Show a discrete “Delete selected” control only when one or more rows are selected; require confirmation (reuse existing AlertDialog UI component) and on confirm call the new bulk delete hook, then clear selection and rely on query invalidation/refresh. Preserve the per-row “View” button exactly as-is and independent of selection."
+          "description": "Ensure the table’s rendered order follows the parent-provided ordering based on getEffectiveMatchTimestamp(match) (descending) and does not introduce any alternative sort keys; keep Date cell formatting as-is (date-only via formatEffectiveMatchDate)."
         }
       ]
     }

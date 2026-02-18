@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-accepting-gifts-change-only-the-existing-save-start-next-match-button-behavior-so-that-after-saving-it-immediately-starts-the-next-match-at-the-next-calculated-level-using-the-already-implemented-progression-logic-instead-of-navigating-to-the-home-screen-or-history-do-not-change-any-other-buttons-behavior",
-      "featureTitle": "Accepting Gifts: Change ONLY the existing “Save & Start Next Match” button behavior so that after saving it immediately starts the next match at the next calculated level (using the already-implemented progression logic), instead of navigating to the home screen or history. Do not change any other buttons’ behavior.",
+      "featureId": "feature-identify-official-apa-match-rows-using-the-existing-match-type-mode-discriminator-already-used-elsewhere-in-the-codebase-same-mechanism-as-in-frontend-src-lib-history-matchwinloss-ts-frontend-src-lib-history-matchhistoryrowmodel-ts-and-the-match-builders-do-not-add-any-new-flags-fields",
+      "featureTitle": "Identify “Official APA match” rows using the existing match-type/mode discriminator already used elsewhere in the codebase (same mechanism as in frontend/src/lib/history/matchWinLoss.ts, frontend/src/lib/history/matchHistoryRowModel.ts, and the match builders). Do not add any new flags/fields.",
       "files": [
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
+        "frontend/src/components/history/MatchHistoryTable.tsx",
+        "frontend/src/pages/history/MatchHistoryPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,10 +23,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-straight-shot-add-a-save-start-next-match-button-that-saves-the-current-session-and-immediately-starts-a-new-straight-shot-session-do-not-change-any-other-existing-buttons-behavior",
-      "featureTitle": "Straight Shot: Add a “Save & Start Next Match” button that saves the current session and immediately starts a new Straight Shot session. Do not change any other existing buttons’ behavior.",
+      "featureId": "feature-fix-match-history-table-appi-display-so-that-appi-is-displayed-for-official-apa-rows-only-using-the-existing-official-apa-appi-computation-utility-with-full-context-and-show-for-official-apa-rows-where-appi-cannot-be-computed-due-to-missing-inputs-for-all-non-official-rows-apa-practice-accepting-gifts-straight-shot-always-display-in-the-appi-column",
+      "featureTitle": "Fix Match History table aPPI display so that aPPI is displayed for Official APA rows only, using the existing official APA aPPI computation utility (with full context), and show \"—\" for Official APA rows where aPPI cannot be computed due to missing inputs. For all non-Official rows (APA Practice / Accepting Gifts / Straight Shot), always display \"—\" in the aPPI column.",
       "files": [
-        "frontend/src/pages/straight-shot/StraightShotGamePage.tsx"
+        "frontend/src/components/history/MatchHistoryTable.tsx",
+        "frontend/src/pages/history/MatchHistoryPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,10 +44,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-accepting-gifts-match-history-notes-formatting-ensure-the-accepting-gifts-match-summary-stored-in-notes-the-first-line-used-in-the-match-history-row-shows-only-level-played-result-e-g-2-8-7-4-and-does-not-include-any-duplicated-level-baseline-text-preserve-any-user-entered-notes-on-subsequent-lines-if-present",
-      "featureTitle": "Accepting Gifts match history notes formatting: Ensure the Accepting Gifts match summary stored in notes (the first line used in the Match History row) shows only “level played | result” (e.g., “2+8 | 7-4”) and does not include any duplicated level/baseline text. Preserve any user-entered notes on subsequent lines if present.",
+      "featureId": "feature-ensure-the-match-history-all-history-ordering-uses-one-unified-sort-key-sort-strictly-by-the-numeric-value-returned-by-the-existing-geteffectivematchtimestamp-match-no-new-helper-newest-first-keep-the-date-display-exactly-as-it-is-now-date-only",
+      "featureTitle": "Ensure the Match History “All History” ordering uses one unified sort key: sort strictly by the numeric value returned by the existing getEffectiveMatchTimestamp(match) (no new helper), newest first. Keep the Date display exactly as it is now (date-only).",
       "files": [
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsGamePage.tsx"
+        "frontend/src/components/history/MatchHistoryTable.tsx",
+        "frontend/src/pages/history/MatchHistoryPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -58,69 +61,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-match-history-table-columns-rename-the-header-adjusted-ppi-to-appi-and-remove-the-rolling-10-20-column-entirely-header-and-corresponding-cells-without-affecting-other-columns-or-row-rendering",
-      "featureTitle": "Match History table columns: rename the header “Adjusted PPI” to “aPPI”, and remove the “Rolling 10/20” column entirely (header and corresponding cells) without affecting other columns or row rendering.",
-      "files": [
-        "frontend/src/components/history/MatchHistoryTable.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-accepting-gifts-and-straight-shot-start-pages-lock-the-player-name-to-the-logged-in-user-s-profile-name-so-it-is-not-editable-the-session-created-from-these-start-pages-must-always-use-the-profile-name-as-the-playername",
-      "featureTitle": "Accepting Gifts and Straight Shot start pages: lock the player name to the logged-in user’s profile name so it is not editable. The session created from these start pages must always use the profile name as the playerName.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/accepting-gifts/AcceptingGiftsStartPage.tsx",
-        "frontend/src/pages/straight-shot/StraightShotStartPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-match-history-table-add-a-discrete-multi-select-delete-selected-rows-feature-that-permanently-deletes-the-underlying-match-records-from-storage-using-the-existing-delete-capability-include-a-confirmation-step-and-keep-the-existing-single-row-view-action-intact",
-      "featureTitle": "Match History table: add a discrete multi-select + delete-selected-rows feature that permanently deletes the underlying match records from storage using the existing delete capability. Include a confirmation step and keep the existing single-row “View” action intact.",
-      "files": [
-        "frontend/src/components/history/MatchHistoryTable.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-6"
       ],
       "confidence": "high"
     }

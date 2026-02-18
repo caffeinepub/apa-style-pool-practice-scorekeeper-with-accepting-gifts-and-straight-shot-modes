@@ -1,14 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Make targeted navigation, match-history formatting, table cleanup, locked player-name behavior, and multi-select deletion improvements for Accepting Gifts and Straight Shot without changing unrelated flows.
+**Goal:** Fix Match History table logic so Official APA rows are detected using existing match-type/mode discrimination, aPPI displays correctly for Official APA only, and “All History” sorting uses a single unified effective timestamp key.
 
 **Planned changes:**
-- Update Accepting Gifts end-of-set flow so the existing “Save & Start Next Match” saves and immediately starts the next match at the next calculated level (using existing progression logic), without changing any other button behaviors.
-- Add a “Save & Start Next Match” button to the Straight Shot end-of-session flow that saves and immediately starts a new Straight Shot session, without changing any other existing button behaviors.
-- Fix Accepting Gifts match-history notes first-line summary formatting to store only “level played | result” (e.g., “2+8 | 7-4”), while preserving any user-entered notes on subsequent lines.
-- Update Match History table columns by renaming “Adjusted PPI” to “aPPI” and removing the “Rolling 10/20” column (header + cells) while keeping all other columns and row rendering intact.
-- On Accepting Gifts and Straight Shot start pages, display the logged-in profile name as the player name and prevent editing; ensure created sessions always store the profile name as `playerName`.
-- Add a discrete multi-select + “Delete selected” capability to the Match History table with confirmation, deleting the underlying match records via existing delete functionality while keeping the per-row “View” action unchanged.
+- Reuse the existing match-type/mode discriminator (as used in matchWinLoss.ts, matchHistoryRowModel.ts, and match builders) to identify “Official APA match” rows without adding any new flags/fields.
+- Update MatchHistoryTable aPPI column logic to compute/display aPPI only for Official APA rows using the existing official APA aPPI utility with full match-list context; show "—" when aPPI cannot be computed or when the row is not Official APA.
+- Ensure the “All History” ordering (and the table view fed by it) sorts strictly by the numeric value from getEffectiveMatchTimestamp(match), descending (newest first), while keeping the Date column display date-only as it is now.
 
-**User-visible outcome:** Users can chain Accepting Gifts matches correctly, start consecutive Straight Shot sessions via a new button, see cleaner Accepting Gifts history summaries, view a simplified Match History table, always play these drills under their profile name, and bulk-delete selected match history entries with confirmation.
+**User-visible outcome:** In Match History, only Official APA matches show an aPPI value (otherwise "—"), and the All tab history list is consistently ordered newest-first using the effective match timestamp while the Date column remains date-only.

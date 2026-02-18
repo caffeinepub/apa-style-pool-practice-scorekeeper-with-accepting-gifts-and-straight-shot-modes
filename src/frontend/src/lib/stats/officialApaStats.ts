@@ -1,6 +1,7 @@
 import type { ApiMatch } from '../../backend';
-import { extractOfficialApaWinRate } from '../apa/apaAggregateStats';
+import { calculateOfficialApaWinRate } from '../apa/apaAggregateStats';
 import { computeOfficialApaPpi, computeOfficialApaAppiWithContext } from '../apa/officialApaPpi';
+import { extractApaMatchDataPoints } from '../apa/apaAggregateStats';
 
 export interface OfficialApaStats {
   totalMatches: number;
@@ -15,7 +16,12 @@ export interface OfficialApaStats {
 export function computeOfficialApaStats(matches: ApiMatch[], playerName: string): OfficialApaStats {
   const officialMatches = matches.filter(m => m.officialApaMatchLogData);
 
-  const { total, wins, winRate } = extractOfficialApaWinRate(matches);
+  const dataPoints = extractApaMatchDataPoints(matches, playerName);
+  const officialDataPoints = dataPoints.filter(dp => dp.didWin !== null);
+  
+  const wins = officialDataPoints.filter(dp => dp.didWin === true).length;
+  const total = officialDataPoints.length;
+  const winRate = calculateOfficialApaWinRate(dataPoints);
 
   const validPpiValues: number[] = [];
   const validAppiValues: number[] = [];

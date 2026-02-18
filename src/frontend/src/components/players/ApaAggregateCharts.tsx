@@ -1,128 +1,67 @@
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, TooltipProps } from 'recharts';
 import type { ApaAggregateDataPoint } from '../../lib/apa/apaAggregateStats';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ApaAggregateChartsProps {
   dataPoints: ApaAggregateDataPoint[];
-  playerName: string;
 }
 
-// Custom dot shapes for differentiation
-const CircleDot = (props: any) => {
-  const { cx, cy, stroke } = props;
-  return <circle cx={cx} cy={cy} r={4} fill={stroke} />;
-};
-
-const SquareDot = (props: any) => {
-  const { cx, cy, stroke } = props;
-  return <rect x={cx - 4} y={cy - 4} width={8} height={8} fill={stroke} />;
-};
-
-const TriangleDot = (props: any) => {
-  const { cx, cy, stroke } = props;
-  const points = `${cx},${cy - 5} ${cx - 4.5},${cy + 3} ${cx + 4.5},${cy + 3}`;
-  return <polygon points={points} fill={stroke} />;
-};
-
-export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggregateChartsProps) {
-  console.log('APA RAW DATAPOINTS', dataPoints);
-
-  const sortedDataPoints = useMemo(() => {
-    return [...dataPoints].sort((a, b) => a.timestamp - b.timestamp);
+export default function ApaAggregateCharts({ dataPoints }: ApaAggregateChartsProps) {
+  const chartData = useMemo(() => {
+    return dataPoints.map((dp) => ({
+      timestamp: dp.timestamp, // BUILD 2: Numeric timestamp (unique per match)
+      date: new Date(dp.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), // BUILD 2: Date-only label
+      ppi: dp.ppi,
+      appi: dp.appi,
+      defensiveShots: dp.defensiveShots,
+      yourPoints: dp.yourPoints,
+      opponentPoints: dp.opponentPoints,
+    }));
   }, [dataPoints]);
 
-  // Build unified dataset keyed by timestamp
-  const unifiedData = useMemo(() => {
-    const dataMap = new Map<number, {
-      timestamp: number;
-      ppi?: number;
-      appi?: number;
-      yourPoints?: number;
-      opponentPoints?: number;
-      defensiveShots?: number;
-    }>();
+  // BUILD 2: Custom tooltip to show full date+time
+  const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+    if (!active || !payload || payload.length === 0) return null;
 
-    sortedDataPoints.forEach((dp) => {
-      const existing = dataMap.get(dp.timestamp) || { timestamp: dp.timestamp };
-
-      if (typeof dp.ppi === 'number' && isFinite(dp.ppi)) {
-        existing.ppi = dp.ppi;
-      }
-      if (typeof dp.appi === 'number' && isFinite(dp.appi)) {
-        existing.appi = dp.appi;
-      }
-      if (typeof dp.yourPoints === 'number' && isFinite(dp.yourPoints)) {
-        existing.yourPoints = dp.yourPoints;
-      }
-      if (typeof dp.opponentPoints === 'number' && isFinite(dp.opponentPoints)) {
-        existing.opponentPoints = dp.opponentPoints;
-      }
-      if (typeof dp.defensiveShots === 'number' && isFinite(dp.defensiveShots)) {
-        existing.defensiveShots = dp.defensiveShots;
-      }
-
-      dataMap.set(dp.timestamp, existing);
+    const data = payload[0].payload;
+    const fullDateTime = new Date(data.timestamp).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
     });
 
-    return Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
-  }, [sortedDataPoints]);
-
-  console.log('UNIFIED DATA (final):', unifiedData);
-
-  if (dataPoints.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>APA Performance Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No APA match data available for {playerName}.</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-md border bg-background p-3 shadow-md">
+        <p className="mb-2 text-sm font-semibold">{fullDateTime}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value !== null && entry.value !== undefined ? Number(entry.value).toFixed(2) : '—'}
+          </p>
+        ))}
+      </div>
     );
-  }
-
-  const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
   };
 
   return (
-    <div className="space-y-6" data-apa-aggregate-root>
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>PPI & aPPI Trend</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={unifiedData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                scale="time"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={formatTimestamp}
-              />
+              <XAxis dataKey="date" /> {/* BUILD 2: Date-only label */}
               <YAxis />
-              <Tooltip labelFormatter={formatTimestamp} />
+              <Tooltip content={<CustomTooltip />} /> {/* BUILD 2: Full date+time in tooltip */}
               <Legend />
-              <Line
-                dataKey="ppi"
-                name="PPI"
-                stroke="#000"
-                strokeWidth={2}
-                dot={CircleDot}
-                connectNulls={true}
-              />
-              <Line
-                dataKey="appi"
-                name="aPPI"
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={SquareDot}
-                connectNulls={true}
-              />
+              <Line type="monotone" dataKey="ppi" stroke="#000" strokeWidth={2} name="PPI" dot={{ r: 4, fill: '#000' }} connectNulls={true} />
+              <Line type="monotone" dataKey="appi" stroke="#3b82f6" strokeWidth={2} name="aPPI" dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#3b82f6' }} connectNulls={true} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -134,42 +73,15 @@ export default function ApaAggregateCharts({ dataPoints, playerName }: ApaAggreg
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={unifiedData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                scale="time"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={formatTimestamp}
-              />
+              <XAxis dataKey="date" /> {/* BUILD 2: Date-only label */}
               <YAxis />
-              <Tooltip labelFormatter={formatTimestamp} />
+              <Tooltip content={<CustomTooltip />} /> {/* BUILD 2: Full date+time in tooltip */}
               <Legend />
-              <Line
-                dataKey="yourPoints"
-                name="Your Points"
-                stroke="#000"
-                strokeWidth={2}
-                dot={CircleDot}
-                connectNulls={true}
-              />
-              <Line
-                dataKey="opponentPoints"
-                name="Opponent Points"
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={SquareDot}
-                connectNulls={true}
-              />
-              <Line
-                dataKey="defensiveShots"
-                name="Defensive Shots"
-                stroke="#7c3aed"
-                strokeWidth={2}
-                dot={TriangleDot}
-                connectNulls={true}
-              />
+              <Line type="monotone" dataKey="yourPoints" stroke="#000" strokeWidth={2} name="Your Points" dot={{ r: 4, fill: '#000' }} connectNulls={true} />
+              <Line type="monotone" dataKey="opponentPoints" stroke="#3b82f6" strokeWidth={2} name="Opponent Points" dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#3b82f6' }} connectNulls={true} />
+              <Line type="monotone" dataKey="defensiveShots" stroke="#9333ea" strokeWidth={2} name="Defensive Shots" dot={{ r: 4, fill: '#9333ea', strokeWidth: 2, stroke: '#9333ea' }} connectNulls={true} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>

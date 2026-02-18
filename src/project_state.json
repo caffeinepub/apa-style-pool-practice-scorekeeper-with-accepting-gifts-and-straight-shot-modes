@@ -1,62 +1,37 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build updates to be applied surgically on top of Draft/Build 68 (Build 69 ignored), focusing on specific navigation behavior for drills, match table column/notes adjustments, locking player name to profile on start pages, and adding multi-select delete that permanently removes records from storage.",
+  "summary": "Surgical updates to Match History/Matchups table logic only (no layout changes): reuse existing match-type discriminator, display aPPI only for Official APA rows, and unify sorting via existing effective timestamp logic.",
   "architectural_notes": [
-    "All changes must be built from Draft/Build 68; Build 69 is invalid/ignored.",
-    "Changes are intended to be surgical and must not alter unrelated functionality.",
-    "Multi-select row deletion must permanently delete the underlying saved records from storage (not just hide rows in UI)."
+    "No layout changes; surgical table logic updates only.",
+    "Do not introduce new flags/fields for match type; reuse existing match-type/mode discriminator used in matchWinLoss.ts/history row model/match builders.",
+    "For unified sorting, use existing getEffectiveMatchTimestamp(match) (no new helper).",
+    "Keep Date display formatting exactly as-is (date-only), even though sorting uses timestamps for drills."
   ],
-  "known_issues": [
-    "Rollback/revert may have caused data loss (e.g., if performed via reinstall instead of upgrade, in-canister heap data can be wiped unless preserved via stable memory/upgrade hooks)."
-  ],
-  "isFixRequest": false,
+  "known_issues": [],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-accepting-gifts-change-only-the-existing-save-start-next-match-button-behavior-so-that-after-saving-it-immediately-starts-the-next-match-at-the-next-calculated-level-using-the-already-implemented-progression-logic-instead-of-navigating-to-the-home-screen-or-history-do-not-change-any-other-buttons-behavior",
-      "title": "Accepting Gifts: Change ONLY the existing “Save & Start Next Match” button behavior so that after saving it immediately starts the next match at the next calculated level (using the already-implemented progression logic), instead of navigating to the home screen or history. Do not change any other buttons’ behavior.",
+      "id": "feature-identify-official-apa-match-rows-using-the-existing-match-type-mode-discriminator-already-used-elsewhere-in-the-codebase-same-mechanism-as-in-frontend-src-lib-history-matchwinloss-ts-frontend-src-lib-history-matchhistoryrowmodel-ts-and-the-match-builders-do-not-add-any-new-flags-fields",
+      "title": "Identify “Official APA match” rows using the existing match-type/mode discriminator already used elsewhere in the codebase (same mechanism as in frontend/src/lib/history/matchWinLoss.ts, frontend/src/lib/history/matchHistoryRowModel.ts, and the match builders). Do not add any new flags/fields.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-straight-shot-add-a-save-start-next-match-button-that-saves-the-current-session-and-immediately-starts-a-new-straight-shot-session-do-not-change-any-other-existing-buttons-behavior",
-      "title": "Straight Shot: Add a “Save & Start Next Match” button that saves the current session and immediately starts a new Straight Shot session. Do not change any other existing buttons’ behavior.",
+      "id": "feature-fix-match-history-table-appi-display-so-that-appi-is-displayed-for-official-apa-rows-only-using-the-existing-official-apa-appi-computation-utility-with-full-context-and-show-for-official-apa-rows-where-appi-cannot-be-computed-due-to-missing-inputs-for-all-non-official-rows-apa-practice-accepting-gifts-straight-shot-always-display-in-the-appi-column",
+      "title": "Fix Match History table aPPI display so that aPPI is displayed for Official APA rows only, using the existing official APA aPPI computation utility (with full context), and show \"—\" for Official APA rows where aPPI cannot be computed due to missing inputs. For all non-Official rows (APA Practice / Accepting Gifts / Straight Shot), always display \"—\" in the aPPI column.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-accepting-gifts-match-history-notes-formatting-ensure-the-accepting-gifts-match-summary-stored-in-notes-the-first-line-used-in-the-match-history-row-shows-only-level-played-result-e-g-2-8-7-4-and-does-not-include-any-duplicated-level-baseline-text-preserve-any-user-entered-notes-on-subsequent-lines-if-present",
-      "title": "Accepting Gifts match history notes formatting: Ensure the Accepting Gifts match summary stored in notes (the first line used in the Match History row) shows only “level played | result” (e.g., “2+8 | 7-4”) and does not include any duplicated level/baseline text. Preserve any user-entered notes on subsequent lines if present.",
+      "id": "feature-ensure-the-match-history-all-history-ordering-uses-one-unified-sort-key-sort-strictly-by-the-numeric-value-returned-by-the-existing-geteffectivematchtimestamp-match-no-new-helper-newest-first-keep-the-date-display-exactly-as-it-is-now-date-only",
+      "title": "Ensure the Match History “All History” ordering uses one unified sort key: sort strictly by the numeric value returned by the existing getEffectiveMatchTimestamp(match) (no new helper), newest first. Keep the Date display exactly as it is now (date-only).",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-match-history-table-columns-rename-the-header-adjusted-ppi-to-appi-and-remove-the-rolling-10-20-column-entirely-header-and-corresponding-cells-without-affecting-other-columns-or-row-rendering",
-      "title": "Match History table columns: rename the header “Adjusted PPI” to “aPPI”, and remove the “Rolling 10/20” column entirely (header and corresponding cells) without affecting other columns or row rendering.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-accepting-gifts-and-straight-shot-start-pages-lock-the-player-name-to-the-logged-in-user-s-profile-name-so-it-is-not-editable-the-session-created-from-these-start-pages-must-always-use-the-profile-name-as-the-playername",
-      "title": "Accepting Gifts and Straight Shot start pages: lock the player name to the logged-in user’s profile name so it is not editable. The session created from these start pages must always use the profile name as the playerName.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-match-history-table-add-a-discrete-multi-select-delete-selected-rows-feature-that-permanently-deletes-the-underlying-match-records-from-storage-using-the-existing-delete-capability-include-a-confirmation-step-and-keep-the-existing-single-row-view-action-intact",
-      "title": "Match History table: add a discrete multi-select + delete-selected-rows feature that permanently deletes the underlying match records from storage using the existing delete capability. Include a confirmation step and keep the existing single-row “View” action intact.",
-      "reqIds": [
-        "REQ-6"
       ],
       "version": 1
     }
@@ -64,48 +39,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Accepting Gifts: Only change 'Save & Start Next Match' to save and immediately start next match at the next calculated level; leave other buttons unchanged",
+      "summary": "Use existing Official APA vs APA Practice discriminator (no new flags/fields) for table logic and logging behavior",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Straight Shot: Add 'Save & Start Next Match' button that saves and immediately starts a new match; leave other buttons unchanged",
+      "summary": "Fix aPPI display: show aPPI only for Official APA rows using existing computation util; show — when missing inputs",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Match Table: Accepting Gifts notes should show only 'level played | result' (e.g., '2+8 | 7-4') and remove duplicate level text",
+      "summary": "Fix All History sorting: use existing getEffectiveMatchTimestamp(match) numeric value so Official APA sorts by user-entered match date and drills by high-resolution timestamp; keep date display unchanged",
       "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Match Table: Rename column 'Adjusted PPI' to 'aPPI'",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Match Table: Remove 'Rolling 10/20' column",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Accepting Gifts & Straight Shot start pages: Lock player name to profile name (not editable)",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Table: Add discrete multi-select and delete-selected-rows functionality that permanently deletes the underlying records from storage",
-      "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
     }
   ],
-  "projectName": "Pool Practice Tracker",
+  "projectName": "Match History",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

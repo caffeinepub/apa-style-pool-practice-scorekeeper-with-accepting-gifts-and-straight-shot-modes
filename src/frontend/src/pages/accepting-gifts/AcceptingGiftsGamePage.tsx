@@ -45,6 +45,7 @@ export default function AcceptingGiftsGamePage() {
         totalAttempts: parsed.totalAttempts ?? 0,
         setsCompleted: parsed.setsCompleted ?? 0,
         completed: parsed.completed ?? false,
+        attemptSequence: parsed.attemptSequence ?? [], // BUILD 1: Restore attemptSequence
       };
       setGameState(migratedState);
     } else {
@@ -126,14 +127,19 @@ export default function AcceptingGiftsGamePage() {
       );
 
       const levelPlayed = getLevelByIndex(gameState.levelPlayedIndex);
-      const result = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
-      const noteSummary = `${levelPlayed.label} | ${result}`;
+      const nextLevel = getLevelByIndex(nextBaselineIndex);
+      const score = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
+      const summaryLine = `${levelPlayed.label} | ${score} | ${nextLevel.label}`;
+      
+      // BUILD 1: Add AG_SEQ line with attemptSequence
+      const seqLine = `AG_SEQ=${JSON.stringify(gameState.attemptSequence)}`;
+      const notesWithSequence = `${summaryLine}\n${seqLine}` + (gameState.notes ? `\n${gameState.notes}` : '');
 
       const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
 
       const { matchId, matchRecord } = buildAcceptingGiftsMatch({
         playerName: gameState.playerName,
-        notes: noteSummary + (gameState.notes ? `\n${gameState.notes}` : ''),
+        notes: notesWithSequence,
         startingObjectBallCount: baselineLevel.objectBallCount,
         endingObjectBallCount: levelPlayed.objectBallCount,
         totalAttempts: gameState.totalAttempts,
@@ -152,7 +158,6 @@ export default function AcceptingGiftsGamePage() {
       // Clear old session and start new one at next level
       sessionStorage.removeItem(SESSION_KEYS.ACCEPTING_GIFTS);
 
-      const nextLevel = getLevelByIndex(nextBaselineIndex);
       const newSession: GameState = {
         playerName: gameState.playerName,
         notes: '',
@@ -163,6 +168,7 @@ export default function AcceptingGiftsGamePage() {
         totalAttempts: 0,
         setsCompleted: 0,
         completed: false,
+        attemptSequence: [], // BUILD 1: Initialize empty sequence for new session
       };
 
       sessionStorage.setItem(SESSION_KEYS.ACCEPTING_GIFTS, JSON.stringify(newSession));
@@ -194,14 +200,19 @@ export default function AcceptingGiftsGamePage() {
       );
 
       const levelPlayed = getLevelByIndex(gameState.levelPlayedIndex);
-      const result = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
-      const noteSummary = `${levelPlayed.label} | ${result}`;
+      const nextLevel = getLevelByIndex(nextBaselineIndex);
+      const score = `${gameState.playerSetScore}-${gameState.ghostSetScore}`;
+      const summaryLine = `${levelPlayed.label} | ${score} | ${nextLevel.label}`;
+      
+      // BUILD 1: Add AG_SEQ line with attemptSequence
+      const seqLine = `AG_SEQ=${JSON.stringify(gameState.attemptSequence)}`;
+      const notesWithSequence = `${summaryLine}\n${seqLine}` + (gameState.notes ? `\n${gameState.notes}` : '');
 
       const baselineLevel = getLevelByIndex(gameState.baselineLevelIndex);
 
       const { matchId, matchRecord } = buildAcceptingGiftsMatch({
         playerName: gameState.playerName,
-        notes: noteSummary + (gameState.notes ? `\n${gameState.notes}` : ''),
+        notes: notesWithSequence,
         startingObjectBallCount: baselineLevel.objectBallCount,
         endingObjectBallCount: levelPlayed.objectBallCount,
         totalAttempts: gameState.totalAttempts,

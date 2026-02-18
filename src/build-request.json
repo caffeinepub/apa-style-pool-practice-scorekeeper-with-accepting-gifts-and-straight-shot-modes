@@ -1,136 +1,92 @@
 {
   "kind": "build_request",
-  "title": "Surgical drill navigation fixes, match table cleanup, locked profile names, and multi-select delete",
-  "projectName": "Pool Practice Tracker",
+  "title": "Surgical Match History table logic: Official APA aPPI display + unified effective timestamp sorting",
+  "projectName": "Match History",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Accepting Gifts: Change ONLY the existing “Save & Start Next Match” button behavior so that after saving it immediately starts the next match at the next calculated level (using the already-implemented progression logic), instead of navigating to the home screen or history. Do not change any other buttons’ behavior.",
+      "text": "Identify “Official APA match” rows using the existing match-type/mode discriminator already used elsewhere in the codebase (same mechanism as in frontend/src/lib/history/matchWinLoss.ts, frontend/src/lib/history/matchHistoryRowModel.ts, and the match builders). Do not add any new flags/fields.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent-1"
+          "msg-5"
         ],
         "quotes": [
-          "Accepting Gifts:  Save and start next match instead of go to home screen it should go to the next level determined by logic that is already implemented.",
-          "The other buttons already navigate correctly so dont change them"
+          "Do not invent a new flag/field. Use the existing match-type/mode detection already used elsewhere (same mechanism used in matchWinLoss.ts / history row model / match builders)."
         ]
       },
       "acceptanceCriteria": [
-        "When a set is complete, clicking “Save & Start Next Match” saves the match successfully and then navigates directly into the next Accepting Gifts match without taking the user to Home/History/Start screen.",
-        "The next match starts at the next baseline/level computed by existing progression logic (no new progression rules introduced).",
-        "“Save & Exit”, “Exit Without Saving”, “Back to Home”, and any other buttons retain their current navigation and behavior unchanged."
+        "No new properties/flags are added to ApiMatch or any saved match payloads to represent Official APA vs APA Practice.",
+        "Official APA rows are detected using the same discriminator logic already present in the referenced modules (i.e., reuse the existing pattern rather than introducing a new classifier)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Straight Shot: Add a “Save & Start Next Match” button that saves the current session and immediately starts a new Straight Shot session. Do not change any other existing buttons’ behavior.",
+      "text": "Fix Match History table aPPI display so that aPPI is displayed for Official APA rows only, using the existing official APA aPPI computation utility (with full context), and show \"—\" for Official APA rows where aPPI cannot be computed due to missing inputs. For all non-Official rows (APA Practice / Accepting Gifts / Straight Shot), always display \"—\" in the aPPI column.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent-1"
+          "msg-5"
         ],
         "quotes": [
-          "Straight Shot: it needs thhe \"Save & Start Next Match\" button and this button will save and start another match.",
-          "The other buttons already navigate correctly so dont change them"
+          "aPPI should display for Official APA rows (and only those rows).",
+          "This is a display issue, not a “change the formula” request. Use the existing official APA aPPI computation/util (the same one used in the rest of the app).",
+          "If aPPI cannot be computed for a given Official APA row due to missing inputs, show — for that row (do not fake it)."
         ]
       },
       "acceptanceCriteria": [
-        "A “Save & Start Next Match” button is available at the end-of-session flow for Straight Shot.",
-        "Clicking it saves the current match successfully, clears the prior in-progress session state, and navigates directly into a new Straight Shot match.",
-        "All pre-existing Straight Shot buttons (e.g., save/end, exit without saving, back) continue to behave exactly as before."
+        "In frontend/src/components/history/MatchHistoryTable.tsx, Official APA rows compute aPPI via the existing official APA context-aware util (frontend/src/lib/apa/officialApaPpi.ts: computeOfficialApaAppiWithContext + existing formatter) using the full match list passed into the table.",
+        "For an Official APA row where the util returns invalid/null, the table displays \"—\" in the aPPI cell.",
+        "For any non-Official APA row, the aPPI cell is always \"—\" (no computation attempted).",
+        "No changes are made to the aPPI formula/logic in the util; only wiring/display in the table is updated."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Accepting Gifts match history notes formatting: Ensure the Accepting Gifts match summary stored in notes (the first line used in the Match History row) shows only “level played | result” (e.g., “2+8 | 7-4”) and does not include any duplicated level/baseline text. Preserve any user-entered notes on subsequent lines if present.",
+      "text": "Ensure the Match History “All History” ordering uses one unified sort key: sort strictly by the numeric value returned by the existing getEffectiveMatchTimestamp(match) (no new helper), newest first. Keep the Date display exactly as it is now (date-only).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent-1"
+          "msg-5"
         ],
         "quotes": [
-          "Accepting Gifts Log Entry in Match Table: In notes, it needs to show just the level of the game played | results so for example, 2+8 | 7-4.   (it currently shows more than that with the level at end of match printing too. So it shows twice)"
+          "There should be one unified sort key: Sort by the numeric value from the existing getEffectiveMatchTimestamp(match) (no new helper).",
+          "Keep Date display exactly as it is now (date-only)."
         ]
       },
       "acceptanceCriteria": [
-        "Newly saved Accepting Gifts matches store a first-line summary in notes formatted exactly as: \"<levelPlayedLabel> | <playerScore>-<ghostScore>\".",
-        "The stored summary no longer includes baseline level or any duplicated level text.",
-        "If the user entered additional notes during the session, they remain appended after the summary on a new line."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Match History table columns: rename the header “Adjusted PPI” to “aPPI”, and remove the “Rolling 10/20” column entirely (header and corresponding cells) without affecting other columns or row rendering.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-recent-1"
-        ],
-        "quotes": [
-          "Change column name “adjusted PPI” to “aPPI”",
-          "Remove rolling 10/20 column"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The Match History table header shows “aPPI” instead of “Adjusted PPI”.",
-        "The “Rolling 10/20” column is removed from the table, and all rows align correctly with the remaining headers.",
-        "No other table columns change meaning or ordering beyond removing “Rolling 10/20”."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Accepting Gifts and Straight Shot start pages: lock the player name to the logged-in user’s profile name so it is not editable. The session created from these start pages must always use the profile name as the playerName.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-recent-1"
-        ],
-        "quotes": [
-          "Accepting Gifts & Straight Shots Start up pages - on the start up pages: the name is the profile name for these drills and cannot be adjusted as these drills are for the profile."
-        ]
-      },
-      "acceptanceCriteria": [
-        "On Accepting Gifts Start and Straight Shot Start pages, the player name is displayed using the current caller’s saved profile name and cannot be edited.",
-        "Starting a session in either mode uses the profile name as the stored session playerName.",
-        "No other modes’ player naming behavior is changed."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Match History table: add a discrete multi-select + delete-selected-rows feature that permanently deletes the underlying match records from storage using the existing delete capability. Include a confirmation step and keep the existing single-row “View” action intact.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-recent-1"
-        ],
-        "quotes": [
-          "Multiple select/delete rows functionality but discrete",
-          "from storage"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Users can select multiple match rows in the Match History table (including a select-all control for the current list view).",
-        "A “Delete selected” action is shown in a discrete way (e.g., only when one or more rows are selected) and requires confirmation before deleting.",
-        "Confirmed deletion permanently removes the selected matches from backend storage and the UI refreshes to reflect the removals.",
-        "The existing per-row “View” button continues to work as before and does not require selection."
+        "Match ordering in the All tab (and the table view fed by it) is determined solely by getEffectiveMatchTimestamp(match), descending (newest first), without introducing new sorting helpers.",
+        "Official APA matches sort based on the user-entered official APA match date as encoded by getEffectiveMatchTimestamp; drills/practice sort using their saved high-resolution timestamp (dateTime) as encoded by getEffectiveMatchTimestamp.",
+        "When multiple drills occur on the same calendar date, they appear in correct chronological order based on their high-resolution timestamps, without changing the date-only display formatting in the Date column (formatEffectiveMatchDate remains date-only)."
       ]
     }
   ],
   "constraints": [
-    "Implement changes surgically on top of Draft/Build 68 only; ignore Build 69.",
-    "Do not change any unrelated functionality or navigation outside the explicitly listed items.",
-    "For Accepting Gifts and Straight Shot, do not alter the behavior of any buttons other than the specific “Save & Start Next Match” behavior/addition described by the user.",
-    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT."
+    "NO LAYOUT CHANGES. Surgical table logic only.",
+    "Do not invent/add new match flags/fields for Official APA detection; reuse existing discriminator logic already used in matchWinLoss.ts / matchHistoryRowModel.ts / match builders.",
+    "Do not create a new sorting helper; use the existing getEffectiveMatchTimestamp(match).",
+    "Keep the Date column display exactly as it is now (date-only).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Recovering or restoring data lost during the prior revert/reinstall.",
-    "Adding new drill modes, changing scoring rules, or changing Accepting Gifts progression logic beyond reusing the existing logic for navigation.",
-    "Adding new authentication methods (Internet Identity remains the only auth)."
+    "Do not change any page/table layout, styling, column order, spacing, or UI structure.",
+    "Do not change the aPPI formula, expected PPI table, or official APA calculation logic; only fix display wiring for the table.",
+    "Do not change how dates are formatted/displayed (no time shown in the Date column).",
+    "Do not add new backend fields, endpoints, or persistence changes."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }
