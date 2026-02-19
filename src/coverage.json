@@ -1,47 +1,32 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T00:58:54.492Z",
+  "generatedAt": "2026-02-19T03:10:20.961Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
+        "summary": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
-          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
+          "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
-          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
+          "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
+        "summary": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/stats/officialApaStats.ts",
-          "frontend/src/pages/stats/StatsPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/stats/officialApaStats.ts"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
-          "frontend/src/lib/apa/apaSkillLevelPrediction.ts"
+          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
         ],
         "matchedFiles": [
           "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
@@ -54,8 +39,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
-    "frontend/src/lib/stats/officialApaStats.ts",
+    "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx",
     "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",

@@ -8,7 +8,7 @@ import { extractPlayerApaMatches, computeBest10Of20Average } from '../../lib/apa
 import { getNavigationOrigin, clearNavigationOrigin } from '../../utils/urlParams';
 import { getApaPpiSkillLevelDetailed, getApaAppiSkillLevelDetailed } from '../../lib/apa/apaSkillLevelPrediction';
 import MatchupAnalysisPanel from '../../components/apa/MatchupAnalysisPanel';
-import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';
+import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';
 import { normalizePlayerName } from '../../utils/playerName';
 
 export default function PlayerAggregateStatsPage() {

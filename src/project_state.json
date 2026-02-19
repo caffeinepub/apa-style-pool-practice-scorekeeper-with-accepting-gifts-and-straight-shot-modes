@@ -1,61 +1,30 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Pool statistics tracking app with official APA and practice game management, matchup analysis, and skill level calculations",
-  "architectural_notes": [
-    "Stats page has official APA tab with View Detailed Player Stats screen",
-    "PPI (Performance Per Inning) and aPPI metrics tracked for skill level calculation",
-    "Game types: practice games and official APA matches"
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-update-the-matchup-analysis-to-include-both-practice-and-official-apa-games-add-visual-labels-or-badges-to-differentiate-between-practice-games-and-official-games-in-the-match-list-display",
-      "title": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
+      "id": "feature-create-a-new-file-frontend-src-components-apa-matchupanalysisdropdownplayerstats-tsx-that-is-an-exact-copy-of-the-existing-frontend-src-components-apa-matchupanalysisdropdown-tsx-with-no-modifications",
+      "title": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-on-the-stats-page-official-apa-tab-update-the-average-ppi-and-average-appi-calculations-to-use-the-10-highest-scoring-matches-from-the-most-recent-20-official-matches-chronologically-this-replaces-the-current-last-10-of-20-logic-with-a-best-10-of-last-20-calculation-based-on-ppi-scores",
-      "title": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
+      "id": "feature-in-frontend-src-pages-players-playeraggregatestatspage-tsx-change-the-import-statement-from-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdown-to-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdownplayerstats-with-no-other-code-changes",
+      "title": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-ensure-all-skill-level-calculations-use-the-best-10-out-of-last-20-official-matches-logic-10-highest-scoring-matches-from-the-most-recent-20-official-matches-apply-this-to-average-ppi-and-average-appi-calculations-used-for-skill-level-prediction",
-      "title": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Matchup analysis on View Detailed Player Stats should include practice and official APA games with labels/badges to differentiate",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Average PPI and aPPI calculations should use best 10 out of last 20 official matches (highest-scoring from most recent 20)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Skill level calculations on official APA tab must be based on best 10 out of last 20 official matches",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
-  "projectName": "Update matchup analysis and PPI calculations with best 10 of 20 logic",
+  "new_feature_requests": [],
+  "projectName": "Create duplicate component and update import in PlayerAggregateStatsPage",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-update-the-matchup-analysis-to-include-both-practice-and-official-apa-games-add-visual-labels-or-badges-to-differentiate-between-practice-games-and-official-games-in-the-match-list-display",
-      "featureTitle": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
+      "featureId": "feature-create-a-new-file-frontend-src-components-apa-matchupanalysisdropdownplayerstats-tsx-that-is-an-exact-copy-of-the-existing-frontend-src-components-apa-matchupanalysisdropdown-tsx-with-no-modifications",
+      "featureTitle": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
       "files": [
-        "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
-        "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
+        "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -23,28 +22,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-on-the-stats-page-official-apa-tab-update-the-average-ppi-and-average-appi-calculations-to-use-the-10-highest-scoring-matches-from-the-most-recent-20-official-matches-chronologically-this-replaces-the-current-last-10-of-20-logic-with-a-best-10-of-last-20-calculation-based-on-ppi-scores",
-      "featureTitle": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
-      "files": [
-        "frontend/src/lib/stats/officialApaStats.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-ensure-all-skill-level-calculations-use-the-best-10-out-of-last-20-official-matches-logic-10-highest-scoring-matches-from-the-most-recent-20-official-matches-apply-this-to-average-ppi-and-average-appi-calculations-used-for-skill-level-prediction",
-      "featureTitle": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
+      "featureId": "feature-in-frontend-src-pages-players-playeraggregatestatspage-tsx-change-the-import-statement-from-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdown-to-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdownplayerstats-with-no-other-code-changes",
+      "featureTitle": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
       "files": [
         "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
       ],
@@ -58,7 +37,7 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-2"
       ],
       "confidence": "high"
     }

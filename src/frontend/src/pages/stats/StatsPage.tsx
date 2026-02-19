@@ -141,12 +141,12 @@ export default function StatsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {officialApaStats?.averagePpiLast10Of20 !== null && officialApaStats?.averagePpiLast10Of20 !== undefined
-                    ? officialApaStats.averagePpiLast10Of20.toFixed(2)
+                  {officialApaStats?.averagePpiLast10 !== null && officialApaStats?.averagePpiLast10 !== undefined
+                    ? officialApaStats.averagePpiLast10.toFixed(2)
                     : '—'}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Last 10 out of 20 matches
+                  {officialApaStats?.avgPpiLast10Label || 'Last 10 matches'}
                 </p>
               </CardContent>
             </Card>
@@ -157,12 +157,12 @@ export default function StatsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {officialApaStats?.averageAppiLast10Of20 !== null && officialApaStats?.averageAppiLast10Of20 !== undefined
-                    ? officialApaStats.averageAppiLast10Of20.toFixed(2)
+                  {officialApaStats?.averageAppiBest10Of20 !== null && officialApaStats?.averageAppiBest10Of20 !== undefined
+                    ? officialApaStats.averageAppiBest10Of20.toFixed(2)
                     : '—'}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Last 10 out of 20 matches
+                  {officialApaStats?.avgAppiLast10Label || 'Best 10 out of last 20 matches'}
                 </p>
               </CardContent>
             </Card>

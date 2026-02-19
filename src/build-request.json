@@ -1,78 +1,52 @@
 {
   "kind": "build_request",
-  "title": "Update matchup analysis and PPI calculations with best 10 of 20 logic",
+  "title": "Create duplicate component and update import in PlayerAggregateStatsPage",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
+      "text": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-4"
         ],
         "quotes": [
-          "On the stats page official APA tab,  on the View Detailed Player Stats screen only, the matchup analysis details/matches should include practice and official apa games.  it should also differentiate between the two.",
-          "1, labels/badges"
+          "Create a new file (copy-paste exact contents)\n\nNEW FILE\nfrontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx\n\nContents: copy the entire MatchupAnalysisDropdown.tsx you pasted (unchanged for now)."
         ]
       },
       "acceptanceCriteria": [
-        "Matchup analysis panel shows both practice and official APA matches against the selected opponent",
-        "Each match in the list has a visible label or badge indicating whether it is a practice or official game",
-        "The differentiation is clear and visually distinct"
+        "File frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx exists",
+        "The new file contains identical code to MatchupAnalysisDropdown.tsx"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
+      "text": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-4"
         ],
         "quotes": [
-          "On the stats pap Officiial APA tab, the average PPI and average aPPI should be calculated using the Best 10 out of last 20 matches from official matches.",
-          "be the 10 highest-scoring matches from the most recent 20"
+          "Change ONLY the import in PlayerAggregateStatsPage\n\nIn:\nfrontend/src/pages/players/PlayerAggregateStatsPage.tsx\n\nReplace:\n\nimport MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\n\nWith:\n\nimport MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';"
         ]
       },
       "acceptanceCriteria": [
-        "Average PPI calculation on the Official APA tab uses the 10 highest PPI values from the most recent 20 official matches",
-        "Average aPPI calculation on the Official APA tab uses the corresponding aPPI values from those same 10 matches",
-        "If fewer than 20 official matches exist, use all available matches",
-        "If fewer than 10 matches exist, use all available matches"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "On the stats page official APA tab,  on the View Detailed Player Stats screen only,   All skill level calculations must be based on official matches.  Best 10 out of last 20."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Skill level predictions on the View Detailed Player Stats screen use average PPI and aPPI calculated from the best 10 of last 20 official matches",
-        "The calculation methodology matches the logic implemented in REQ-2",
-        "Skill level displays reflect the updated calculation approach"
+        "PlayerAggregateStatsPage.tsx imports from MatchupAnalysisDropdownPlayerStats instead of MatchupAnalysisDropdown",
+        "No other changes are made to PlayerAggregateStatsPage.tsx"
       ]
     }
   ],
   "constraints": [
-    "Do not modify matchup analysis logic outside of the View Detailed Player Stats screen",
-    "Do not change any calculation logic for practice matches",
-    "Do not modify the backend schema or data structures",
-    "Do not alter the Official APA Expected PPI lookup table",
-    "Keep all other existing functionality intact"
+    "Do not modify any code in MatchupAnalysisDropdown.tsx",
+    "Do not modify any code in PlayerAggregateStatsPage.tsx except the single import statement",
+    "The new MatchupAnalysisDropdownPlayerStats.tsx must be identical to MatchupAnalysisDropdown.tsx"
   ],
   "nonGoals": [
-    "Changing skill level calculation methodology on other tabs or screens",
-    "Modifying practice match statistics or displays",
-    "Altering the APA equalizer system or points-to-win mappings",
-    "Updating match history table displays or filtering"
+    "Changing the behavior of the matchup analysis dropdown",
+    "Modifying any other imports or code in PlayerAggregateStatsPage.tsx",
+    "Updating any other files that use MatchupAnalysisDropdown"
   ],
   "imageRequirements": {
     "required": [],

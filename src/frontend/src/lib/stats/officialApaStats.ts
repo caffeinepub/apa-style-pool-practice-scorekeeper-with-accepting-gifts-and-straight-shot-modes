@@ -1,5 +1,5 @@
 import type { ApiMatch } from '../../backend';
-import { extractOfficialApaWinRate, computeBest10Of20Average } from '../apa/apaAggregateStats';
+import { extractOfficialApaWinRate, computeBest10Of20Average, computeLast10Of20Average } from '../apa/apaAggregateStats';
 import { computeOfficialApaPpi, computeOfficialApaAppiWithContext } from '../apa/officialApaPpi';
 import { getEffectiveMatchTimestamp } from '../matches/effectiveMatchDate';
 
@@ -8,9 +8,11 @@ export interface OfficialApaStats {
   totalKnownOutcome: number;
   wins: number;
   winRate: number | null;
-  averagePpiLast10Of20: number | null;
-  averageAppiLast10Of20: number | null;
+  averagePpiLast10: number | null;
+  averageAppiBest10Of20: number | null;
   hasData: boolean;
+  avgPpiLast10Label: string;
+  avgAppiLast10Label: string;
 }
 
 export function computeOfficialApaStats(matches: ApiMatch[], playerName: string): OfficialApaStats {
@@ -42,17 +44,21 @@ export function computeOfficialApaStats(matches: ApiMatch[], playerName: string)
     }
   }
 
-  // Compute best 10 of last 20 averages (highest-scoring matches)
-  const averagePpiLast10Of20 = computeBest10Of20Average(allPpiValues);
-  const averageAppiLast10Of20 = computeBest10Of20Average(allAppiValues);
+  // Average PPI: Last 10 matches (most recent 10 chronologically)
+  const averagePpiLast10 = computeLast10Of20Average(allPpiValues);
+  
+  // Average aPPI: Best 10 of last 20 matches (highest-scoring matches)
+  const averageAppiBest10Of20 = computeBest10Of20Average(allAppiValues);
 
   return {
     totalMatches: officialMatches.length,
     totalKnownOutcome: total,
     wins,
     winRate,
-    averagePpiLast10Of20,
-    averageAppiLast10Of20,
+    averagePpiLast10,
+    averageAppiBest10Of20,
     hasData: officialMatches.length > 0,
+    avgPpiLast10Label: 'Last 10 matches',
+    avgAppiLast10Label: 'Best 10 out of last 20 matches',
   };
 }

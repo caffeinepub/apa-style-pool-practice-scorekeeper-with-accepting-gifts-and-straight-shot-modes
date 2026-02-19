@@ -1,69 +1,35 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Update matchup analysis and PPI calculations with best 10 of 20 logic",
+  "title": "Create duplicate component and update import in PlayerAggregateStatsPage",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add practice game support and visual differentiation to matchup analysis on View Detailed Player Stats screen",
+      "summary": "Create MatchupAnalysisDropdownPlayerStats.tsx as exact copy of MatchupAnalysisDropdown.tsx",
       "acceptanceCriteria": [
-        "Matchup analysis panel shows both practice and official APA matches against the selected opponent",
-        "Each match in the list has a visible label or badge indicating whether it is a practice or official game",
-        "The differentiation is clear and visually distinct"
+        "File frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx exists",
+        "The new file contains identical code to MatchupAnalysisDropdown.tsx"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
-          "operation": "modify",
-          "description": "Update the component to include both practice (apaNineBall) and official (officialApaMatchLog) APA matches in the matchup analysis. Filter matches by opponent name across both match types. Add visual badges or labels to each match row to clearly differentiate between 'Practice' and 'Official' game types using distinct styling."
-        },
-        {
-          "path": "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
-          "operation": "modify",
-          "description": "Update the matchup analysis logic to pass both practice and official APA matches to the MatchupAnalysisPanel component. Ensure the filtered match list includes both match types when calculating head-to-head statistics."
+          "path": "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx",
+          "operation": "create",
+          "description": "Create a new component file that is an exact copy of frontend/src/components/apa/MatchupAnalysisDropdown.tsx. Copy all content including imports, types, component logic, and exports without any modifications."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Update Official APA tab average PPI and aPPI calculations to use best 10 of last 20 matches",
+      "summary": "Update PlayerAggregateStatsPage to import from MatchupAnalysisDropdownPlayerStats",
       "acceptanceCriteria": [
-        "Average PPI calculation on the Official APA tab uses the 10 highest PPI values from the most recent 20 official matches",
-        "Average aPPI calculation on the Official APA tab uses the corresponding aPPI values from those same 10 matches",
-        "If fewer than 20 official matches exist, use all available matches",
-        "If fewer than 10 matches exist, use all available matches"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/stats/officialApaStats.ts",
-          "operation": "modify",
-          "description": "Replace the current 'last 10 of 20' chronological logic with 'best 10 of last 20' logic. Update computeOfficialApaStats to: 1) Take the most recent 20 official matches chronologically, 2) Select the 10 matches with the highest PPI scores from those 20, 3) Calculate average PPI from those 10 highest-scoring matches, 4) Calculate average aPPI using the aPPI values from those same 10 matches. Handle edge cases where fewer than 20 or fewer than 10 matches exist."
-        },
-        {
-          "path": "frontend/src/pages/stats/StatsPage.tsx",
-          "operation": "modify",
-          "description": "Verify that the Official APA tab correctly displays the updated average PPI and aPPI values computed using the best 10 of last 20 logic. Ensure the statistics panel reflects the new calculation methodology without requiring additional changes to the UI display logic."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Apply best 10 of last 20 logic to skill level calculations on View Detailed Player Stats screen",
-      "acceptanceCriteria": [
-        "Skill level predictions on the View Detailed Player Stats screen use average PPI and aPPI calculated from the best 10 of last 20 official matches",
-        "The calculation methodology matches the logic implemented in REQ-2",
-        "Skill level displays reflect the updated calculation approach"
+        "PlayerAggregateStatsPage.tsx imports from MatchupAnalysisDropdownPlayerStats instead of MatchupAnalysisDropdown",
+        "No other changes are made to PlayerAggregateStatsPage.tsx"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
           "operation": "modify",
-          "description": "Update the skill level prediction calculations to use the best 10 of last 20 official matches logic. Apply the same methodology implemented in REQ-2 for computing average PPI and aPPI values from official matches. Use these updated averages as inputs to the skill level prediction functions from apaSkillLevelPrediction.ts to determine the predicted skill level range displayed on the View Detailed Player Stats screen."
-        },
-        {
-          "path": "frontend/src/lib/apa/apaSkillLevelPrediction.ts",
-          "operation": "modify",
-          "description": "Review and update skill level prediction range tables and functions if needed to ensure they correctly consume the best 10 of last 20 averages. Verify that the Detailed Player Stats page view uses appropriate skill level ranges that align with the new calculation methodology. Ensure the prediction logic handles edge cases consistently with REQ-2."
+          "description": "Change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other changes to the file."
         }
       ]
     }
