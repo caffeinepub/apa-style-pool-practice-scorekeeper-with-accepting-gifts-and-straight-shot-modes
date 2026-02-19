@@ -179,6 +179,62 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
     );
   };
 
+  // NEW: Check if exactly one winner is determined
+  const hasExactlyOneWinner = (): boolean => {
+    // If skill levels or scores are missing, we can't determine a winner
+    if (!yourSkillLevel || !opponentSkillLevel || !yourScore || !theirScore) {
+      return false;
+    }
+
+    const yourScoreNum = Number(yourScore);
+    const theirScoreNum = Number(theirScore);
+    const yourTarget = getPointsToWin(parseInt(yourSkillLevel));
+    const theirTarget = getPointsToWin(parseInt(opponentSkillLevel));
+
+    const youWon = yourScoreNum >= yourTarget;
+    const theyWon = theirScoreNum >= theirTarget;
+
+    // Exactly one player must have won (not both, not neither)
+    return (youWon && !theyWon) || (!youWon && theyWon);
+  };
+
+  // NEW: Check if defensive shots <= innings
+  const isDefensiveShotsValid = (): boolean => {
+    // If innings is unknown, skip this validation
+    if (inningsUnknown) {
+      return true;
+    }
+
+    // If either field is empty, skip validation (will be caught by required fields check)
+    if (!innings || !defensiveShots) {
+      return true;
+    }
+
+    const inningsNum = Number(innings);
+    const defensiveShotsNum = Number(defensiveShots);
+
+    // Check if defensive shots <= innings
+    return defensiveShotsNum <= inningsNum;
+  };
+
+  // NEW: Check if innings > 0
+  const isInningsPositive = (): boolean => {
+    // If innings is unknown, skip this validation
+    if (inningsUnknown) {
+      return true;
+    }
+
+    // If innings is empty, skip validation (will be caught by required fields check)
+    if (!innings) {
+      return true;
+    }
+
+    const inningsNum = Number(innings);
+
+    // Check if innings > 0
+    return inningsNum > 0;
+  };
+
   const handleRetryConnection = () => {
     retryConnection();
     toast.info('Retrying connection...');
@@ -227,6 +283,24 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
 
     if (hasValidationErrors()) {
       toast.error('Please fix validation errors before saving');
+      return;
+    }
+
+    // NEW: Validate exactly one winner
+    if (!hasExactlyOneWinner()) {
+      toast.error('Match cannot be saved: exactly one player must reach their points-to-win target');
+      return;
+    }
+
+    // NEW: Validate defensive shots <= innings
+    if (!isDefensiveShotsValid()) {
+      toast.error('Match cannot be saved: defensive shots must be less than or equal to innings');
+      return;
+    }
+
+    // NEW: Validate innings > 0
+    if (!isInningsPositive()) {
+      toast.error('Match cannot be saved: innings must be greater than zero');
       return;
     }
 
@@ -286,7 +360,15 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
   };
 
   const isSubmitting = saveMatchMutation.isPending || updateMatchMutation.isPending;
-  const isSubmitDisabled = isSubmitting || hasValidationErrors() || !hasRequiredFields();
+  
+  // Updated: Include all three new validation checks
+  const isSubmitDisabled = 
+    isSubmitting || 
+    hasValidationErrors() || 
+    !hasRequiredFields() ||
+    !hasExactlyOneWinner() ||
+    !isDefensiveShotsValid() ||
+    !isInningsPositive();
 
   return (
     <div className="space-y-6">
@@ -539,7 +621,7 @@ export default function RealApaMatchForm({ mode, matchId, initialData }: RealApa
             className="flex-1 gap-2"
           >
             <Save className="h-4 w-4" />
-            {isSubmitting ? 'Saving...' : 'Update Match'}
+            {isSubmitting ? 'Updating...' : 'Update Match'}
           </Button>
         )}
       </div>

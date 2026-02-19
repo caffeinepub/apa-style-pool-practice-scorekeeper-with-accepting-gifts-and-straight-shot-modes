@@ -13,14 +13,12 @@ export interface GameState {
   totalAttempts: number;
   setsCompleted: number;
   completed: boolean;
-  attemptSequence: number[]; // BUILD 1: Capture attempt-by-attempt inputs
 }
 
 /**
  * Apply an attempt result to the game state.
  * Player scores a point if attemptInput equals the max value for the current level.
  * Otherwise, ghost scores a point.
- * BUILD 1: Appends attemptInput to attemptSequence.
  */
 export function applyAttemptResult(state: GameState, attemptInput: number): GameState {
   const maxForLevel = getMaxAttemptForLevel(state.levelPlayedIndex);
@@ -31,7 +29,6 @@ export function applyAttemptResult(state: GameState, attemptInput: number): Game
     totalAttempts: state.totalAttempts + 1,
     playerSetScore: playerScored ? state.playerSetScore + 1 : state.playerSetScore,
     ghostSetScore: playerScored ? state.ghostSetScore : state.ghostSetScore + 1,
-    attemptSequence: [...state.attemptSequence, attemptInput], // BUILD 1: Append attempt input
   };
 }
 
@@ -39,7 +36,6 @@ export function applyAttemptResult(state: GameState, attemptInput: number): Game
  * Prepare the next set after a set completes (race-to-7).
  * This does NOT update the baseline level (that happens only on match save).
  * It only resets the set scores and increments setsCompleted.
- * BUILD 1: Resets attemptSequence to empty array.
  */
 export function prepareNextSet(state: GameState): GameState {
   return {
@@ -47,6 +43,5 @@ export function prepareNextSet(state: GameState): GameState {
     playerSetScore: 0,
     ghostSetScore: 0,
     setsCompleted: state.setsCompleted + 1,
-    attemptSequence: [], // BUILD 1: Reset sequence for next set
   };
 }

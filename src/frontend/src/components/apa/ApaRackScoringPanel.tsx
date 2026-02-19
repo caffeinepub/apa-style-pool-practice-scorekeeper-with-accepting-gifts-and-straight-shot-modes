@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Plus, AlertCircle, RotateCcw, Shield, Lock } from 'lucide-react';
+import { Plus, Minus, AlertCircle, RotateCcw, Shield, Lock } from 'lucide-react';
 import { POINTS_PER_RACK } from '../../lib/apa/apaScoring';
 import ApaBallButton from './ApaBallButton';
 import { useApaInningFlow } from './useApaInningFlow';
@@ -51,6 +51,7 @@ export default function ApaRackScoringPanel({
   const [ballStates, setBallStates] = useState<Record<number, BallState>>({});
   const [player1DefensiveShots, setPlayer1DefensiveShots] = useState(0);
   const [player2DefensiveShots, setPlayer2DefensiveShots] = useState(0);
+  const [defensiveActive, setDefensiveActive] = useState(false);
   const [autoDeadBallsNinePocketed, setAutoDeadBallsNinePocketed] = useState<Set<number>>(new Set());
   const [autoDeadBallsMatchImminent, setAutoDeadBallsMatchImminent] = useState<Set<number>>(new Set());
   
@@ -74,6 +75,13 @@ export default function ApaRackScoringPanel({
   const isMatchCompletionImminent = matchContext && !matchContext.matchComplete && 
     (player1WouldReachTarget || player2WouldReachTarget);
   
+  // FIX: Check if a player WOULD WIN with current rack points WITHOUT the 9-ball being potted
+  // This is the condition when the 9-ball should become dead and unclickable
+  const canWinWithout9Ball = matchContext && !matchContext.matchComplete && !isNineBallPocketed && (
+    (matchContext.player1CurrentPoints + baseTotals.playerAPoints >= matchContext.player1Target) ||
+    (matchContext.player2CurrentPoints + baseTotals.playerBPoints >= matchContext.player2Target)
+  );
+
   // Apply auto-dead logic for match completion imminent (exclude ball 9)
   useEffect(() => {
     if (isMatchCompletionImminent) {
@@ -114,6 +122,12 @@ export default function ApaRackScoringPanel({
         effectiveBallStates[ball] = 'dead';
       }
     });
+  }
+
+  // FIX: Make 9-ball dead if game WOULD BE won without it (based on current rack points)
+  // This overrides the normal constraint that prevents the 9-ball from being dead
+  if (canWinWithout9Ball && (!effectiveBallStates[9] || effectiveBallStates[9] === 'unscored')) {
+    effectiveBallStates[9] = 'dead';
   }
 
   const totals = calculateRackTotals(effectiveBallStates, matchContext);
@@ -179,6 +193,10 @@ export default function ApaRackScoringPanel({
   const handleBallClick = (ballNumber: number) => {
     if (matchContext?.matchComplete) return;
     if (isRackLocked && ballNumber !== 9) return;
+    if (defensiveActive) return; // Block ball selection when defensive is active
+    
+    // FIX: Block 9-ball if game WOULD BE won without it
+    if (ballNumber === 9 && canWinWithout9Ball) return;
 
     // Check if adding points would exceed target (EXCEPT for ball 9)
     if (matchContext && !matchContext.matchComplete && ballNumber !== 9) {
@@ -244,18 +262,32 @@ export default function ApaRackScoringPanel({
     });
   };
 
-  const handleDefensiveShot = (player: 'A' | 'B') => {
+  const handleDefensiveShotIncrement = (player: 'A' | 'B') => {
     if (matchContext?.matchComplete) return;
     if (player === 'A') {
       setPlayer1DefensiveShots(prev => prev + 1);
     } else {
       setPlayer2DefensiveShots(prev => prev + 1);
     }
+    setDefensiveActive(true);
+  };
+
+  const handleDefensiveShotDecrement = (player: 'A' | 'B') => {
+    if (matchContext?.matchComplete) return;
+    if (player === 'A') {
+      setPlayer1DefensiveShots(prev => Math.max(0, prev - 1));
+    } else {
+      setPlayer2DefensiveShots(prev => Math.max(0, prev - 1));
+    }
+    setDefensiveActive(false);
   };
 
   const handleTurnOver = () => {
     if (matchContext?.matchComplete) return;
     if (isRackComplete) return; // Disable Turn Over when rack is complete
+    
+    // Reset defensive active state when turn ends
+    setDefensiveActive(false);
     inningFlow.turnOver();
   };
 
@@ -283,6 +315,7 @@ export default function ApaRackScoringPanel({
     setBallStates({});
     setPlayer1DefensiveShots(0);
     setPlayer2DefensiveShots(0);
+    setDefensiveActive(false);
     setAutoDeadBallsNinePocketed(new Set());
     setAutoDeadBallsMatchImminent(new Set());
     inningFlow.resetRack(inningFlow.activePlayer, finalInnings);
@@ -293,6 +326,7 @@ export default function ApaRackScoringPanel({
     setBallStates({});
     setPlayer1DefensiveShots(0);
     setPlayer2DefensiveShots(0);
+    setDefensiveActive(false);
     setAutoDeadBallsNinePocketed(new Set());
     setAutoDeadBallsMatchImminent(new Set());
     inningFlow.resetRack(matchContext?.activePlayer ?? 'A', matchContext?.sharedInnings ?? 0);
@@ -330,13 +364,20 @@ export default function ApaRackScoringPanel({
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(ball => {
             const state = effectiveBallStates[ball] || 'unscored';
+            const isDisabled = matchContext?.matchComplete || 
+              (isRackLocked && ball !== 9) || 
+              defensiveActive ||
+              (ball === 9 && canWinWithout9Ball);
+            const isDead = state === 'dead';
+            
             return (
               <ApaBallButton
                 key={ball}
                 ballNumber={ball}
                 state={state}
                 onClick={() => handleBallClick(ball)}
-                disabled={matchContext?.matchComplete || (isRackLocked && ball !== 9)}
+                disabled={isDisabled}
+                isDead={isDead}
               />
             );
           })}
@@ -362,80 +403,91 @@ export default function ApaRackScoringPanel({
               {deadBallCount}
             </Badge>
           </div>
-        </div>
-
-        {/* Defensive Shots */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{player1Name} Defensive Shots</span>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{player1DefensiveShots}</Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleDefensiveShot('A')}
-                disabled={matchContext?.matchComplete}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{player2Name} Defensive Shots</span>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{player2DefensiveShots}</Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleDefensiveShot('B')}
-                disabled={matchContext?.matchComplete}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center justify-between border-t pt-3">
+            <span className="text-sm font-medium">Total Accounted</span>
+            <Badge variant={isRackComplete ? 'default' : 'secondary'} className="text-base">
+              {totals.totalAccounted} / {POINTS_PER_RACK}
+            </Badge>
           </div>
         </div>
 
-        {/* Error/Status Messages */}
+        {/* Error Alert */}
         {error && (
-          <Alert variant={totals.totalAccounted > POINTS_PER_RACK ? 'destructive' : 'default'}>
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        {isRackLocked && (
-          <Alert>
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              9-ball pocketed! Remaining balls are automatically dead. Click "Complete Rack" to continue.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isMatchCompletionImminent && !isRackLocked && (
-          <Alert>
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              Match completion reached! You can complete this rack now. Any remaining balls will be treated as dead for rack accounting.
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Defensive Shots Controls */}
+        <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Defensive Shots</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">{player1Name}</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDefensiveShotDecrement('A')}
+                  disabled={player1DefensiveShots === 0 || matchContext?.matchComplete}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[2rem] text-center font-semibold">{player1DefensiveShots}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDefensiveShotIncrement('A')}
+                  disabled={matchContext?.matchComplete}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">{player2Name}</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDefensiveShotDecrement('B')}
+                  disabled={player2DefensiveShots === 0 || matchContext?.matchComplete}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[2rem] text-center font-semibold">{player2DefensiveShots}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDefensiveShotIncrement('B')}
+                  disabled={matchContext?.matchComplete}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">
           <Button
             onClick={handleTurnOver}
-            variant="outline"
-            className="flex-1"
             disabled={matchContext?.matchComplete || isRackComplete}
+            className="flex-1"
+            variant="outline"
           >
             Turn Over
           </Button>
           <Button
             onClick={handleResetRack}
-            variant="outline"
             disabled={matchContext?.matchComplete}
+            variant="ghost"
+            size="icon"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>

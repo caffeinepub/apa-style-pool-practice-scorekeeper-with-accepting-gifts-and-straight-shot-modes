@@ -1,31 +1,17 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T00:19:24.604Z",
-  "summary": "Diff adds per-bucket running W-L/Win% computation and introduces a date-sorting mechanism using getEffectiveMatchTimestamp, but the shown changes appear to always sort on render (potentially changing default ordering) and do not show the restored toggle wiring for the existing sort UI control due to truncation.",
-  "missing_requirements": [
-    {
-      "id": "REQ-2",
-      "requirement": "Restore toggleable “Sort by date” behavior without changing default ordering on initial render; sorting must only change when the user uses the table’s existing sort UI control.",
-      "reason": "In the visible diff, matches are always sorted by timestamp in a useMemo, with sortDirection defaulting to 'desc'. This likely changes the default ordering behavior on load and does not demonstrate that sorting only changes when the user interacts with an existing sort control (the toggle wiring is not shown in the truncated content).",
-      "evidence": [
-        "frontend/src/components/history/MatchHistoryTable.tsx"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "Always sorting MatchHistoryTable rows by effective match timestamp on render (date sort applied by default), rather than only applying/toggling sort when the user uses the existing sort UI control.",
-      "reason": "The diff shows sortedMatches is always computed by sorting a copy of matches using getEffectiveMatchTimestamp, and sortDirection is initialized to 'desc', implying a default enforced sort even before any user action.",
-      "evidence": [
-        "frontend/src/components/history/MatchHistoryTable.tsx"
-      ]
-    }
-  ],
-  "confidence": 0.62,
+  "generatedAt": "2026-02-19T00:58:54.489Z",
+  "summary": "The diff implements all three requirements: matchup analysis now includes both practice and official APA games with visual badges (REQ-1), the official APA stats calculations use the best 10 of last 20 logic (REQ-2), and the PlayerAggregateStatsPage applies the same best 10 of last 20 logic for skill level predictions (REQ-3). Implementation aligns with acceptance criteria.",
+  "missing_requirements": [],
+  "hallucinated_features": [],
+  "confidence": 0.92,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/history/MatchHistoryTable.tsx",
+    "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+    "frontend/src/lib/stats/officialApaStats.ts",
+    "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
+    "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]
 }

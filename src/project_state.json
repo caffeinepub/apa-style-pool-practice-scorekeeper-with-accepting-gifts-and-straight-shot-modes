@@ -1,36 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Fix Match History Table “All” view to compute W-L/Win% running totals per-mode (ignoring unknown outcomes) and restore the missing toggleable “Sort by date” behavior using existing effective timestamp logic, without changing default ordering or UI layout.",
+  "summary": "Pool statistics tracking app with official APA and practice game management, matchup analysis, and skill level calculations",
   "architectural_notes": [
-    "Per-row W-L/Win% in “All” view must be computed as a per-mode running total in the current displayed sort order; other modes never contribute even if interleaved.",
-    "Use existing getEffectiveMatchTimestamp(match) for date sorting; do not add new timestamp helpers; do not parse notes for outcome—use existing matchWinLoss.ts."
+    "Stats page has official APA tab with View Detailed Player Stats screen",
+    "PPI (Performance Per Inning) and aPPI metrics tracked for skill level calculation",
+    "Game types: practice games and official APA matches"
   ],
-  "known_issues": [
-    "BUG: In Match History Table “All” view, W-L and Win% accumulate across mode boundaries instead of per-mode.",
-    "Missing regression: “Sort by date” behavior is not working in Match History Table."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-fix-matchhistorytable-running-w-l-and-win-so-each-row-s-displayed-w-l-win-is-computed-only-from-matches-of-the-same-mode-bucket-as-that-row-official-apa-apa-practice-accepting-gifts-straight-shot-using-the-current-displayed-sort-order-and-counting-from-the-start-of-that-mode-s-sequence-up-through-the-current-row-i-e-running-within-mode-regardless-of-adjacency",
-      "title": "Fix MatchHistoryTable running W-L and Win% so each row’s displayed W-L/Win% is computed only from matches of the same mode/bucket as that row (Official APA, APA Practice, Accepting Gifts, Straight Shot), using the current displayed sort order and counting from the start of that mode’s sequence up through the current row (i.e., running within mode regardless of adjacency).",
+      "id": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-update-the-matchup-analysis-to-include-both-practice-and-official-apa-games-add-visual-labels-or-badges-to-differentiate-between-practice-games-and-official-games-in-the-match-list-display",
+      "title": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-restore-the-missing-toggleable-sort-by-date-behavior-in-matchhistorytable-using-the-existing-geteffectivematchtimestamp-match-comparator-without-changing-the-default-ordering-behavior-that-exists-today-sorting-must-only-change-when-the-user-uses-the-table-s-existing-sort-ui-control-do-not-add-new-controls",
-      "title": "Restore the missing toggleable “Sort by date” behavior in MatchHistoryTable using the existing getEffectiveMatchTimestamp(match) comparator, without changing the default ordering behavior that exists today; sorting must only change when the user uses the table’s existing sort UI control (do not add new controls).",
+      "id": "feature-on-the-stats-page-official-apa-tab-update-the-average-ppi-and-average-appi-calculations-to-use-the-10-highest-scoring-matches-from-the-most-recent-20-official-matches-chronologically-this-replaces-the-current-last-10-of-20-logic-with-a-best-10-of-last-20-calculation-based-on-ppi-scores",
+      "title": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-keep-matchhistorytable-ui-layout-columns-and-date-display-unchanged-while-implementing-the-logic-fixes-limiting-changes-to-frontend-src-components-history-matchhistorytable-tsx-plus-any-already-existing-sort-control-wiring-required",
-      "title": "Keep MatchHistoryTable UI layout/columns and date display unchanged while implementing the logic fixes, limiting changes to frontend/src/components/history/MatchHistoryTable.tsx (plus any already-existing sort control wiring required).",
+      "id": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-ensure-all-skill-level-calculations-use-the-best-10-out-of-last-20-official-matches-logic-10-highest-scoring-matches-from-the-most-recent-20-official-matches-apply-this-to-average-ppi-and-average-appi-calculations-used-for-skill-level-prediction",
+      "title": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
       "reqIds": [
         "REQ-3"
       ],
@@ -40,18 +38,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix Match History Table “All” view W-L/Win% running totals to be computed per-mode (running within mode in current sort order) and exclude unknown outcomes from wins/losses and Win% denominator; no layout/column changes; MatchHistoryTable.tsx only.",
+      "summary": "Matchup analysis on View Detailed Player Stats should include practice and official APA games with labels/badges to differentiate",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Restore/implement missing toggleable “Sort by date” in Match History Table using existing getEffectiveMatchTimestamp(match); apply only via existing UI control; do not change default ordering or add new controls; keep date display date-only.",
+      "summary": "Average PPI and aPPI calculations should use best 10 out of last 20 official matches (highest-scoring from most recent 20)",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Skill level calculations on official APA tab must be based on best 10 out of last 20 official matches",
+      "reqIds": [],
+      "status": "pending"
     }
   ],
-  "projectName": "Match History",
+  "projectName": "Update matchup analysis and PPI calculations with best 10 of 20 logic",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

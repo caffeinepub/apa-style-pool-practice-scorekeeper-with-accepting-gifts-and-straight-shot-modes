@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Restore the Match History date sort toggle and correct per-row running W-L/Win% so it is computed per mode/bucket (excluding unknown outcomes) based on the currently displayed row order.
+**Goal:** Update matchup analysis display and improve PPI calculation accuracy using best 10 of last 20 official matches logic.
 
 **Planned changes:**
-- Update MatchHistoryTable running W-L and Win% calculations to accumulate only within the current row’s bucket (Official APA, APA Practice, Accepting Gifts, Straight Shot) across the displayed order, excluding unknown outcomes from wins/losses and Win% denominator.
-- Restore the existing “Sort by date” toggle behavior in MatchHistoryTable using getEffectiveMatchTimestamp(match), without changing the current default ordering on initial load and without adding new sort UI controls.
-- Keep the MatchHistoryTable layout/columns and date-only display unchanged; confine logic changes to frontend/src/components/history/MatchHistoryTable.tsx (plus minimal existing sort-control wiring if required).
+- Include both practice and official APA games in matchup analysis on View Detailed Player Stats screen with visual labels/badges to differentiate them
+- Update average PPI and average aPPI calculations on Official APA tab to use the 10 highest-scoring matches from the most recent 20 official matches
+- Apply best 10 of last 20 calculation logic to all skill level predictions on View Detailed Player Stats screen
 
-**User-visible outcome:** Users can toggle date sorting via the table’s existing sort control, and each row shows correct running W-L and Win% for its own mode/bucket (unknown outcomes excluded), reflecting the current displayed sort order.
+**User-visible outcome:** Users will see more comprehensive matchup history including practice games with clear visual distinction, and skill level calculations will reflect performance based on their best 10 recent official matches rather than simply the last 10.

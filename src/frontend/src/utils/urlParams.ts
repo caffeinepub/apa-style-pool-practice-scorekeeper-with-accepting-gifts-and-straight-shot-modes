@@ -206,3 +206,33 @@ export function getSecretFromHash(paramName: string): string | null {
 export function getSecretParameter(paramName: string): string | null {
     return getSecretFromHash(paramName);
 }
+
+/**
+ * Navigation origin tracking helpers
+ * Used for context-aware back links across the application
+ */
+
+const NAVIGATION_ORIGIN_KEY = 'navigationOrigin';
+
+/**
+ * Sets the navigation origin in sessionStorage
+ * @param origin - The origin identifier (e.g., 'stats', 'history')
+ */
+export function setNavigationOrigin(origin: string): void {
+    storeSessionParameter(NAVIGATION_ORIGIN_KEY, origin);
+}
+
+/**
+ * Gets the navigation origin from sessionStorage
+ * @returns The origin identifier if found, null otherwise
+ */
+export function getNavigationOrigin(): string | null {
+    return getSessionParameter(NAVIGATION_ORIGIN_KEY);
+}
+
+/**
+ * Clears the navigation origin from sessionStorage
+ */
+export function clearNavigationOrigin(): void {
+    clearSessionParameter(NAVIGATION_ORIGIN_KEY);
+}

@@ -145,12 +145,14 @@ export default function PracticeGamePage() {
         deadBalls: rackData.deadBalls,
       };
 
+      // FIX: Use sharedInnings directly from the inning flow, not accumulated from racks
+      // The sharedInnings counter already represents the total count of Player 2's completed turns
       const newState = {
         ...prev,
         player1Points: newPlayer1Points,
         player2Points: newPlayer2Points,
-        player1Innings: prev.player1Innings + rackData.player1Innings,
-        player2Innings: prev.player2Innings + rackData.player2Innings,
+        player1Innings: rackData.sharedInnings,
+        player2Innings: rackData.sharedInnings,
         player1DefensiveShots: prev.player1DefensiveShots + rackData.player1DefensiveShots,
         player2DefensiveShots: prev.player2DefensiveShots + rackData.player2DefensiveShots,
         racks: [...prev.racks, newRack],
@@ -185,11 +187,26 @@ export default function PracticeGamePage() {
       return;
     }
 
-    try {
-      // Clamp final totals to targets before saving
-      const finalPlayer1Points = Math.min(gameState.player1Points, gameState.player1Target);
-      const finalPlayer2Points = Math.min(gameState.player2Points, gameState.player2Target);
+    // Clamp final totals to targets before validation
+    const finalPlayer1Points = Math.min(gameState.player1Points, gameState.player1Target);
+    const finalPlayer2Points = Math.min(gameState.player2Points, gameState.player2Target);
 
+    // Check if match has a winner
+    const hasWinner = finalPlayer1Points >= gameState.player1Target || finalPlayer2Points >= gameState.player2Target;
+
+    // NEW VALIDATION: When a winner exists, defensive shots must be <= innings for both players
+    if (hasWinner) {
+      if (gameState.player1DefensiveShots > gameState.player1Innings) {
+        toast.error(`${gameState.player1}'s defensive shots (${gameState.player1DefensiveShots}) cannot exceed innings (${gameState.player1Innings})`);
+        return;
+      }
+      if (gameState.player2DefensiveShots > gameState.player2Innings) {
+        toast.error(`${gameState.player2}'s defensive shots (${gameState.player2DefensiveShots}) cannot exceed innings (${gameState.player2Innings})`);
+        return;
+      }
+    }
+
+    try {
       // Compute match outcome
       const matchOutcome = computeApaPracticeMatchOutcome({
         player1Points: finalPlayer1Points,

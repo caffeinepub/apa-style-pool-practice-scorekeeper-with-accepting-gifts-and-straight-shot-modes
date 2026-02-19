@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T00:19:24.607Z",
+  "generatedAt": "2026-02-19T00:58:54.492Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,35 +12,39 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix MatchHistoryTable running W-L and Win% so each row’s displayed W-L/Win% is computed only from matches of the same mode/bucket as that row (Official APA, APA Practice, Accepting Gifts, Straight Shot), using the current displayed sort order and counting from the start of that mode’s sequence up through the current row (i.e., running within mode regardless of adjacency).",
+        "summary": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx"
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx"
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Restore the missing toggleable “Sort by date” behavior in MatchHistoryTable using the existing getEffectiveMatchTimestamp(match) comparator, without changing the default ordering behavior that exists today; sorting must only change when the user uses the table’s existing sort UI control (do not add new controls).",
+        "summary": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx"
+          "frontend/src/lib/stats/officialApaStats.ts",
+          "frontend/src/pages/stats/StatsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx"
+          "frontend/src/lib/stats/officialApaStats.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Keep MatchHistoryTable UI layout/columns and date display unchanged while implementing the logic fixes, limiting changes to frontend/src/components/history/MatchHistoryTable.tsx (plus any already-existing sort control wiring required).",
+        "summary": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx"
+          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
+          "frontend/src/lib/apa/apaSkillLevelPrediction.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/history/MatchHistoryTable.tsx"
+          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
         ]
       }
     ]
@@ -50,7 +54,10 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/history/MatchHistoryTable.tsx",
+    "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+    "frontend/src/lib/stats/officialApaStats.ts",
+    "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
+    "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

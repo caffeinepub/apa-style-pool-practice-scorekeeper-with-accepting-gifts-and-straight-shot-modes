@@ -3,12 +3,13 @@ import { useGetMatch, useGetAllMatches } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, User, Edit } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Trophy, Target, Activity, Edit } from 'lucide-react';
 import { MatchMode } from '../../backend';
 import DeleteMatchButton from '../../components/matches/DeleteMatchButton';
 import { getPointsToWin } from '../../lib/apa/apaEqualizer';
 import { getOfficialApaOutcome } from '../../lib/apa/officialApaOutcome';
 import { computeOfficialApaPpi, formatOfficialPpi, computeOfficialApaAppiWithContext, formatOfficialAppi } from '../../lib/apa/officialApaPpi';
+import { setNavigationOrigin } from '../../utils/urlParams';
 
 export default function MatchDetailsPage() {
   const navigate = useNavigate();
@@ -45,7 +46,8 @@ export default function MatchDetailsPage() {
   };
 
   const handleNavigateToPlayerAggregate = (playerName: string) => {
-    navigate({ to: `/players/${encodeURIComponent(playerName)}` });
+    setNavigationOrigin('history');
+    navigate({ to: `/players/${encodeURIComponent(playerName)}/aggregate` });
   };
 
   const renderModeSpecificDetails = () => {
@@ -114,7 +116,7 @@ export default function MatchDetailsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Match Points:</span>
-                  <span className="font-semibold">{player2.pointsWonConverted.toString()}</span>
+  <span className="font-semibold">{player2.pointsWonConverted.toString()}</span>
                 </div>
                 {player2.isPlayerOfMatch && (
                   <Badge className="mt-2 w-full justify-center bg-emerald-600">Winner</Badge>
@@ -310,7 +312,7 @@ export default function MatchDetailsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate({ to: `/apa/official/edit/${matchId}` })}
+              onClick={() => navigate({ to: `/apa/real-match/${matchId}/edit` })}
               className="gap-2"
             >
               <Edit className="h-4 w-4" />
@@ -346,23 +348,27 @@ export default function MatchDetailsPage() {
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Players:</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="ml-6 space-y-1">
                 {match.players.map((player, idx) => (
-                  <Button
+                  <button
                     key={idx}
-                    variant="outline"
-                    size="sm"
                     onClick={() => handleNavigateToPlayerAggregate(player.name)}
+                    className="block text-sm text-primary hover:underline"
                   >
                     {player.name}
-                  </Button>
+                    {player.skillLevel !== undefined && ` (SL ${player.skillLevel.toString()})`}
+                  </button>
                 ))}
               </div>
             </div>
           )}
-          {match.notes && match.mode !== MatchMode.apaPractice && !match.officialApaMatchLogData && (
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
+          {match.notes && match.mode !== MatchMode.straightShot && !match.officialApaMatchLogData && (
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Notes:</span>
+              </div>
+              <p className="ml-6 text-sm text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
             </div>
           )}
         </CardContent>

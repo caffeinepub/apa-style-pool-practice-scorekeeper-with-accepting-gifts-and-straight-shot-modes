@@ -1,46 +1,40 @@
 import type { ApiMatch } from '../../backend';
 import { MatchMode } from '../../backend';
-
-/**
- * Derive Accepting Gifts win/loss outcome from saved match fields.
- * 
- * Win: finalSetScorePlayer === 7 AND finalSetScoreGhost < 7
- * Loss: finalSetScoreGhost === 7 AND finalSetScorePlayer < 7
- * Unknown: any other case
- */
-function deriveAcceptingGiftsOutcome(match: ApiMatch): 'win' | 'loss' | 'unknown' {
-  const playerScore = match.finalSetScorePlayer;
-  const ghostScore = match.finalSetScoreGhost;
-
-  if (playerScore === undefined || playerScore === null || ghostScore === undefined || ghostScore === null) {
-    return 'unknown';
-  }
-
-  const player = Number(playerScore);
-  const ghost = Number(ghostScore);
-
-  if (player === 7 && ghost < 7) {
-    return 'win';
-  }
-
-  if (ghost === 7 && player < 7) {
-    return 'loss';
-  }
-
-  return 'unknown';
-}
+import { getPointsToWin } from '../apa/apaEqualizer';
+import { getLevelByIndex } from '../accepting-gifts/acceptingGiftsLevels';
 
 /**
  * Build a Match Results narrative string for the Match History table.
- * For Accepting Gifts, display exactly: "Accepting Gifts | levelPlayed | score | nextLevel | Win/Loss"
- * For other modes, use existing formatting.
+ * Each mode displays a specific format with a trailing W/L indicator.
  */
 export function buildMatchResultsNarrative(match: ApiMatch): string {
+  // Official APA: "Official APA | vs {OpponentName} | {MyScore}/{MyPointsToWin} - {OppScore}/{OppPointsToWin} | {W|L}"
   if (match.officialApaMatchLogData) {
     const data = match.officialApaMatchLogData;
-    return `vs ${data.opponentName} | ${data.myScore}–${data.theirScore}`;
+    const myScore = data.myScore;
+    const theirScore = data.theirScore;
+    
+    let myPointsToWin = '?';
+    let theirPointsToWin = '?';
+    
+    if (data.playerOneSkillLevel !== undefined && data.playerOneSkillLevel !== null) {
+      myPointsToWin = String(getPointsToWin(Number(data.playerOneSkillLevel)));
+    }
+    if (data.playerTwoSkillLevel !== undefined && data.playerTwoSkillLevel !== null) {
+      theirPointsToWin = String(getPointsToWin(Number(data.playerTwoSkillLevel)));
+    }
+    
+    let outcome = '—';
+    if (data.didWin === true) {
+      outcome = 'W';
+    } else if (data.didWin === false) {
+      outcome = 'L';
+    }
+    
+    return `Official APA | vs ${data.opponentName} | ${myScore}/${myPointsToWin} - ${theirScore}/${theirPointsToWin} | ${outcome}`;
   }
 
+  // APA Practice: "APA Practice | {Player1Name} vs {Player2Name} | {P1Score}/{P1PointsToWin} - {P2Score}/{P2PointsToWin} | {W|L}"
   if (match.apaMatchInfo) {
     const players = match.players;
     if (players.length >= 2) {
@@ -49,48 +43,68 @@ export function buildMatchResultsNarrative(match: ApiMatch): string {
       const p1Stats = match.apaMatchInfo.players[0];
       const p2Stats = match.apaMatchInfo.players[1];
       if (p1Stats && p2Stats) {
-        return `${p1.name} vs ${p2.name} | ${p1Stats.totalScore}–${p2Stats.totalScore}`;
+        const p1Score = Number(p1Stats.totalScore);
+        const p2Score = Number(p2Stats.totalScore);
+        const p1PointsToWin = Number(p1Stats.pointsNeeded);
+        const p2PointsToWin = Number(p2Stats.pointsNeeded);
+        
+        let outcome = '—';
+        if (p1Score >= p1PointsToWin && p2Score < p2PointsToWin) {
+          outcome = 'W';
+        } else if (p2Score >= p2PointsToWin && p1Score < p1PointsToWin) {
+          outcome = 'L';
+        }
+        
+        return `APA Practice | ${p1.name} vs ${p2.name} | ${p1Score}/${p1PointsToWin} - ${p2Score}/${p2PointsToWin} | ${outcome}`;
       }
     }
     return 'APA Practice Match';
   }
 
-  if (match.mode === MatchMode.acceptingGifts) {
-    if (match.notes) {
-      // Handle both \n and \r\n line breaks
-      const firstLine = match.notes.split(/\r?\n/)[0];
-      
-      // Parse the first line to extract components
-      // Expected format: "levelPlayed | score | nextLevel"
-      const parts = firstLine.split('|').map(p => p.trim());
-      
-      if (parts.length >= 3) {
-        const levelPlayed = parts[0];
-        const score = parts[1];
-        const nextLevel = parts[2];
-        
-        // Derive Win/Loss from match data
-        const outcome = deriveAcceptingGiftsOutcome(match);
-        let winLossText = 'Unknown';
-        if (outcome === 'win') {
-          winLossText = 'Win';
-        } else if (outcome === 'loss') {
-          winLossText = 'Loss';
-        }
-        
-        return `Accepting Gifts | ${levelPlayed} | ${score} | ${nextLevel} | ${winLossText}`;
-      }
-      
-      // Fallback: if format doesn't match, still prepend "Accepting Gifts |"
-      return `Accepting Gifts | ${firstLine}`;
-    }
-    return 'Accepting Gifts';
-  }
-
+  // Straight Shots: "Straight Shots | {ShotCount} Shots | {W|L}"
   if (match.mode === MatchMode.straightShot) {
     const totalShots = match.strokes?.[0] ?? match.totalScore ?? 0;
-    const isWin = Number(totalShots) <= 20 && Number(totalShots) > 0;
-    return `Straight Shot | ${totalShots} shots | ${isWin ? 'Win' : 'Loss'}`;
+    const isWin = Number(totalShots) <= 20;
+    const outcome = isWin ? 'W' : 'L';
+    return `Straight Shots | ${totalShots} Shots | ${outcome}`;
+  }
+
+  // Accepting Gifts: "Accepting Gifts | {StartingLevel} | {ResultScore} | {EndingLevel} | {W|L}"
+  if (match.mode === MatchMode.acceptingGifts) {
+    if (match.notes) {
+      const firstLine = match.notes.split('\n')[0];
+      // Expected format: "levelPlayed | result"
+      // We need to parse this and reconstruct with starting/ending levels
+      const parts = firstLine.split('|').map(p => p.trim());
+      if (parts.length >= 2) {
+        const levelPlayedStr = parts[0]; // e.g., "2+8"
+        const resultStr = parts[1]; // e.g., "7-4"
+        
+        // Parse result to determine W/L
+        const resultParts = resultStr.split('-').map(p => p.trim());
+        let outcome = '—';
+        if (resultParts.length === 2) {
+          const playerScore = parseInt(resultParts[0]) || 0;
+          const ghostScore = parseInt(resultParts[1]) || 0;
+          if (playerScore >= 7 && ghostScore < 7) {
+            outcome = 'W';
+          } else if (ghostScore >= 7 && playerScore < 7) {
+            outcome = 'L';
+          }
+        }
+        
+        // For starting/ending levels, we use the stored data
+        const startingLevel = match.startingObjectBallCount !== undefined && match.startingObjectBallCount !== null
+          ? getLevelByIndex(Number(match.startingObjectBallCount)).label
+          : '?';
+        const endingLevel = match.endingObjectBallCount !== undefined && match.endingObjectBallCount !== null
+          ? getLevelByIndex(Number(match.endingObjectBallCount)).label
+          : '?';
+        
+        return `Accepting Gifts | ${startingLevel} | ${resultStr} | ${endingLevel} | ${outcome}`;
+      }
+    }
+    return 'Accepting Gifts';
   }
 
   return 'Match';

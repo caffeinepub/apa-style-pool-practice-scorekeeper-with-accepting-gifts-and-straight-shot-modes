@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-matchhistorytable-running-w-l-and-win-so-each-row-s-displayed-w-l-win-is-computed-only-from-matches-of-the-same-mode-bucket-as-that-row-official-apa-apa-practice-accepting-gifts-straight-shot-using-the-current-displayed-sort-order-and-counting-from-the-start-of-that-mode-s-sequence-up-through-the-current-row-i-e-running-within-mode-regardless-of-adjacency",
-      "featureTitle": "Fix MatchHistoryTable running W-L and Win% so each row’s displayed W-L/Win% is computed only from matches of the same mode/bucket as that row (Official APA, APA Practice, Accepting Gifts, Straight Shot), using the current displayed sort order and counting from the start of that mode’s sequence up through the current row (i.e., running within mode regardless of adjacency).",
+      "featureId": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-update-the-matchup-analysis-to-include-both-practice-and-official-apa-games-add-visual-labels-or-badges-to-differentiate-between-practice-games-and-official-games-in-the-match-list-display",
+      "featureTitle": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), update the matchup analysis to include both practice and official APA games. Add visual labels or badges to differentiate between practice games and official games in the match list display.",
       "files": [
-        "frontend/src/components/history/MatchHistoryTable.tsx"
+        "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+        "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,10 +23,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-restore-the-missing-toggleable-sort-by-date-behavior-in-matchhistorytable-using-the-existing-geteffectivematchtimestamp-match-comparator-without-changing-the-default-ordering-behavior-that-exists-today-sorting-must-only-change-when-the-user-uses-the-table-s-existing-sort-ui-control-do-not-add-new-controls",
-      "featureTitle": "Restore the missing toggleable “Sort by date” behavior in MatchHistoryTable using the existing getEffectiveMatchTimestamp(match) comparator, without changing the default ordering behavior that exists today; sorting must only change when the user uses the table’s existing sort UI control (do not add new controls).",
+      "featureId": "feature-on-the-stats-page-official-apa-tab-update-the-average-ppi-and-average-appi-calculations-to-use-the-10-highest-scoring-matches-from-the-most-recent-20-official-matches-chronologically-this-replaces-the-current-last-10-of-20-logic-with-a-best-10-of-last-20-calculation-based-on-ppi-scores",
+      "featureTitle": "On the Stats page Official APA tab, update the average PPI and average aPPI calculations to use the 10 highest-scoring matches from the most recent 20 official matches (chronologically). This replaces the current 'last 10 of 20' logic with a 'best 10 of last 20' calculation based on PPI scores.",
       "files": [
-        "frontend/src/components/history/MatchHistoryTable.tsx"
+        "frontend/src/lib/stats/officialApaStats.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,10 +43,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-keep-matchhistorytable-ui-layout-columns-and-date-display-unchanged-while-implementing-the-logic-fixes-limiting-changes-to-frontend-src-components-history-matchhistorytable-tsx-plus-any-already-existing-sort-control-wiring-required",
-      "featureTitle": "Keep MatchHistoryTable UI layout/columns and date display unchanged while implementing the logic fixes, limiting changes to frontend/src/components/history/MatchHistoryTable.tsx (plus any already-existing sort control wiring required).",
+      "featureId": "feature-on-the-view-detailed-player-stats-screen-playeraggregatestatspage-ensure-all-skill-level-calculations-use-the-best-10-out-of-last-20-official-matches-logic-10-highest-scoring-matches-from-the-most-recent-20-official-matches-apply-this-to-average-ppi-and-average-appi-calculations-used-for-skill-level-prediction",
+      "featureTitle": "On the View Detailed Player Stats screen (PlayerAggregateStatsPage), ensure all skill level calculations use the best 10 out of last 20 official matches logic (10 highest-scoring matches from the most recent 20 official matches). Apply this to average PPI and average aPPI calculations used for skill level prediction.",
       "files": [
-        "frontend/src/components/history/MatchHistoryTable.tsx"
+        "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",

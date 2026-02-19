@@ -3,6 +3,7 @@ import { FileText, Gift, Target, TrendingUp } from 'lucide-react';
 import ModeCard from '../components/navigation/ModeCard';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { SESSION_KEYS } from '../lib/session/inProgressSessions';
+import { setNavigationOrigin } from '../utils/urlParams';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function HomePage() {
   const isAuthenticated = !!identity;
 
   const handleNavigateToHistory = () => {
+    setNavigationOrigin('home');
     navigate({ to: '/history' });
   };
 
@@ -28,7 +30,7 @@ export default function HomePage() {
           icon={<FileText className="h-8 w-8" />}
           title="Official APA Match Log"
           description="Log your official APA league match results"
-          path="/apa/official/create"
+          path="/real-apa-match"
           primaryCtaText="Log APA Match"
         />
 

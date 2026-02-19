@@ -8,9 +8,10 @@ interface ApaBallButtonProps {
   state: BallState;
   onClick: () => void;
   disabled?: boolean;
+  isDead?: boolean;
 }
 
-export default function ApaBallButton({ ballNumber, state, onClick, disabled }: ApaBallButtonProps) {
+export default function ApaBallButton({ ballNumber, state, onClick, disabled, isDead }: ApaBallButtonProps) {
   const ballValue = ballNumber === 9 ? 2 : 1;
   
   const stateStyles = {
@@ -27,16 +28,19 @@ export default function ApaBallButton({ ballNumber, state, onClick, disabled }: 
     dead: 'Dead Ball',
   };
 
+  // Use isDead prop to override state styling when needed
+  const effectiveState = isDead ? 'dead' : state;
+
   return (
     <Button
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || isDead}
       className={cn(
         'h-16 w-16 rounded-full text-xl font-bold shadow-md transition-all',
-        stateStyles[state],
-        disabled && 'opacity-50 cursor-not-allowed'
+        stateStyles[effectiveState],
+        (disabled || isDead) && 'opacity-40 cursor-not-allowed hover:opacity-40'
       )}
-      aria-label={`Ball ${ballNumber} (${ballValue} point${ballValue > 1 ? 's' : ''}) - ${stateLabels[state]}`}
+      aria-label={`Ball ${ballNumber} (${ballValue} point${ballValue > 1 ? 's' : ''}) - ${stateLabels[effectiveState]}`}
     >
       {ballNumber}
     </Button>

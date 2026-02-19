@@ -35,7 +35,7 @@ export function useApaInningFlow(init?: InitialState) {
 
   const turnOver = () => {
     setState(prev => {
-      // Only increment shared innings when Player B ends their turn (switching back to A)
+      // ONLY increment shared innings when Player B ends their turn (switching back to A)
       const shouldIncrementInnings = prev.activePlayer === 'B';
       
       return {
