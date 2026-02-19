@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T03:10:20.961Z",
+  "generatedAt": "2026-02-19T07:11:12.140Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 6,
+    "implemented": 6,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
+        "summary": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state (useBest10Of20) and UI elements",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
@@ -23,13 +23,57 @@
       },
       {
         "id": "REQ-2",
-        "summary": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
+        "summary": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing to last 10, so the panel can compute both 'last 10' and 'best 10 of 20' statistics",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
+          "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
+          "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel that extracts win/loss/PPI from both official APA matches (using officialApaMatchLogData) and practice matches (using apaMatchInfo), following the exact implementation provided with player identification, score calculation, and win/loss determination logic",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Update Record and Win Rate calculation in MatchupAnalysisPanel to iterate through all matches in sortedMatches (both official and practice) using getMatchOutcomeAndPpi() helper, counting wins and losses from both match types to produce accurate statistics when toggle is ON",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Replace the single Avg PPI calculation in MatchupAnalysisPanel with two separate calculations: 'Last 10 Avg PPI' (average of most recent 10 matches) and 'Best 10 of last 20 Avg PPI' (average of top 10 PPI values from most recent 20 matches), both computed from the chronological PPI list that includes practice matches when toggle is ON",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Update the Avg PPI display card in MatchupAnalysisPanel to show the Last 10 Avg PPI as the primary value (large text) with two subtext lines below: 'Last 10' and 'Best 10 of last 20: [value]', maintaining the same visual style as the Record and Win Rate cards",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
         ]
       }
     ]
@@ -40,7 +84,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx",
-    "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
+    "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

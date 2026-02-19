@@ -57,41 +57,97 @@ export default function MatchupAnalysisPanel({ opponentName, matches, allMatches
     getEffectiveMatchTimestamp(a.match) - getEffectiveMatchTimestamp(b.match)
   );
 
-  // Calculate head-to-head stats (official matches only for record)
+  // Helper function to extract outcome and PPI from both official and practice matches
+  function getMatchOutcomeAndPpi(entry: { match: ApiMatch; isPractice: boolean }) {
+    const { match, isPractice } = entry;
+
+    // OFFICIAL
+    if (!isPractice && match.officialApaMatchLogData) {
+      const d = match.officialApaMatchLogData;
+
+      const ppiResult = computeOfficialApaPpi(d.myScore, d.innings, d.defensiveShots);
+      const ppi = ppiResult.isValid && ppiResult.ppi !== null ? ppiResult.ppi : null;
+
+      const didWin = d.didWin === true;
+      const didLose = d.didWin === false;
+
+      return { didWin, didLose, ppi };
+    }
+
+    // PRACTICE
+    if (isPractice && match.apaMatchInfo) {
+      const player1 = match.players[0];
+      const player2 = match.players[1];
+      if (!player1 || !player2) return { didWin: false, didLose: false, ppi: null };
+
+      const normalizedP1 = normalizePlayerName(player1.name);
+      const isPlayer1 = normalizedP1 === normalizedPlayerName;
+
+      const playerStats = match.apaMatchInfo.players[isPlayer1 ? 0 : 1];
+      const opponentStats = match.apaMatchInfo.players[isPlayer1 ? 1 : 0];
+      if (!playerStats || !opponentStats) return { didWin: false, didLose: false, ppi: null };
+
+      const innings = String(Number(playerStats.innings) || 0);
+      const defShots = String(Number(playerStats.defensiveShots) || 0);
+      const yourPoints = String(Number(playerStats.totalScore) || 0);
+
+      const mySkillLevel = player1.skillLevel ? Number(player1.skillLevel) : 0;
+      const theirSkillLevel = player2.skillLevel ? Number(player2.skillLevel) : 0;
+
+      const myTarget = isPlayer1 ? getPointsToWin(mySkillLevel) : getPointsToWin(theirSkillLevel);
+      const theirTarget = isPlayer1 ? getPointsToWin(theirSkillLevel) : getPointsToWin(mySkillLevel);
+
+      const oppPoints = Number(opponentStats.totalScore) || 0;
+
+      const didWin = Number(yourPoints) >= myTarget && oppPoints < theirTarget;
+      const didLose = oppPoints >= theirTarget && Number(yourPoints) < myTarget;
+
+      const ppiResult = computeOfficialApaPpi(yourPoints, innings, defShots);
+      const ppi = ppiResult.isValid && ppiResult.ppi !== null ? ppiResult.ppi : null;
+
+      return { didWin, didLose, ppi };
+    }
+
+    return { didWin: false, didLose: false, ppi: null };
+  }
+
+  // Calculate head-to-head stats (now includes both official and practice)
   let wins = 0;
   let losses = 0;
   let totalWithOutcome = 0;
 
-  for (const { match, isPractice } of sortedMatches) {
-    if (!isPractice && match.officialApaMatchLogData) {
-      if (match.officialApaMatchLogData.didWin === true) {
-        wins++;
-        totalWithOutcome++;
-      } else if (match.officialApaMatchLogData.didWin === false) {
-        losses++;
-        totalWithOutcome++;
-      }
+  for (const entry of sortedMatches) {
+    const { didWin, didLose } = getMatchOutcomeAndPpi(entry);
+
+    if (didWin) {
+      wins++;
+      totalWithOutcome++;
+    } else if (didLose) {
+      losses++;
+      totalWithOutcome++;
     }
   }
 
   const winRate = totalWithOutcome > 0 ? (wins / totalWithOutcome) * 100 : null;
 
-  // Calculate average PPI against this opponent (official matches only)
-  const ppiValues: number[] = [];
+  // Calculate PPI averages (now includes both official and practice)
+  const ppisChronological: number[] = [];
 
-  for (const { match, isPractice } of sortedMatches) {
-    if (!isPractice && match.officialApaMatchLogData) {
-      const data = match.officialApaMatchLogData;
-      const ppiResult = computeOfficialApaPpi(data.myScore, data.innings, data.defensiveShots);
-      if (ppiResult.isValid && ppiResult.ppi !== null) {
-        ppiValues.push(ppiResult.ppi);
-      }
-    }
+  for (const entry of sortedMatches) {
+    const { ppi } = getMatchOutcomeAndPpi(entry);
+    if (ppi !== null) ppisChronological.push(ppi);
   }
 
-  const avgPpi = ppiValues.length > 0
-    ? ppiValues.reduce((sum, val) => sum + val, 0) / ppiValues.length
-    : null;
+  // Last 10 avg
+  const last10 = ppisChronological.slice(-10);
+  const last10AvgPpi =
+    last10.length > 0 ? last10.reduce((s, v) => s + v, 0) / last10.length : null;
+
+  // Best 10 of last 20 avg
+  const last20 = ppisChronological.slice(-20);
+  const best10 = [...last20].sort((a, b) => b - a).slice(0, 10);
+  const best10of20AvgPpi =
+    best10.length > 0 ? best10.reduce((s, v) => s + v, 0) / best10.length : null;
 
   return (
     <Card className="border-2">
@@ -126,8 +182,14 @@ export default function MatchupAnalysisPanel({ opponentName, matches, allMatches
           <div>
             <p className="text-sm text-muted-foreground">Avg PPI</p>
             <p className="text-2xl font-bold">
-              {avgPpi !== null ? avgPpi.toFixed(2) : '—'}
+              {last10AvgPpi !== null ? last10AvgPpi.toFixed(2) : '—'}
             </p>
+            <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+              <div>Last 10</div>
+              <div>
+                Best 10 of last 20{best10of20AvgPpi !== null ? `: ${best10of20AvgPpi.toFixed(2)}` : ''}
+              </div>
+            </div>
           </div>
         </div>
 

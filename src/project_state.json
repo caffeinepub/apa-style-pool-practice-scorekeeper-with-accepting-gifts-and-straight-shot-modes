@@ -2,29 +2,66 @@
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
   "summary": "New project",
-  "architectural_notes": [],
+  "architectural_notes": [
+    "Matchup analysis stats (Record/WinRate/AvgPPI) must include practice matches when toggle is ON",
+    "Always display both Last 10 and Best 10 of last 20 PPI averages in matchup analysis",
+    "Practice match outcomes computed using same PPI logic as official matches",
+    "MatchupAnalysisDropdownPlayerStats returns full opponent dataset without slicing; panel computes both PPI averages"
+  ],
   "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-create-a-new-file-frontend-src-components-apa-matchupanalysisdropdownplayerstats-tsx-that-is-an-exact-copy-of-the-existing-frontend-src-components-apa-matchupanalysisdropdown-tsx-with-no-modifications",
-      "title": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
+      "id": "feature-remove-the-best-10-of-last-20-matches-checkbox-from-matchupanalysisdropdownplayerstats-component-including-all-associated-state-usebest10of20-and-ui-elements",
+      "title": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state (useBest10Of20) and UI elements",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-frontend-src-pages-players-playeraggregatestatspage-tsx-change-the-import-statement-from-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdown-to-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdownplayerstats-with-no-other-code-changes",
-      "title": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
+      "id": "feature-modify-getfilteredmatches-in-matchupanalysisdropdownplayerstats-to-return-the-full-opponent-dataset-official-plus-optional-practice-matches-sorted-chronologically-without-slicing-to-last-10-so-the-panel-can-compute-both-last-10-and-best-10-of-20-statistics",
+      "title": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing to last 10, so the panel can compute both 'last 10' and 'best 10 of 20' statistics",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-getmatchoutcomeandppi-helper-function-in-matchupanalysispanel-that-extracts-win-loss-ppi-from-both-official-apa-matches-using-officialapamatchlogdata-and-practice-matches-using-apamatchinfo-following-the-exact-implementation-provided-with-player-identification-score-calculation-and-win-loss-determination-logic",
+      "title": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel that extracts win/loss/PPI from both official APA matches (using officialApaMatchLogData) and practice matches (using apaMatchInfo), following the exact implementation provided with player identification, score calculation, and win/loss determination logic",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-record-and-win-rate-calculation-in-matchupanalysispanel-to-iterate-through-all-matches-in-sortedmatches-both-official-and-practice-using-getmatchoutcomeandppi-helper-counting-wins-and-losses-from-both-match-types-to-produce-accurate-statistics-when-toggle-is-on",
+      "title": "Update Record and Win Rate calculation in MatchupAnalysisPanel to iterate through all matches in sortedMatches (both official and practice) using getMatchOutcomeAndPpi() helper, counting wins and losses from both match types to produce accurate statistics when toggle is ON",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-single-avg-ppi-calculation-in-matchupanalysispanel-with-two-separate-calculations-last-10-avg-ppi-average-of-most-recent-10-matches-and-best-10-of-last-20-avg-ppi-average-of-top-10-ppi-values-from-most-recent-20-matches-both-computed-from-the-chronological-ppi-list-that-includes-practice-matches-when-toggle-is-on",
+      "title": "Replace the single Avg PPI calculation in MatchupAnalysisPanel with two separate calculations: 'Last 10 Avg PPI' (average of most recent 10 matches) and 'Best 10 of last 20 Avg PPI' (average of top 10 PPI values from most recent 20 matches), both computed from the chronological PPI list that includes practice matches when toggle is ON",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-avg-ppi-display-card-in-matchupanalysispanel-to-show-the-last-10-avg-ppi-as-the-primary-value-large-text-with-two-subtext-lines-below-last-10-and-best-10-of-last-20-value-maintaining-the-same-visual-style-as-the-record-and-win-rate-cards",
+      "title": "Update the Avg PPI display card in MatchupAnalysisPanel to show the Last 10 Avg PPI as the primary value (large text) with two subtext lines below: 'Last 10' and 'Best 10 of last 20: [value]', maintaining the same visual style as the Record and Win Rate cards",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Create duplicate component and update import in PlayerAggregateStatsPage",
+  "projectName": "Fix practice match stat calculations in matchup analysis",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

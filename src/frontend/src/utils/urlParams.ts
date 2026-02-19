@@ -218,7 +218,7 @@ const NAVIGATION_ORIGIN_KEY = 'navigationOrigin';
  * Sets the navigation origin in sessionStorage
  * Used to track where the user navigated from for context-aware back links
  *
- * @param origin - The origin identifier (e.g., 'stats', 'history')
+ * @param origin - The origin identifier (e.g., 'history', 'stats')
  */
 export function setNavigationOrigin(origin: string): void {
     storeSessionParameter(NAVIGATION_ORIGIN_KEY, origin);

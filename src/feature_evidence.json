@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-create-a-new-file-frontend-src-components-apa-matchupanalysisdropdownplayerstats-tsx-that-is-an-exact-copy-of-the-existing-frontend-src-components-apa-matchupanalysisdropdown-tsx-with-no-modifications",
-      "featureTitle": "Create a new file frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx that is an exact copy of the existing frontend/src/components/apa/MatchupAnalysisDropdown.tsx with no modifications",
+      "featureId": "feature-remove-the-best-10-of-last-20-matches-checkbox-from-matchupanalysisdropdownplayerstats-component-including-all-associated-state-usebest10of20-and-ui-elements",
+      "featureTitle": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state (useBest10Of20) and UI elements",
       "files": [
         "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
       ],
@@ -22,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-frontend-src-pages-players-playeraggregatestatspage-tsx-change-the-import-statement-from-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdown-to-import-matchupanalysisdropdown-from-components-apa-matchupanalysisdropdownplayerstats-with-no-other-code-changes",
-      "featureTitle": "In frontend/src/pages/players/PlayerAggregateStatsPage.tsx, change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other code changes",
+      "featureId": "feature-modify-getfilteredmatches-in-matchupanalysisdropdownplayerstats-to-return-the-full-opponent-dataset-official-plus-optional-practice-matches-sorted-chronologically-without-slicing-to-last-10-so-the-panel-can-compute-both-last-10-and-best-10-of-20-statistics",
+      "featureTitle": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing to last 10, so the panel can compute both 'last 10' and 'best 10 of 20' statistics",
       "files": [
-        "frontend/src/pages/players/PlayerAggregateStatsPage.tsx"
+        "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,6 +38,86 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-getmatchoutcomeandppi-helper-function-in-matchupanalysispanel-that-extracts-win-loss-ppi-from-both-official-apa-matches-using-officialapamatchlogdata-and-practice-matches-using-apamatchinfo-following-the-exact-implementation-provided-with-player-identification-score-calculation-and-win-loss-determination-logic",
+      "featureTitle": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel that extracts win/loss/PPI from both official APA matches (using officialApaMatchLogData) and practice matches (using apaMatchInfo), following the exact implementation provided with player identification, score calculation, and win/loss determination logic",
+      "files": [
+        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-record-and-win-rate-calculation-in-matchupanalysispanel-to-iterate-through-all-matches-in-sortedmatches-both-official-and-practice-using-getmatchoutcomeandppi-helper-counting-wins-and-losses-from-both-match-types-to-produce-accurate-statistics-when-toggle-is-on",
+      "featureTitle": "Update Record and Win Rate calculation in MatchupAnalysisPanel to iterate through all matches in sortedMatches (both official and practice) using getMatchOutcomeAndPpi() helper, counting wins and losses from both match types to produce accurate statistics when toggle is ON",
+      "files": [
+        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-replace-the-single-avg-ppi-calculation-in-matchupanalysispanel-with-two-separate-calculations-last-10-avg-ppi-average-of-most-recent-10-matches-and-best-10-of-last-20-avg-ppi-average-of-top-10-ppi-values-from-most-recent-20-matches-both-computed-from-the-chronological-ppi-list-that-includes-practice-matches-when-toggle-is-on",
+      "featureTitle": "Replace the single Avg PPI calculation in MatchupAnalysisPanel with two separate calculations: 'Last 10 Avg PPI' (average of most recent 10 matches) and 'Best 10 of last 20 Avg PPI' (average of top 10 PPI values from most recent 20 matches), both computed from the chronological PPI list that includes practice matches when toggle is ON",
+      "files": [
+        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-avg-ppi-display-card-in-matchupanalysispanel-to-show-the-last-10-avg-ppi-as-the-primary-value-large-text-with-two-subtext-lines-below-last-10-and-best-10-of-last-20-value-maintaining-the-same-visual-style-as-the-record-and-win-rate-cards",
+      "featureTitle": "Update the Avg PPI display card in MatchupAnalysisPanel to show the Last 10 Avg PPI as the primary value (large text) with two subtext lines below: 'Last 10' and 'Best 10 of last 20: [value]', maintaining the same visual style as the Record and Win Rate cards",
+      "files": [
+        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
       ],
       "confidence": "high"
     }

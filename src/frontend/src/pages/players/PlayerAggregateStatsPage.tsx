@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,15 +6,12 @@ import { useGetAllMatches } from '../../hooks/useQueries';
 import { extractPlayerApaMatches, computeBest10Of20Average } from '../../lib/apa/apaAggregateStats';
 import { getNavigationOrigin, clearNavigationOrigin } from '../../utils/urlParams';
 import { getApaPpiSkillLevelDetailed, getApaAppiSkillLevelDetailed } from '../../lib/apa/apaSkillLevelPrediction';
-import MatchupAnalysisPanel from '../../components/apa/MatchupAnalysisPanel';
 import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';
-import { normalizePlayerName } from '../../utils/playerName';
 
 export default function PlayerAggregateStatsPage() {
   const navigate = useNavigate();
   const { playerName } = useParams({ from: '/players/$playerName' });
   const { data: allMatches, isLoading } = useGetAllMatches();
-  const [selectedOpponent, setSelectedOpponent] = useState<string | null>(null);
 
   const decodedPlayerName = decodeURIComponent(playerName);
 
@@ -90,26 +86,6 @@ export default function PlayerAggregateStatsPage() {
 
   const predictedSkillLevelPpi = best10Of20Ppi !== null ? getApaPpiSkillLevelDetailed(best10Of20Ppi) : null;
   const predictedSkillLevelAppi = best10Of20Appi !== null ? getApaAppiSkillLevelDetailed(best10Of20Appi) : null;
-
-  // Extract unique opponent names from official APA matches only
-  const opponentNames = Array.from(
-    new Set(
-      allMatches
-        .filter(m => m.officialApaMatchLogData)
-        .map(m => m.officialApaMatchLogData!.opponentName)
-        .filter(name => name && name.trim() !== '')
-    )
-  ).sort();
-
-  // Filter matches for selected opponent (official matches only)
-  const opponentMatches = selectedOpponent
-    ? allMatches.filter(m => {
-        if (m.officialApaMatchLogData) {
-          return m.officialApaMatchLogData.opponentName === selectedOpponent;
-        }
-        return false;
-      })
-    : [];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -274,27 +250,11 @@ export default function PlayerAggregateStatsPage() {
           <CardTitle>Matchup Analysis</CardTitle>
         </CardHeader>
         <CardContent>
-          {opponentNames.length > 0 ? (
-            <div className="space-y-4">
-              <MatchupAnalysisDropdown
-                matches={allMatches}
-                onSelectOpponent={(opponent) => setSelectedOpponent(opponent === selectedOpponent ? null : opponent)}
-              />
-              {selectedOpponent && (
-                <MatchupAnalysisPanel
-                  opponentName={selectedOpponent}
-                  matches={opponentMatches}
-                  allMatches={allMatches}
-                  playerName={decodedPlayerName}
-                  onClose={() => setSelectedOpponent(null)}
-                />
-              )}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              No opponents found. Play some matches to see matchup analysis.
-            </p>
-          )}
+          <MatchupAnalysisDropdown
+            matches={allMatches}
+            playerName={decodedPlayerName}
+            onSelectOpponent={() => {}}
+          />
         </CardContent>
       </Card>
     </div>

@@ -1,35 +1,104 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Create duplicate component and update import in PlayerAggregateStatsPage",
+  "title": "Fix practice match stat calculations in matchup analysis",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Create MatchupAnalysisDropdownPlayerStats.tsx as exact copy of MatchupAnalysisDropdown.tsx",
+      "summary": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state and UI elements",
       "acceptanceCriteria": [
-        "File frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx exists",
-        "The new file contains identical code to MatchupAnalysisDropdown.tsx"
+        "The 'Best 10 of last 20 matches' checkbox is no longer visible in the UI",
+        "No useBest10Of20 state or related logic remains in the component"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx",
-          "operation": "create",
-          "description": "Create a new component file that is an exact copy of frontend/src/components/apa/MatchupAnalysisDropdown.tsx. Copy all content including imports, types, component logic, and exports without any modifications."
+          "operation": "modify",
+          "description": "Remove the useBest10Of20 state variable, the checkbox UI block, and all logic that references useBest10Of20. This includes removing the state declaration, the checkbox component in the JSX, and any conditional logic or filtering that depends on the useBest10Of20 boolean value."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Update PlayerAggregateStatsPage to import from MatchupAnalysisDropdownPlayerStats",
+      "summary": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset sorted chronologically without slicing",
       "acceptanceCriteria": [
-        "PlayerAggregateStatsPage.tsx imports from MatchupAnalysisDropdownPlayerStats instead of MatchupAnalysisDropdown",
-        "No other changes are made to PlayerAggregateStatsPage.tsx"
+        "getFilteredMatches() sorts matches chronologically using getEffectiveMatchTimestamp",
+        "getFilteredMatches() returns the full list without slicing",
+        "The returned list includes both official and practice matches when the toggle is ON"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/players/PlayerAggregateStatsPage.tsx",
+          "path": "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx",
           "operation": "modify",
-          "description": "Change the import statement from \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdown';\" to \"import MatchupAnalysisDropdown from '../../components/apa/MatchupAnalysisDropdownPlayerStats';\" with no other changes to the file."
+          "description": "Replace the end of getFilteredMatches() function to sort filteredMatches chronologically using getEffectiveMatchTimestamp and return the full array without slicing. Remove any .slice(-10) or similar operations. The function should return all matches (official plus optional practice) sorted by timestamp so that MatchupAnalysisPanel can compute both 'last 10' and 'best 10 of 20' statistics from the complete dataset."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel to extract win/loss/PPI from both official and practice matches",
+      "acceptanceCriteria": [
+        "Helper function correctly identifies and processes official match data from officialApaMatchLogData",
+        "Helper function correctly identifies and processes practice match data from apaMatchInfo",
+        "Returns object with didWin, didLose, and ppi properties",
+        "Practice match logic correctly identifies player vs opponent using normalizePlayerName and isPlayer1 logic",
+        "Practice match win/loss determination uses getPointsToWin targets for both players"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+          "operation": "modify",
+          "description": "Add the getMatchOutcomeAndPpi() helper function near the top of the component (after sortedMatches is defined). This function takes an entry with match and isPractice flag, and returns an object with didWin (boolean), didLose (boolean), and ppi (number | null). For official matches, it extracts data from officialApaMatchLogData (myScore, theirScore, innings). For practice matches, it extracts data from apaMatchInfo, identifies the player using normalizePlayerName comparison with the two players in the match, determines win/loss by comparing actual scores against skill-level-based targets from getPointsToWin, and calculates PPI from the appropriate playerStats entry."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Update Record and Win Rate calculation in MatchupAnalysisPanel to include both official and practice match outcomes",
+      "acceptanceCriteria": [
+        "Record calculation includes both official and practice match outcomes",
+        "Win Rate percentage changes when toggle switches between 'Official Only' and 'Official + Practice'",
+        "Statistics reflect the practice match visible in the Match History list"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+          "operation": "modify",
+          "description": "Replace the current Record and Win Rate calculation block. Iterate through all matches in sortedMatches using getMatchOutcomeAndPpi() to extract didWin and didLose for each entry. Count wins and losses from both official and practice matches. Calculate totalWithOutcome as wins + losses, and compute winRate as (wins / totalWithOutcome) * 100 when totalWithOutcome > 0, otherwise null. This ensures that practice matches are included in the statistics when the toggle is ON."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Replace single Avg PPI calculation with two separate calculations: 'Last 10 Avg PPI' and 'Best 10 of last 20 Avg PPI'",
+      "acceptanceCriteria": [
+        "PPI list includes both official and practice match PPI values when toggle is ON",
+        "Last 10 Avg PPI is calculated from the 10 most recent matches chronologically",
+        "Best 10 of last 20 Avg PPI is calculated from the top 10 PPI values in the most recent 20 matches",
+        "Both values change when toggle switches between 'Official Only' and 'Official + Practice'"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+          "operation": "modify",
+          "description": "Replace the current Avg PPI calculation block with two separate calculations. First, build a chronological PPI list by iterating through sortedMatches and extracting ppi values using getMatchOutcomeAndPpi() helper. Then compute last10AvgPpi by slicing the last 10 entries from the PPI list and averaging them. Compute best10of20AvgPpi by slicing the last 20 entries, sorting them in descending order, taking the top 10, and averaging those. Both averages should return null if there are no valid PPI values. This dual calculation allows the UI to show both the recent trend and the best performance within a rolling window."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Update the Avg PPI display card in MatchupAnalysisPanel to show Last 10 Avg PPI as primary value with two subtext lines",
+      "acceptanceCriteria": [
+        "Avg PPI card displays last10AvgPpi as the main value in large text",
+        "Subtext shows 'Last 10' label on first line",
+        "Subtext shows 'Best 10 of last 20: [value]' on second line when value is available",
+        "Visual styling matches the Record and Win Rate cards with consistent spacing and text sizes"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/MatchupAnalysisPanel.tsx",
+          "operation": "modify",
+          "description": "Update the Avg PPI card JSX to display last10AvgPpi as the primary value in text-2xl font-bold styling. Below the main value, add a div with text-xs text-muted-foreground mt-1 space-y-0.5 classes containing two lines: 'Last 10' as a static label, and 'Best 10 of last 20: [value]' showing best10of20AvgPpi formatted to 2 decimal places (or omitting the value if null). This matches the visual pattern of the Record and Win Rate cards with a large primary metric and smaller subtext lines underneath."
         }
       ]
     }
