@@ -1,139 +1,128 @@
 {
   "kind": "build_request",
-  "title": "Fix practice match stat calculations in matchup analysis",
+  "title": "APA Practice — End-of-Match Finalization (Surgical Fix)",
+  "projectName": "APA Scorekeeper",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state (useBest10Of20) and UI elements",
+      "text": "Remove the 'Resume (Undo Accidental Win)' button from the APA Practice game interface after match finalization",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-final"
+          "msg-last"
         ],
         "quotes": [
-          "Remove the checkbox entirely",
-          "Delete checkbox state + UI",
-          "Remove these: useBest10Of20 state, Checkbox block, all useBest10Of20 logic"
+          "Remove 'Resume (Undo Accidental Win)'",
+          "Remove the Resume button"
         ]
       },
       "acceptanceCriteria": [
-        "The 'Best 10 of last 20 matches' checkbox is no longer visible in the UI",
-        "No useBest10Of20 state or related logic remains in the component"
+        "Resume button is not visible after a winning rack is finalized",
+        "No UI elements allow undoing a finalized match"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing to last 10, so the panel can compute both 'last 10' and 'best 10 of 20' statistics",
+      "text": "Remove the Resume button handler and all snapshot/rollback plumbing used exclusively for the Resume functionality in APA Practice mode",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-final"
+          "msg-last"
         ],
         "quotes": [
-          "getFilteredMatches() should return the full opponent dataset (official + optional practice), sorted",
-          "Do not slice to last 10 here (panel needs the full list to compute both \"last 10\" and \"best 10 of 20\")",
-          "Replace the end of getFilteredMatches() with: // Sort chronologically filteredMatches.sort((a, b) => getEffectiveMatchTimestamp(a) - getEffectiveMatchTimestamp(b)); // IMPORTANT: do NOT slice here. // Panel will compute Last 10 and Best 10/20 itself. return filteredMatches;"
+          "Remove its handler",
+          "Remove any snapshot / rollback plumbing used only for Resume"
         ]
       },
       "acceptanceCriteria": [
-        "getFilteredMatches() sorts matches chronologically using getEffectiveMatchTimestamp",
-        "getFilteredMatches() returns the full list without slicing",
-        "The returned list includes both official and practice matches when the toggle is ON"
+        "No handler code exists for resuming after finalization",
+        "Rack snapshot/restore logic for post-finalization rollback is removed",
+        "No state corruption occurs from attempted rollback operations"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel that extracts win/loss/PPI from both official APA matches (using officialApaMatchLogData) and practice matches (using apaMatchInfo), following the exact implementation provided with player identification, score calculation, and win/loss determination logic",
+      "text": "Enforce that after pressing 'End Rack' on a winning rack in APA Practice, gameplay stops permanently: balls become unclickable, the rack scoring panel does not render again, and the match enters a final summary state where it can only be saved or discarded",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-final"
+          "msg-last"
         ],
         "quotes": [
-          "Add these helpers near the top (inside the component, after sortedMatches): function getMatchOutcomeAndPpi(entry: { match: ApiMatch; isPractice: boolean }) { ... }"
+          "Once End Rack finalizes a winning rack: Gameplay must stop",
+          "Balls must not become clickable",
+          "Rack scoring panel must not render again",
+          "Match may only be saved or discarded"
         ]
       },
       "acceptanceCriteria": [
-        "Helper function correctly identifies and processes official match data from officialApaMatchLogData",
-        "Helper function correctly identifies and processes practice match data from apaMatchInfo",
-        "Returns object with didWin, didLose, and ppi properties",
-        "Practice match logic correctly identifies player vs opponent using normalizePlayerName and isPlayer1 logic",
-        "Practice match win/loss determination uses getPointsToWin targets for both players"
+        "After 'End Rack' finalizes a winning rack, no ball buttons are clickable",
+        "Rack scoring panel does not appear after finalization",
+        "Only save/discard actions are available post-finalization",
+        "No code path allows returning to gameplay after finalization"
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Update Record and Win Rate calculation in MatchupAnalysisPanel to iterate through all matches in sortedMatches (both official and practice) using getMatchOutcomeAndPpi() helper, counting wins and losses from both match types to produce accurate statistics when toggle is ON",
+      "text": "Fix the save logic in APA Practice to persist authoritative values as-is without recalculation: use player1TotalScore and player2TotalScore for scores, session.sharedInnings for innings (same value for both players), and sum of session.racks[].playerXDefensiveShots for defensive shots",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-final"
+          "msg-last"
         ],
         "quotes": [
-          "Record / WinRate must include practice matches when they are present (i.e., when toggle ON caused them to exist in the dataset)",
-          "Replace the current Record / WinRate calculation block with: let wins = 0; let losses = 0; let totalWithOutcome = 0; for (const entry of sortedMatches) { const { didWin, didLose } = getMatchOutcomeAndPpi(entry); if (didWin) { wins++; totalWithOutcome++; } else if (didLose) { losses++; totalWithOutcome++; } } const winRate = totalWithOutcome > 0 ? (wins / totalWithOutcome) * 100 : null;"
+          "Persist the values that are already finalized and tracked in state",
+          "Do not derive, recompute, or reinterpret these values"
         ]
       },
       "acceptanceCriteria": [
-        "Record calculation includes both official and practice match outcomes",
-        "Win Rate percentage changes when toggle switches between 'Official Only' and 'Official + Practice'",
-        "Statistics reflect the practice match visible in the Match History list"
+        "Save logic reads player1TotalScore and player2TotalScore directly without recalculation",
+        "Innings value is taken from session.sharedInnings for both players",
+        "Defensive shots are computed as sum of defensive shot values across racks",
+        "No scoring logic re-derives totals from ball states at save time"
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Replace the single Avg PPI calculation in MatchupAnalysisPanel with two separate calculations: 'Last 10 Avg PPI' (average of most recent 10 matches) and 'Best 10 of last 20 Avg PPI' (average of top 10 PPI values from most recent 20 matches), both computed from the chronological PPI list that includes practice matches when toggle is ON",
+      "text": "In buildApaNineBallMatch for APA Practice, preserve both totalScore and pointsEarnedRunningTotal fields by persisting the same finalized value into both fields without zeroing, removing, or combining them",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-final"
+          "msg-last"
         ],
         "quotes": [
-          "Compute two averages: last10AvgPpi, best10of20AvgPpi",
-          "Replace the current Avg PPI block with BOTH calculations: const ppisChronological: number[] = []; for (const entry of sortedMatches) { const { ppi } = getMatchOutcomeAndPpi(entry); if (ppi !== null) ppisChronological.push(ppi); } // Last 10 avg const last10 = ppisChronological.slice(-10); const last10AvgPpi = last10.length > 0 ? last10.reduce((s, v) => s + v, 0) / last10.length : null; // Best 10 of last 20 avg const last20 = ppisChronological.slice(-20); const best10 = [...last20].sort((a, b) => b - a).slice(0, 10); const best10of20AvgPpi = best10.length > 0 ? best10.reduce((s, v) => s + v, 0) / best10.length : null;"
+          "Keep both: totalScore, pointsEarnedRunningTotal",
+          "Persist the same finalized value into both fields",
+          "Do not zero them. Do not remove them. Do not combine them."
         ]
       },
       "acceptanceCriteria": [
-        "PPI list includes both official and practice match PPI values when toggle is ON",
-        "Last 10 Avg PPI is calculated from the 10 most recent matches chronologically",
-        "Best 10 of last 20 Avg PPI is calculated from the top 10 PPI values in the most recent 20 matches",
-        "Both values change when toggle switches between 'Official Only' and 'Official + Practice'"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Update the Avg PPI display card in MatchupAnalysisPanel to show the Last 10 Avg PPI as the primary value (large text) with two subtext lines below: 'Last 10' and 'Best 10 of last 20: [value]', maintaining the same visual style as the Record and Win Rate cards",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-final"
-        ],
-        "quotes": [
-          "Render Avg PPI like your other cards: big number + subtext lines under it",
-          "UI style stays the same as your screenshot: one big number + small subtext lines under it",
-          "Change the Avg PPI section to match your screenshot pattern (big number + subtext), but now show both lines: <div> <p className=\"text-sm text-muted-foreground\">Avg PPI</p> <p className=\"text-2xl font-bold\"> {last10AvgPpi !== null ? last10AvgPpi.toFixed(2) : '—'} </p> <div className=\"text-xs text-muted-foreground mt-1 space-y-0.5\"> <div>Last 10</div> <div> Best 10 of last 20{best10of20AvgPpi !== null ? `: ${best10of20AvgPpi.toFixed(2)}` : ''} </div> </div> </div>"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Avg PPI card displays last10AvgPpi as the main value in large text",
-        "Subtext shows 'Last 10' label on first line",
-        "Subtext shows 'Best 10 of last 20: [value]' on second line when value is available",
-        "Visual styling matches the Record and Win Rate cards with consistent spacing and text sizes"
+        "Both totalScore and pointsEarnedRunningTotal are present in saved match records",
+        "Both fields contain the same finalized score value",
+        "No aggregation or combination logic manipulates these fields",
+        "Neither field is zeroed out or removed"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files other than MatchupAnalysisDropdownPlayerStats.tsx and MatchupAnalysisPanel.tsx",
-    "Do not change the visual layout or styling of the matchup analysis panel beyond the Avg PPI card structure",
-    "Preserve all existing match filtering and sorting logic except where explicitly specified",
-    "Maintain compatibility with both official and practice match data structures"
+    "Do not change rack scoring logic",
+    "Do not change dead ball logic",
+    "Do not change turn locking rules",
+    "Do not change running total behavior during live gameplay",
+    "Do not change chart aggregation logic",
+    "Do not change match history format",
+    "Do not modify any non-APA-Practice game modes",
+    "Do not redesign or rewrite gameplay systems",
+    "Match finalization occurs only when 'End Rack' is pressed on the winning rack (there is no separate 'End Match' button)",
+    "Pre-finalization behavior must remain unchanged: balls in the current inning may be unselected, running totals may fluctuate, win indicators may appear/disappear"
   ],
   "nonGoals": [
-    "Modifying StatsPage.tsx or PlayerAggregateStatsPage.tsx",
-    "Changing the toggle button behavior or appearance",
-    "Altering the Match History list display format",
-    "Adding new features beyond the stat calculation fixes"
+    "Adding new undo/redo mechanics after finalization",
+    "Recalculating scores from ball states at save time",
+    "Changing gameplay rules or scoring calculations",
+    "Modifying behavior of other game modes",
+    "Redesigning the UI or adding new features beyond finalization enforcement"
   ],
   "imageRequirements": {
     "required": [],

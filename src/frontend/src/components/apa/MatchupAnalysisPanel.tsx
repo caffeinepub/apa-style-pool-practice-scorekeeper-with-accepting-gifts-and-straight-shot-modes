@@ -185,7 +185,6 @@ export default function MatchupAnalysisPanel({ opponentName, matches, allMatches
               {last10AvgPpi !== null ? last10AvgPpi.toFixed(2) : '—'}
             </p>
             <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-              <div>Last 10</div>
               <div>
                 Best 10 of last 20{best10of20AvgPpi !== null ? `: ${best10of20AvgPpi.toFixed(2)}` : ''}
               </div>

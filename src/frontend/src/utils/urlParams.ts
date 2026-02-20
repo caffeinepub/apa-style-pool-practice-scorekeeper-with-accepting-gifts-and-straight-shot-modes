@@ -207,11 +207,7 @@ export function getSecretParameter(paramName: string): string | null {
     return getSecretFromHash(paramName);
 }
 
-/**
- * Navigation origin tracking helpers
- * Used for context-aware back links across the application
- */
-
+// Navigation origin tracking helpers
 const NAVIGATION_ORIGIN_KEY = 'navigationOrigin';
 
 /**

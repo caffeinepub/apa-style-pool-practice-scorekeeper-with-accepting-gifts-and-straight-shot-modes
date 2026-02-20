@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 type BallState = 'unscored' | 'playerA' | 'playerB' | 'dead';
 
@@ -9,9 +10,19 @@ interface ApaBallButtonProps {
   onClick: () => void;
   disabled?: boolean;
   isDead?: boolean;
+  activePlayer?: 'A' | 'B';
+  isLocked?: boolean;
 }
 
-export default function ApaBallButton({ ballNumber, state, onClick, disabled, isDead }: ApaBallButtonProps) {
+export default function ApaBallButton({ 
+  ballNumber, 
+  state, 
+  onClick, 
+  disabled, 
+  isDead,
+  activePlayer = 'A',
+  isLocked = false,
+}: ApaBallButtonProps) {
   const ballValue = ballNumber === 9 ? 2 : 1;
   
   const stateStyles = {
@@ -20,6 +31,11 @@ export default function ApaBallButton({ ballNumber, state, onClick, disabled, is
     playerB: 'bg-blue-600 border-2 border-blue-700 text-white hover:bg-blue-700',
     dead: 'bg-gray-400 border-2 border-gray-500 text-white hover:bg-gray-500',
   };
+
+  // Hover color based on active player
+  const hoverColorClass = activePlayer === 'A' 
+    ? 'hover:bg-emerald-100 hover:border-emerald-500' 
+    : 'hover:bg-blue-100 hover:border-blue-500';
 
   const stateLabels = {
     unscored: 'Unscored',
@@ -31,18 +47,32 @@ export default function ApaBallButton({ ballNumber, state, onClick, disabled, is
   // Use isDead prop to override state styling when needed
   const effectiveState = isDead ? 'dead' : state;
 
+  // Locked balls cannot be clicked
+  const effectiveDisabled = disabled || isLocked;
+
   return (
     <Button
       onClick={onClick}
-      disabled={disabled || isDead}
+      disabled={effectiveDisabled}
       className={cn(
-        'h-16 w-16 rounded-full text-xl font-bold shadow-md transition-all',
+        'h-16 w-16 rounded-full text-xl font-bold shadow-md transition-all relative',
         stateStyles[effectiveState],
-        (disabled || isDead) && 'opacity-40 cursor-not-allowed hover:opacity-40'
+        // Apply hover color only for unscored balls when not disabled/locked
+        effectiveState === 'unscored' && !effectiveDisabled && hoverColorClass,
+        effectiveDisabled && 'opacity-40',
+        // Cursor indication for locked state
+        isLocked && 'cursor-not-allowed'
       )}
-      aria-label={`Ball ${ballNumber} (${ballValue} point${ballValue > 1 ? 's' : ''}) - ${stateLabels[effectiveState]}`}
+      aria-label={`Ball ${ballNumber} (${ballValue} point${ballValue > 1 ? 's' : ''}) - ${stateLabels[effectiveState]}${isLocked ? ' (Locked)' : ''}`}
     >
-      {ballNumber}
+      {effectiveState === 'dead' ? (
+        <div className="flex items-center justify-center">
+          <X className="h-8 w-8 text-red-600 absolute" strokeWidth={3} />
+          <span className="relative z-10">{ballNumber}</span>
+        </div>
+      ) : (
+        ballNumber
+      )}
     </Button>
   );
 }

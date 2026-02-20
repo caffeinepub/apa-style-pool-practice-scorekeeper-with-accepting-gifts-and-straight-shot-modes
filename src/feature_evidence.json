@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-the-best-10-of-last-20-matches-checkbox-from-matchupanalysisdropdownplayerstats-component-including-all-associated-state-usebest10of20-and-ui-elements",
-      "featureTitle": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state (useBest10Of20) and UI elements",
+      "featureId": "feature-remove-the-resume-undo-accidental-win-button-from-the-apa-practice-game-interface-after-match-finalization",
+      "featureTitle": "Remove the 'Resume (Undo Accidental Win)' button from the APA Practice game interface after match finalization",
       "files": [
-        "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
+        "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-modify-getfilteredmatches-in-matchupanalysisdropdownplayerstats-to-return-the-full-opponent-dataset-official-plus-optional-practice-matches-sorted-chronologically-without-slicing-to-last-10-so-the-panel-can-compute-both-last-10-and-best-10-of-20-statistics",
-      "featureTitle": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing to last 10, so the panel can compute both 'last 10' and 'best 10 of 20' statistics",
+      "featureId": "feature-remove-the-resume-button-handler-and-all-snapshot-rollback-plumbing-used-exclusively-for-the-resume-functionality-in-apa-practice-mode",
+      "featureTitle": "Remove the Resume button handler and all snapshot/rollback plumbing used exclusively for the Resume functionality in APA Practice mode",
       "files": [
-        "frontend/src/components/apa/MatchupAnalysisDropdownPlayerStats.tsx"
+        "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,10 +42,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-getmatchoutcomeandppi-helper-function-in-matchupanalysispanel-that-extracts-win-loss-ppi-from-both-official-apa-matches-using-officialapamatchlogdata-and-practice-matches-using-apamatchinfo-following-the-exact-implementation-provided-with-player-identification-score-calculation-and-win-loss-determination-logic",
-      "featureTitle": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel that extracts win/loss/PPI from both official APA matches (using officialApaMatchLogData) and practice matches (using apaMatchInfo), following the exact implementation provided with player identification, score calculation, and win/loss determination logic",
+      "featureId": "feature-enforce-that-after-pressing-end-rack-on-a-winning-rack-in-apa-practice-gameplay-stops-permanently-balls-become-unclickable-the-rack-scoring-panel-does-not-render-again-and-the-match-enters-a-final-summary-state-where-it-can-only-be-saved-or-discarded",
+      "featureTitle": "Enforce that after pressing 'End Rack' on a winning rack in APA Practice, gameplay stops permanently: balls become unclickable, the rack scoring panel does not render again, and the match enters a final summary state where it can only be saved or discarded",
       "files": [
-        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+        "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -62,10 +63,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-record-and-win-rate-calculation-in-matchupanalysispanel-to-iterate-through-all-matches-in-sortedmatches-both-official-and-practice-using-getmatchoutcomeandppi-helper-counting-wins-and-losses-from-both-match-types-to-produce-accurate-statistics-when-toggle-is-on",
-      "featureTitle": "Update Record and Win Rate calculation in MatchupAnalysisPanel to iterate through all matches in sortedMatches (both official and practice) using getMatchOutcomeAndPpi() helper, counting wins and losses from both match types to produce accurate statistics when toggle is ON",
+      "featureId": "feature-fix-the-save-logic-in-apa-practice-to-persist-authoritative-values-as-is-without-recalculation-use-player1totalscore-and-player2totalscore-for-scores-session-sharedinnings-for-innings-same-value-for-both-players-and-sum-of-session-racks-playerxdefensiveshots-for-defensive-shots",
+      "featureTitle": "Fix the save logic in APA Practice to persist authoritative values as-is without recalculation: use player1TotalScore and player2TotalScore for scores, session.sharedInnings for innings (same value for both players), and sum of session.racks[].playerXDefensiveShots for defensive shots",
       "files": [
-        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
+        "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -78,46 +79,6 @@
       ],
       "testIds": [
         "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-replace-the-single-avg-ppi-calculation-in-matchupanalysispanel-with-two-separate-calculations-last-10-avg-ppi-average-of-most-recent-10-matches-and-best-10-of-last-20-avg-ppi-average-of-top-10-ppi-values-from-most-recent-20-matches-both-computed-from-the-chronological-ppi-list-that-includes-practice-matches-when-toggle-is-on",
-      "featureTitle": "Replace the single Avg PPI calculation in MatchupAnalysisPanel with two separate calculations: 'Last 10 Avg PPI' (average of most recent 10 matches) and 'Best 10 of last 20 Avg PPI' (average of top 10 PPI values from most recent 20 matches), both computed from the chronological PPI list that includes practice matches when toggle is ON",
-      "files": [
-        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-avg-ppi-display-card-in-matchupanalysispanel-to-show-the-last-10-avg-ppi-as-the-primary-value-large-text-with-two-subtext-lines-below-last-10-and-best-10-of-last-20-value-maintaining-the-same-visual-style-as-the-record-and-win-rate-cards",
-      "featureTitle": "Update the Avg PPI display card in MatchupAnalysisPanel to show the Last 10 Avg PPI as the primary value (large text) with two subtext lines below: 'Last 10' and 'Best 10 of last 20: [value]', maintaining the same visual style as the Record and Win Rate cards",
-      "files": [
-        "frontend/src/components/apa/MatchupAnalysisPanel.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-6"
       ],
       "confidence": "high"
     }

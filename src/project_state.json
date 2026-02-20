@@ -1,67 +1,85 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "APA Practice pool scorekeeper with end-of-match finalization fix",
   "architectural_notes": [
-    "Matchup analysis stats (Record/WinRate/AvgPPI) must include practice matches when toggle is ON",
-    "Always display both Last 10 and Best 10 of last 20 PPI averages in matchup analysis",
-    "Practice match outcomes computed using same PPI logic as official matches",
-    "MatchupAnalysisDropdownPlayerStats returns full opponent dataset without slicing; panel computes both PPI averages"
+    "End Rack is the sole finalization trigger for APA Practice matches",
+    "Match finalization is irreversible - no resume/undo after End Rack",
+    "Save logic uses authoritative state values (player scores, shared innings, defensive shot sums) without recomputation",
+    "Both totalScore and pointsEarnedRunningTotal persist with same finalized value",
+    "Post-finalization: gameplay stops, balls unclickable, match enters summary state"
   ],
   "known_issues": [],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-the-best-10-of-last-20-matches-checkbox-from-matchupanalysisdropdownplayerstats-component-including-all-associated-state-usebest10of20-and-ui-elements",
-      "title": "Remove the 'Best 10 of last 20 matches' checkbox from MatchupAnalysisDropdownPlayerStats component including all associated state (useBest10Of20) and UI elements",
+      "id": "feature-remove-the-resume-undo-accidental-win-button-from-the-apa-practice-game-interface-after-match-finalization",
+      "title": "Remove the 'Resume (Undo Accidental Win)' button from the APA Practice game interface after match finalization",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-modify-getfilteredmatches-in-matchupanalysisdropdownplayerstats-to-return-the-full-opponent-dataset-official-plus-optional-practice-matches-sorted-chronologically-without-slicing-to-last-10-so-the-panel-can-compute-both-last-10-and-best-10-of-20-statistics",
-      "title": "Modify getFilteredMatches() in MatchupAnalysisDropdownPlayerStats to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing to last 10, so the panel can compute both 'last 10' and 'best 10 of 20' statistics",
+      "id": "feature-remove-the-resume-button-handler-and-all-snapshot-rollback-plumbing-used-exclusively-for-the-resume-functionality-in-apa-practice-mode",
+      "title": "Remove the Resume button handler and all snapshot/rollback plumbing used exclusively for the Resume functionality in APA Practice mode",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-getmatchoutcomeandppi-helper-function-in-matchupanalysispanel-that-extracts-win-loss-ppi-from-both-official-apa-matches-using-officialapamatchlogdata-and-practice-matches-using-apamatchinfo-following-the-exact-implementation-provided-with-player-identification-score-calculation-and-win-loss-determination-logic",
-      "title": "Add getMatchOutcomeAndPpi() helper function in MatchupAnalysisPanel that extracts win/loss/PPI from both official APA matches (using officialApaMatchLogData) and practice matches (using apaMatchInfo), following the exact implementation provided with player identification, score calculation, and win/loss determination logic",
+      "id": "feature-enforce-that-after-pressing-end-rack-on-a-winning-rack-in-apa-practice-gameplay-stops-permanently-balls-become-unclickable-the-rack-scoring-panel-does-not-render-again-and-the-match-enters-a-final-summary-state-where-it-can-only-be-saved-or-discarded",
+      "title": "Enforce that after pressing 'End Rack' on a winning rack in APA Practice, gameplay stops permanently: balls become unclickable, the rack scoring panel does not render again, and the match enters a final summary state where it can only be saved or discarded",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-record-and-win-rate-calculation-in-matchupanalysispanel-to-iterate-through-all-matches-in-sortedmatches-both-official-and-practice-using-getmatchoutcomeandppi-helper-counting-wins-and-losses-from-both-match-types-to-produce-accurate-statistics-when-toggle-is-on",
-      "title": "Update Record and Win Rate calculation in MatchupAnalysisPanel to iterate through all matches in sortedMatches (both official and practice) using getMatchOutcomeAndPpi() helper, counting wins and losses from both match types to produce accurate statistics when toggle is ON",
+      "id": "feature-fix-the-save-logic-in-apa-practice-to-persist-authoritative-values-as-is-without-recalculation-use-player1totalscore-and-player2totalscore-for-scores-session-sharedinnings-for-innings-same-value-for-both-players-and-sum-of-session-racks-playerxdefensiveshots-for-defensive-shots",
+      "title": "Fix the save logic in APA Practice to persist authoritative values as-is without recalculation: use player1TotalScore and player2TotalScore for scores, session.sharedInnings for innings (same value for both players), and sum of session.racks[].playerXDefensiveShots for defensive shots",
       "reqIds": [
         "REQ-4"
       ],
       "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Remove Resume button and rollback logic after rack finalization",
+      "reqIds": [],
+      "status": "pending"
     },
     {
-      "id": "feature-replace-the-single-avg-ppi-calculation-in-matchupanalysispanel-with-two-separate-calculations-last-10-avg-ppi-average-of-most-recent-10-matches-and-best-10-of-last-20-avg-ppi-average-of-top-10-ppi-values-from-most-recent-20-matches-both-computed-from-the-chronological-ppi-list-that-includes-practice-matches-when-toggle-is-on",
-      "title": "Replace the single Avg PPI calculation in MatchupAnalysisPanel with two separate calculations: 'Last 10 Avg PPI' (average of most recent 10 matches) and 'Best 10 of last 20 Avg PPI' (average of top 10 PPI values from most recent 20 matches), both computed from the chronological PPI list that includes practice matches when toggle is ON",
+      "id": "AR-2",
+      "summary": "Enforce post-finalization lock (no gameplay after End Rack on winning rack)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Fix save logic to use authoritative values without recalculation",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Preserve both totalScore and pointsEarnedRunningTotal with same finalized value",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "In buildApaNineBallMatch for APA Practice, preserve both totalScore and pointsEarnedRunningTotal fields by persisting the same finalized value into both fields without zeroing, removing, or combining them",
       "reqIds": [
         "REQ-5"
       ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-avg-ppi-display-card-in-matchupanalysispanel-to-show-the-last-10-avg-ppi-as-the-primary-value-large-text-with-two-subtext-lines-below-last-10-and-best-10-of-last-20-value-maintaining-the-same-visual-style-as-the-record-and-win-rate-cards",
-      "title": "Update the Avg PPI display card in MatchupAnalysisPanel to show the Last 10 Avg PPI as the primary value (large text) with two subtext lines below: 'Last 10' and 'Best 10 of last 20: [value]', maintaining the same visual style as the Record and Win Rate cards",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "version": 1
+      "status": "pending"
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Fix practice match stat calculations in matchup analysis",
+  "projectName": "APA Practice",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

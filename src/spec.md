@@ -1,14 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Fix practice match stat calculations in matchup analysis so that Record, Win Rate, and Avg PPI statistics correctly include practice matches when the toggle is ON.
+**Goal:** Fix APA Practice end-of-match finalization to prevent accidental resumption and ensure correct score persistence.
 
 **Planned changes:**
-- Remove the "Best 10 of last 20 matches" checkbox from MatchupAnalysisDropdownPlayerStats component
-- Modify getFilteredMatches() to return the full opponent dataset (official plus optional practice matches) sorted chronologically without slicing
-- Add getMatchOutcomeAndPpi() helper function to extract win/loss/PPI from both official and practice matches
-- Update Record and Win Rate calculation to iterate through all matches (official and practice) using the helper function
-- Replace single Avg PPI calculation with two separate calculations: "Last 10 Avg PPI" and "Best 10 of last 20 Avg PPI"
-- Update the Avg PPI display card to show Last 10 as primary value with two subtext lines: "Last 10" and "Best 10 of last 20: [value]"
+- Remove the 'Resume (Undo Accidental Win)' button and its handler from APA Practice
+- Remove snapshot/rollback plumbing used exclusively for Resume functionality
+- Enforce permanent gameplay stop after 'End Rack' finalizes a winning rack: balls become unclickable, rack scoring panel doesn't render again
+- Fix save logic to persist authoritative values without recalculation: use player1TotalScore/player2TotalScore for scores, session.sharedInnings for innings, and sum of defensive shots from racks
+- Preserve both totalScore and pointsEarnedRunningTotal fields in buildApaNineBallMatch with the same finalized value
 
-**User-visible outcome:** When the "Official + Practice" toggle is ON, the matchup analysis panel displays accurate Record, Win Rate, and Avg PPI statistics that include practice matches. The Avg PPI card shows both "Last 10" and "Best 10 of last 20" values with the same visual style as other stat cards.
+**User-visible outcome:** After completing a winning rack in APA Practice, the match is permanently finalized with no way to resume gameplay. Saved matches persist accurate scores, innings, and defensive shots exactly as finalized during play.

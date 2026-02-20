@@ -1,72 +1,61 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-type Player = 'A' | 'B';
-
-interface InningFlowState {
-  activePlayer: Player;
+interface ApaInningFlowState {
+  activePlayer: 'A' | 'B';
   sharedInnings: number;
-  currentInningHasBalls: boolean;
+  bottomPlayer: 'A' | 'B';
 }
 
-interface InitialState {
-  startingPlayer?: Player;
+interface ApaInningFlowInit {
+  startingPlayer?: 'A' | 'B';
   initialInnings?: number;
+  bottomPlayer?: 'A' | 'B';
 }
 
-export function useApaInningFlow(init?: InitialState) {
-  const startingPlayer = init?.startingPlayer ?? 'A';
-  const initialInnings = init?.initialInnings ?? 0;
-
-  const [state, setState] = useState<InningFlowState>({
-    activePlayer: startingPlayer,
-    sharedInnings: initialInnings,
-    currentInningHasBalls: false,
+export function useApaInningFlow(init?: ApaInningFlowInit) {
+  const [state, setState] = useState<ApaInningFlowState>({
+    activePlayer: init?.startingPlayer ?? 'A',
+    sharedInnings: init?.initialInnings ?? 0,
+    bottomPlayer: init?.bottomPlayer ?? 'B',
   });
 
-  const markBallScored = () => {
-    setState(prev => ({ ...prev, currentInningHasBalls: true }));
-  };
-
-  const markBallUnscored = (wasLastBall: boolean) => {
-    if (wasLastBall) {
-      setState(prev => ({ ...prev, currentInningHasBalls: false }));
-    }
-  };
-
-  const turnOver = () => {
+  const turnOver = useCallback(() => {
     setState(prev => {
-      // ONLY increment shared innings when Player B ends their turn (switching back to A)
-      const shouldIncrementInnings = prev.activePlayer === 'B';
-      
+      const shouldIncrementInnings = prev.activePlayer === prev.bottomPlayer;
       return {
+        ...prev,
         activePlayer: prev.activePlayer === 'A' ? 'B' : 'A',
         sharedInnings: shouldIncrementInnings ? prev.sharedInnings + 1 : prev.sharedInnings,
-        currentInningHasBalls: false,
       };
     });
-  };
+  }, []);
 
-  const resetRack = (preserveActivePlayer?: Player, preserveInnings?: number) => {
-    setState({
-      activePlayer: preserveActivePlayer ?? startingPlayer,
-      sharedInnings: preserveInnings ?? 0,
-      currentInningHasBalls: false,
-    });
-  };
+  const markBallScored = useCallback(() => {
+    // No-op: innings are only incremented on turn over
+  }, []);
 
-  // Helper to compute final innings at rack completion
-  const getFinalSharedInnings = () => {
-    // If active player is B when rack completes, we need to count this final inning
-    return state.activePlayer === 'B' ? state.sharedInnings + 1 : state.sharedInnings;
-  };
+  const markBallUnscored = useCallback((_isLastBall: boolean) => {
+    // No-op: innings are only incremented on turn over
+  }, []);
+
+  const resetRack = useCallback((newActivePlayer: 'A' | 'B', currentInnings: number) => {
+    setState(prev => ({
+      ...prev,
+      activePlayer: newActivePlayer,
+      sharedInnings: currentInnings,
+    }));
+  }, []);
+
+  const getFinalSharedInnings = useCallback(() => {
+    return state.sharedInnings;
+  }, [state.sharedInnings]);
 
   return {
     activePlayer: state.activePlayer,
     sharedInnings: state.sharedInnings,
-    currentInningHasBalls: state.currentInningHasBalls,
+    turnOver,
     markBallScored,
     markBallUnscored,
-    turnOver,
     resetRack,
     getFinalSharedInnings,
   };
