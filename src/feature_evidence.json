@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-the-resume-undo-accidental-win-button-from-the-apa-practice-game-interface-after-match-finalization",
-      "featureTitle": "Remove the 'Resume (Undo Accidental Win)' button from the APA Practice game interface after match finalization",
+      "featureId": "feature-fix-the-auto-dead-ball-revert-logic-in-aparackscoringpanel-when-the-9-ball-is-unclicked-all-balls-that-were-auto-marked-as-dead-in-the-current-inning-balls-4-5-6-7-8-in-the-screenshot-must-revert-to-unscored-clickable-state-instead-of-remaining-locked",
+      "featureTitle": "Fix the auto-dead ball revert logic in ApaRackScoringPanel: when the 9-ball is unclicked, all balls that were auto-marked as dead in the current inning (balls 4, 5, 6, 7, 8 in the screenshot) must revert to unscored/clickable state instead of remaining locked",
       "files": [
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,8 +22,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-remove-the-resume-button-handler-and-all-snapshot-rollback-plumbing-used-exclusively-for-the-resume-functionality-in-apa-practice-mode",
-      "featureTitle": "Remove the Resume button handler and all snapshot/rollback plumbing used exclusively for the Resume functionality in APA Practice mode",
+      "featureId": "feature-fix-react-error-185-in-practicegamepage-when-clicking-end-session-without-saving-add-a-microtask-delay-settimeout-with-0ms-between-clearpracticesession-and-navigate-to-prevent-state-updates-on-unmounted-components",
+      "featureTitle": "Fix React error #185 in PracticeGamePage when clicking 'End Session Without Saving': add a microtask delay (setTimeout with 0ms) between clearPracticeSession() and navigate('/') to prevent state updates on unmounted components",
       "files": [
         "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
@@ -38,47 +38,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-enforce-that-after-pressing-end-rack-on-a-winning-rack-in-apa-practice-gameplay-stops-permanently-balls-become-unclickable-the-rack-scoring-panel-does-not-render-again-and-the-match-enters-a-final-summary-state-where-it-can-only-be-saved-or-discarded",
-      "featureTitle": "Enforce that after pressing 'End Rack' on a winning rack in APA Practice, gameplay stops permanently: balls become unclickable, the rack scoring panel does not render again, and the match enters a final summary state where it can only be saved or discarded",
-      "files": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-fix-the-save-logic-in-apa-practice-to-persist-authoritative-values-as-is-without-recalculation-use-player1totalscore-and-player2totalscore-for-scores-session-sharedinnings-for-innings-same-value-for-both-players-and-sum-of-session-racks-playerxdefensiveshots-for-defensive-shots",
-      "featureTitle": "Fix the save logic in APA Practice to persist authoritative values as-is without recalculation: use player1TotalScore and player2TotalScore for scores, session.sharedInnings for innings (same value for both players), and sum of session.racks[].playerXDefensiveShots for defensive shots",
-      "files": [
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

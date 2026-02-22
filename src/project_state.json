@@ -1,85 +1,33 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "APA Practice pool scorekeeper with end-of-match finalization fix",
+  "summary": "A 9-ball pool practice game with APA scoring system. Fixing ball unlocking when 9-ball is unclicked and React error on session abandon.",
   "architectural_notes": [
-    "End Rack is the sole finalization trigger for APA Practice matches",
-    "Match finalization is irreversible - no resume/undo after End Rack",
-    "Save logic uses authoritative state values (player scores, shared innings, defensive shot sums) without recomputation",
-    "Both totalScore and pointsEarnedRunningTotal persist with same finalized value",
-    "Post-finalization: gameplay stops, balls unclickable, match enters summary state"
+    "Auto-dead ball revert: When 9-ball is unclicked, balls auto-marked as dead in current inning should revert to unscored/clickable state",
+    "Session abandon cleanup: Use setTimeout with 0 delay between clearPracticeSession() and navigate() to prevent React error #185 during unmounting"
   ],
   "known_issues": [],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-the-resume-undo-accidental-win-button-from-the-apa-practice-game-interface-after-match-finalization",
-      "title": "Remove the 'Resume (Undo Accidental Win)' button from the APA Practice game interface after match finalization",
+      "id": "feature-fix-the-auto-dead-ball-revert-logic-in-aparackscoringpanel-when-the-9-ball-is-unclicked-all-balls-that-were-auto-marked-as-dead-in-the-current-inning-balls-4-5-6-7-8-in-the-screenshot-must-revert-to-unscored-clickable-state-instead-of-remaining-locked",
+      "title": "Fix the auto-dead ball revert logic in ApaRackScoringPanel: when the 9-ball is unclicked, all balls that were auto-marked as dead in the current inning (balls 4, 5, 6, 7, 8 in the screenshot) must revert to unscored/clickable state instead of remaining locked",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-remove-the-resume-button-handler-and-all-snapshot-rollback-plumbing-used-exclusively-for-the-resume-functionality-in-apa-practice-mode",
-      "title": "Remove the Resume button handler and all snapshot/rollback plumbing used exclusively for the Resume functionality in APA Practice mode",
+      "id": "feature-fix-react-error-185-in-practicegamepage-when-clicking-end-session-without-saving-add-a-microtask-delay-settimeout-with-0ms-between-clearpracticesession-and-navigate-to-prevent-state-updates-on-unmounted-components",
+      "title": "Fix React error #185 in PracticeGamePage when clicking 'End Session Without Saving': add a microtask delay (setTimeout with 0ms) between clearPracticeSession() and navigate('/') to prevent state updates on unmounted components",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-enforce-that-after-pressing-end-rack-on-a-winning-rack-in-apa-practice-gameplay-stops-permanently-balls-become-unclickable-the-rack-scoring-panel-does-not-render-again-and-the-match-enters-a-final-summary-state-where-it-can-only-be-saved-or-discarded",
-      "title": "Enforce that after pressing 'End Rack' on a winning rack in APA Practice, gameplay stops permanently: balls become unclickable, the rack scoring panel does not render again, and the match enters a final summary state where it can only be saved or discarded",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-save-logic-in-apa-practice-to-persist-authoritative-values-as-is-without-recalculation-use-player1totalscore-and-player2totalscore-for-scores-session-sharedinnings-for-innings-same-value-for-both-players-and-sum-of-session-racks-playerxdefensiveshots-for-defensive-shots",
-      "title": "Fix the save logic in APA Practice to persist authoritative values as-is without recalculation: use player1TotalScore and player2TotalScore for scores, session.sharedInnings for innings (same value for both players), and sum of session.racks[].playerXDefensiveShots for defensive shots",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Remove Resume button and rollback logic after rack finalization",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Enforce post-finalization lock (no gameplay after End Rack on winning rack)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Fix save logic to use authoritative values without recalculation",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Preserve both totalScore and pointsEarnedRunningTotal with same finalized value",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "In buildApaNineBallMatch for APA Practice, preserve both totalScore and pointsEarnedRunningTotal fields by persisting the same finalized value into both fields without zeroing, removing, or combining them",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "status": "pending"
-    }
-  ],
-  "projectName": "APA Practice",
+  "new_feature_requests": [],
+  "projectName": "Fix 9-ball unlock behavior and session abandon error",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

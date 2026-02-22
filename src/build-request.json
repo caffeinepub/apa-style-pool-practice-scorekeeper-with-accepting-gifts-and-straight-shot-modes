@@ -1,128 +1,61 @@
 {
   "kind": "build_request",
-  "title": "APA Practice — End-of-Match Finalization (Surgical Fix)",
-  "projectName": "APA Scorekeeper",
-  "priority": "high",
+  "title": "Fix 9-ball unlock behavior and session abandon error",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the 'Resume (Undo Accidental Win)' button from the APA Practice game interface after match finalization",
+      "text": "Fix the auto-dead ball revert logic in ApaRackScoringPanel: when the 9-ball is unclicked, all balls that were auto-marked as dead in the current inning (balls 4, 5, 6, 7, 8 in the screenshot) must revert to unscored/clickable state instead of remaining locked",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-last"
+          "msg-latest"
         ],
         "quotes": [
-          "Remove 'Resume (Undo Accidental Win)'",
-          "Remove the Resume button"
+          "balls also remain locked when unclick nineball",
+          "After clicking ball 1 and then unclicking the 9-ball, balls 4, 5, 6, 7, 8 remain locked/grayed out"
         ]
       },
       "acceptanceCriteria": [
-        "Resume button is not visible after a winning rack is finalized",
-        "No UI elements allow undoing a finalized match"
+        "When 9-ball is clicked, balls 2-8 that are unscored are auto-marked as dead",
+        "When 9-ball is then unclicked, those auto-marked dead balls revert to blank/clickable state",
+        "Only balls that were auto-marked in the current inning are reverted, not manually marked dead balls",
+        "The fix must preserve existing manual ball state changes"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Remove the Resume button handler and all snapshot/rollback plumbing used exclusively for the Resume functionality in APA Practice mode",
+      "text": "Fix React error #185 in PracticeGamePage when clicking 'End Session Without Saving': add a microtask delay (setTimeout with 0ms) between clearPracticeSession() and navigate('/') to prevent state updates on unmounted components",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-last"
+          "msg-latest"
         ],
         "quotes": [
-          "Remove its handler",
-          "Remove any snapshot / rollback plumbing used only for Resume"
+          "Minified React error #185",
+          "dispatchSetState",
+          "getRootForUpdatedFiber"
         ]
       },
       "acceptanceCriteria": [
-        "No handler code exists for resuming after finalization",
-        "Rack snapshot/restore logic for post-finalization rollback is removed",
-        "No state corruption occurs from attempted rollback operations"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Enforce that after pressing 'End Rack' on a winning rack in APA Practice, gameplay stops permanently: balls become unclickable, the rack scoring panel does not render again, and the match enters a final summary state where it can only be saved or discarded",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Once End Rack finalizes a winning rack: Gameplay must stop",
-          "Balls must not become clickable",
-          "Rack scoring panel must not render again",
-          "Match may only be saved or discarded"
-        ]
-      },
-      "acceptanceCriteria": [
-        "After 'End Rack' finalizes a winning rack, no ball buttons are clickable",
-        "Rack scoring panel does not appear after finalization",
-        "Only save/discard actions are available post-finalization",
-        "No code path allows returning to gameplay after finalization"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Fix the save logic in APA Practice to persist authoritative values as-is without recalculation: use player1TotalScore and player2TotalScore for scores, session.sharedInnings for innings (same value for both players), and sum of session.racks[].playerXDefensiveShots for defensive shots",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Persist the values that are already finalized and tracked in state",
-          "Do not derive, recompute, or reinterpret these values"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Save logic reads player1TotalScore and player2TotalScore directly without recalculation",
-        "Innings value is taken from session.sharedInnings for both players",
-        "Defensive shots are computed as sum of defensive shot values across racks",
-        "No scoring logic re-derives totals from ball states at save time"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "In buildApaNineBallMatch for APA Practice, preserve both totalScore and pointsEarnedRunningTotal fields by persisting the same finalized value into both fields without zeroing, removing, or combining them",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Keep both: totalScore, pointsEarnedRunningTotal",
-          "Persist the same finalized value into both fields",
-          "Do not zero them. Do not remove them. Do not combine them."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Both totalScore and pointsEarnedRunningTotal are present in saved match records",
-        "Both fields contain the same finalized score value",
-        "No aggregation or combination logic manipulates these fields",
-        "Neither field is zeroed out or removed"
+        "Clicking 'End Session Without Saving' no longer throws React error #185",
+        "Session state is cleared before navigation begins",
+        "Navigation to home page completes successfully",
+        "No console errors appear during the abandon flow"
       ]
     }
   ],
   "constraints": [
-    "Do not change rack scoring logic",
-    "Do not change dead ball logic",
-    "Do not change turn locking rules",
-    "Do not change running total behavior during live gameplay",
-    "Do not change chart aggregation logic",
-    "Do not change match history format",
-    "Do not modify any non-APA-Practice game modes",
-    "Do not redesign or rewrite gameplay systems",
-    "Match finalization occurs only when 'End Rack' is pressed on the winning rack (there is no separate 'End Match' button)",
-    "Pre-finalization behavior must remain unchanged: balls in the current inning may be unselected, running totals may fluctuate, win indicators may appear/disappear"
+    "Do not modify any other scoring logic or ball state behavior",
+    "Do not change the APA scoring rules or points calculation",
+    "Preserve all existing session persistence mechanisms",
+    "Do not alter the UI layout or styling of the game page"
   ],
   "nonGoals": [
-    "Adding new undo/redo mechanics after finalization",
-    "Recalculating scores from ball states at save time",
-    "Changing gameplay rules or scoring calculations",
-    "Modifying behavior of other game modes",
-    "Redesigning the UI or adding new features beyond finalization enforcement"
+    "Changing how the 9-ball auto-dead feature works when clicking the 9-ball",
+    "Modifying any other session end flows (save, complete match)",
+    "Refactoring the rack scoring panel architecture",
+    "Adding new confirmation dialogs or user prompts"
   ],
   "imageRequirements": {
     "required": [],

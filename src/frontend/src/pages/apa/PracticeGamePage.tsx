@@ -36,6 +36,7 @@ interface SessionState {
 }
 
 export default function PracticeGamePage() {
+  // All hooks must be called unconditionally at the top level
   const navigate = useNavigate();
   const saveMatchMutation = useSaveMatch();
   const { identity } = useInternetIdentity();
@@ -65,25 +66,6 @@ export default function PracticeGamePage() {
     setPlayer2TotalScore(player2Total);
   }, [navigate]);
 
-  if (!session) {
-    return null;
-  }
-
-  const player1Target = getPointsToWin(session.player1SkillLevel);
-  const player2Target = getPointsToWin(session.player2SkillLevel);
-
-  // Display mapping: lag winner on left, lag loser on right
-  const leftPlayerName = session.lagWinner === 'A' ? session.player1Name : session.player2Name;
-  const rightPlayerName = session.lagWinner === 'A' ? session.player2Name : session.player1Name;
-  const leftPlayerSkillLevel = session.lagWinner === 'A' ? session.player1SkillLevel : session.player2SkillLevel;
-  const rightPlayerSkillLevel = session.lagWinner === 'A' ? session.player2SkillLevel : session.player1SkillLevel;
-  const leftPlayerScore = session.lagWinner === 'A' ? player1TotalScore : player2TotalScore;
-  const rightPlayerScore = session.lagWinner === 'A' ? player2TotalScore : player1TotalScore;
-  const leftPlayerTarget = session.lagWinner === 'A' ? player1Target : player2Target;
-  const rightPlayerTarget = session.lagWinner === 'A' ? player2Target : player1Target;
-  const leftPlayerLiveRack = session.lagWinner === 'A' ? liveRackPoints.player1 : liveRackPoints.player2;
-  const rightPlayerLiveRack = session.lagWinner === 'A' ? liveRackPoints.player2 : liveRackPoints.player1;
-
   const handleRackComplete = (data: {
     player1Points: number;
     player2Points: number;
@@ -95,6 +77,11 @@ export default function PracticeGamePage() {
     activePlayer: 'A' | 'B';
     sharedInnings: number;
   }) => {
+    if (!session) return;
+
+    // eslint-disable-next-line no-console
+    console.log('[APA_MATCH]', 'RACK_COMPLETE_IN', { data });
+
     // Remap rack results from seat-based to original Player1/Player2
     // data.player1Points = LEFT seat points
     // data.player2Points = RIGHT seat points
@@ -118,9 +105,28 @@ export default function PracticeGamePage() {
       originalPlayer2DefensiveShots = data.player1DefensiveShots;
     }
 
+    const player1Target = getPointsToWin(session.player1SkillLevel);
+    const player2Target = getPointsToWin(session.player2SkillLevel);
+
+    // Cap scores at target
+    const newPlayer1Total = Math.min(player1TotalScore + originalPlayer1Points, player1Target);
+    const newPlayer2Total = Math.min(player2TotalScore + originalPlayer2Points, player2Target);
+
+    // eslint-disable-next-line no-console
+    console.log('[APA_MATCH]', 'TOTALS', {
+      before: { p1: player1TotalScore, p2: player2TotalScore },
+      add: { p1: originalPlayer1Points, p2: originalPlayer2Points },
+      after: { p1: newPlayer1Total, p2: newPlayer2Total },
+      targets: { p1: player1Target, p2: player2Target },
+    });
+
+    // Adjust rack points if capping occurred
+    const cappedPlayer1Points = newPlayer1Total - player1TotalScore;
+    const cappedPlayer2Points = newPlayer2Total - player2TotalScore;
+
     const newRack: RackData = {
-      player1Points: originalPlayer1Points,
-      player2Points: originalPlayer2Points,
+      player1Points: cappedPlayer1Points,
+      player2Points: cappedPlayer2Points,
       deadBalls: data.deadBalls,
       player1Innings: data.player1Innings,
       player2Innings: data.player2Innings,
@@ -129,13 +135,18 @@ export default function PracticeGamePage() {
     };
 
     const updatedRacks = [...session.racks, newRack];
-    const newPlayer1Total = player1TotalScore + originalPlayer1Points;
-    const newPlayer2Total = player2TotalScore + originalPlayer2Points;
 
-    // Check if match is complete
+    // XOR match completion logic: exactly one player must reach target
     const player1Won = newPlayer1Total >= player1Target;
     const player2Won = newPlayer2Total >= player2Target;
-    const isComplete = player1Won || player2Won;
+    const isComplete = (player1Won && !player2Won) || (!player1Won && player2Won);
+
+    // eslint-disable-next-line no-console
+    console.log('[APA_MATCH]', 'XOR_COMPLETE_CHECK', {
+      player1Won,
+      player2Won,
+      isComplete,
+    });
 
     const updatedSession: SessionState = {
       ...session,
@@ -158,6 +169,8 @@ export default function PracticeGamePage() {
   };
 
   const handleLiveRackUpdate = (data: { player1Points: number; player2Points: number }) => {
+    if (!session) return;
+
     // Remap live rack updates from seat-based to original Player1/Player2
     // data.player1Points = LEFT seat points
     // data.player2Points = RIGHT seat points
@@ -183,6 +196,9 @@ export default function PracticeGamePage() {
 
   const handleSaveMatch = async () => {
     if (!session || !identity) return;
+
+    const player1Target = getPointsToWin(session.player1SkillLevel);
+    const player2Target = getPointsToWin(session.player2SkillLevel);
 
     // Use authoritative values directly from state without recalculation
     const totalPlayer1Innings = session.sharedInnings;
@@ -228,8 +244,28 @@ export default function PracticeGamePage() {
 
   const handleEndWithoutSaving = () => {
     clearInProgressSession(SESSION_KEYS.APA_PRACTICE);
-    navigate({ to: '/apa-practice/start' });
+    setTimeout(() => navigate({ to: '/apa-practice/start' }), 0);
   };
+
+  // Handle loading state after all hooks have been called
+  if (!session) {
+    return null;
+  }
+
+  const player1Target = getPointsToWin(session.player1SkillLevel);
+  const player2Target = getPointsToWin(session.player2SkillLevel);
+
+  // Display mapping: lag winner on left, lag loser on right
+  const leftPlayerName = session.lagWinner === 'A' ? session.player1Name : session.player2Name;
+  const rightPlayerName = session.lagWinner === 'A' ? session.player2Name : session.player1Name;
+  const leftPlayerSkillLevel = session.lagWinner === 'A' ? session.player1SkillLevel : session.player2SkillLevel;
+  const rightPlayerSkillLevel = session.lagWinner === 'A' ? session.player2SkillLevel : session.player1SkillLevel;
+  const leftPlayerScore = session.lagWinner === 'A' ? player1TotalScore : player2TotalScore;
+  const rightPlayerScore = session.lagWinner === 'A' ? player2TotalScore : player1TotalScore;
+  const leftPlayerTarget = session.lagWinner === 'A' ? player1Target : player2Target;
+  const rightPlayerTarget = session.lagWinner === 'A' ? player2Target : player1Target;
+  const leftPlayerLiveRack = session.lagWinner === 'A' ? liveRackPoints.player1 : liveRackPoints.player2;
+  const rightPlayerLiveRack = session.lagWinner === 'A' ? liveRackPoints.player2 : liveRackPoints.player1;
 
   const totalPlayer1Innings = session.sharedInnings;
   const totalPlayer2Innings = session.sharedInnings;
