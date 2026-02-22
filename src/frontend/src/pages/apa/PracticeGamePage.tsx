@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -168,31 +168,34 @@ export default function PracticeGamePage() {
     }
   };
 
-  const handleLiveRackUpdate = (data: { player1Points: number; player2Points: number }) => {
-    if (!session) return;
+  const handleLiveRackUpdate = useCallback(
+    (data: { player1Points: number; player2Points: number }) => {
+      if (!session) return;
 
-    // Remap live rack updates from seat-based to original Player1/Player2
-    // data.player1Points = LEFT seat points
-    // data.player2Points = RIGHT seat points
-    
-    let originalPlayer1LivePoints: number;
-    let originalPlayer2LivePoints: number;
+      // Remap live rack updates from seat-based to original Player1/Player2
+      // data.player1Points = LEFT seat points
+      // data.player2Points = RIGHT seat points
+      
+      let originalPlayer1LivePoints: number;
+      let originalPlayer2LivePoints: number;
 
-    if (session.lagWinner === 'A') {
-      // Player 1 is on LEFT, Player 2 is on RIGHT
-      originalPlayer1LivePoints = data.player1Points;
-      originalPlayer2LivePoints = data.player2Points;
-    } else {
-      // Player 2 is on LEFT, Player 1 is on RIGHT
-      originalPlayer1LivePoints = data.player2Points;
-      originalPlayer2LivePoints = data.player1Points;
-    }
+      if (session.lagWinner === 'A') {
+        // Player 1 is on LEFT, Player 2 is on RIGHT
+        originalPlayer1LivePoints = data.player1Points;
+        originalPlayer2LivePoints = data.player2Points;
+      } else {
+        // Player 2 is on LEFT, Player 1 is on RIGHT
+        originalPlayer1LivePoints = data.player2Points;
+        originalPlayer2LivePoints = data.player1Points;
+      }
 
-    setLiveRackPoints({ 
-      player1: originalPlayer1LivePoints, 
-      player2: originalPlayer2LivePoints 
-    });
-  };
+      setLiveRackPoints({ 
+        player1: originalPlayer1LivePoints, 
+        player2: originalPlayer2LivePoints 
+      });
+    },
+    [session]
+  );
 
   const handleSaveMatch = async () => {
     if (!session || !identity) return;

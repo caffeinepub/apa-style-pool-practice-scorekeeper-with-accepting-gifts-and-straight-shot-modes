@@ -1,25 +1,25 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "A 9-ball pool practice game with APA scoring system. Fixing ball unlocking when 9-ball is unclicked and React error on session abandon.",
+  "summary": "New project",
   "architectural_notes": [
-    "Auto-dead ball revert: When 9-ball is unclicked, balls auto-marked as dead in current inning should revert to unscored/clickable state",
-    "Session abandon cleanup: Use setTimeout with 0 delay between clearPracticeSession() and navigate() to prevent React error #185 during unmounting"
+    "React #185 infinite render loop caused by unstable callback identity in PracticeGamePage → ApaRackScoringPanel useEffect dependency chain",
+    "Fixed React #185 by wrapping handleLiveRackUpdate with useCallback([session]) to stabilize function reference between renders"
   ],
   "known_issues": [],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-auto-dead-ball-revert-logic-in-aparackscoringpanel-when-the-9-ball-is-unclicked-all-balls-that-were-auto-marked-as-dead-in-the-current-inning-balls-4-5-6-7-8-in-the-screenshot-must-revert-to-unscored-clickable-state-instead-of-remaining-locked",
-      "title": "Fix the auto-dead ball revert logic in ApaRackScoringPanel: when the 9-ball is unclicked, all balls that were auto-marked as dead in the current inning (balls 4, 5, 6, 7, 8 in the screenshot) must revert to unscored/clickable state instead of remaining locked",
+      "id": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-add-usecallback-to-the-react-imports-from-react",
+      "title": "In frontend/src/pages/apa/PracticeGamePage.tsx, add useCallback to the React imports from 'react'",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-react-error-185-in-practicegamepage-when-clicking-end-session-without-saving-add-a-microtask-delay-settimeout-with-0ms-between-clearpracticesession-and-navigate-to-prevent-state-updates-on-unmounted-components",
-      "title": "Fix React error #185 in PracticeGamePage when clicking 'End Session Without Saving': add a microtask delay (setTimeout with 0ms) between clearPracticeSession() and navigate('/') to prevent state updates on unmounted components",
+      "id": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-wrap-the-handleliverackupdate-function-with-usecallback-and-session-as-the-dependency-array-keep-the-function-body-exactly-the-same-only-add-the-usecallback-wrapper-around-it",
+      "title": "In frontend/src/pages/apa/PracticeGamePage.tsx, wrap the handleLiveRackUpdate function with useCallback and [session] as the dependency array. Keep the function body exactly the same - only add the useCallback wrapper around it.",
       "reqIds": [
         "REQ-2"
       ],
@@ -27,7 +27,7 @@
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Fix 9-ball unlock behavior and session abandon error",
+  "projectName": "Fix React error #185 infinite render loop with useCallback",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

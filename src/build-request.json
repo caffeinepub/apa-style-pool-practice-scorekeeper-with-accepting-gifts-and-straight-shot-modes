@@ -1,61 +1,57 @@
 {
   "kind": "build_request",
-  "title": "Fix 9-ball unlock behavior and session abandon error",
-  "priority": "normal",
+  "title": "Fix React error #185 infinite render loop with useCallback",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the auto-dead ball revert logic in ApaRackScoringPanel: when the 9-ball is unclicked, all balls that were auto-marked as dead in the current inning (balls 4, 5, 6, 7, 8 in the screenshot) must revert to unscored/clickable state instead of remaining locked",
+      "text": "In frontend/src/pages/apa/PracticeGamePage.tsx, add useCallback to the React imports from 'react'",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-19"
         ],
         "quotes": [
-          "balls also remain locked when unclick nineball",
-          "After clicking ball 1 and then unclicking the 9-ball, balls 4, 5, 6, 7, 8 remain locked/grayed out"
+          "import { useState, useEffect, useCallback } from 'react';"
         ]
       },
       "acceptanceCriteria": [
-        "When 9-ball is clicked, balls 2-8 that are unscored are auto-marked as dead",
-        "When 9-ball is then unclicked, those auto-marked dead balls revert to blank/clickable state",
-        "Only balls that were auto-marked in the current inning are reverted, not manually marked dead balls",
-        "The fix must preserve existing manual ball state changes"
+        "The import statement includes useCallback alongside useState and useEffect"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix React error #185 in PracticeGamePage when clicking 'End Session Without Saving': add a microtask delay (setTimeout with 0ms) between clearPracticeSession() and navigate('/') to prevent state updates on unmounted components",
+      "text": "In frontend/src/pages/apa/PracticeGamePage.tsx, wrap the handleLiveRackUpdate function with useCallback and [session] as the dependency array. Keep the function body exactly the same - only add the useCallback wrapper around it.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-19"
         ],
         "quotes": [
-          "Minified React error #185",
-          "dispatchSetState",
-          "getRootForUpdatedFiber"
+          "const handleLiveRackUpdate = useCallback(\n  (data: { player1Points: number; player2Points: number }) => {\n    if (!session) return;\n\n    let originalPlayer1LivePoints: number;\n    let originalPlayer2LivePoints: number;\n\n    if (session.lagWinner === 'A') {\n      originalPlayer1LivePoints = data.player1Points;\n      originalPlayer2LivePoints = data.player2Points;\n    } else {\n      originalPlayer1LivePoints = data.player2Points;\n      originalPlayer2LivePoints = data.player1Points;\n    }\n\n    setLiveRackPoints({\n      player1: originalPlayer1LivePoints,\n      player2: originalPlayer2LivePoints,\n    });\n  },\n  [session]\n);"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking 'End Session Without Saving' no longer throws React error #185",
-        "Session state is cleared before navigation begins",
-        "Navigation to home page completes successfully",
-        "No console errors appear during the abandon flow"
+        "handleLiveRackUpdate is wrapped with useCallback",
+        "The dependency array contains [session]",
+        "The function body logic remains completely unchanged",
+        "The function still performs lag winner remapping and calls setLiveRackPoints"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any other scoring logic or ball state behavior",
-    "Do not change the APA scoring rules or points calculation",
-    "Preserve all existing session persistence mechanisms",
-    "Do not alter the UI layout or styling of the game page"
+    "Do not modify any files other than frontend/src/pages/apa/PracticeGamePage.tsx",
+    "Do not change the function body of handleLiveRackUpdate - only add the useCallback wrapper",
+    "Do not modify any scoring logic, innings tracking, or turn flow",
+    "Do not remove any debug logging (dlog calls)",
+    "Do not touch ApaRackScoringPanel.tsx or any other component files",
+    "Preserve all existing game rules and session management logic"
   ],
   "nonGoals": [
-    "Changing how the 9-ball auto-dead feature works when clicking the 9-ball",
-    "Modifying any other session end flows (save, complete match)",
-    "Refactoring the rack scoring panel architecture",
-    "Adding new confirmation dialogs or user prompts"
+    "Fixing the auto-dead ball revert issue (separate bug)",
+    "Adding new features or changing game rules",
+    "Modifying the backend or access management",
+    "Changing any other components or pages"
   ],
   "imageRequirements": {
     "required": [],

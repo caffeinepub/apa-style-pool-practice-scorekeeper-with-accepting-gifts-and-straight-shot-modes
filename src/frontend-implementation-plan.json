@@ -1,39 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix 9-ball unlock behavior and session abandon error",
+  "title": "Fix React error #185 infinite render loop with useCallback",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix auto-dead ball revert logic in ApaRackScoringPanel when 9-ball is unclicked",
+      "summary": "Add useCallback to React imports in PracticeGamePage.tsx",
       "acceptanceCriteria": [
-        "When 9-ball is clicked, balls 2-8 that are unscored are auto-marked as dead",
-        "When 9-ball is then unclicked, those auto-marked dead balls revert to blank/clickable state",
-        "Only balls that were auto-marked in the current inning are reverted, not manually marked dead balls",
-        "The fix must preserve existing manual ball state changes"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "operation": "modify",
-          "description": "Modify the handleBallClick function to track which balls were auto-marked as dead when the 9-ball was clicked. When the 9-ball is unclicked, revert only those auto-marked balls back to blank/unscored state instead of leaving them locked. Add state to track auto-marked ball numbers (e.g., autoMarkedDeadBalls: Set<number>) and update it when ball 9 is clicked (populate with unscored balls 2-8) and when ball 9 is unclicked (revert those tracked balls to blank and clear the tracking set). Preserve manually marked dead balls by not including them in the auto-marked tracking."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Fix React error #185 in PracticeGamePage when abandoning session by adding microtask delay",
-      "acceptanceCriteria": [
-        "Clicking 'End Session Without Saving' no longer throws React error #185",
-        "Session state is cleared before navigation begins",
-        "Navigation to home page completes successfully",
-        "No console errors appear during the abandon flow"
+        "The import statement includes useCallback alongside useState and useEffect"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
           "operation": "modify",
-          "description": "Modify the handleAbandon function to add a microtask delay (setTimeout with 0ms) between calling clearPracticeSession() and navigate('/'). This prevents React error #185 by allowing the state clearing to complete before navigation unmounts the component. Change from: clearPracticeSession(); navigate('/'); to: clearPracticeSession(); setTimeout(() => navigate('/'), 0);"
+          "description": "Add useCallback to the React imports from 'react'. Change the import statement from 'import { useState, useEffect } from \"react\";' to 'import { useState, useEffect, useCallback } from \"react\";'. This prepares the component to use the useCallback hook for memoizing the handleLiveRackUpdate function."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Wrap handleLiveRackUpdate with useCallback and [session] dependency",
+      "acceptanceCriteria": [
+        "handleLiveRackUpdate is wrapped with useCallback",
+        "The dependency array contains [session]",
+        "The function body logic remains completely unchanged",
+        "The function still performs lag winner remapping and calls setLiveRackPoints"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "operation": "modify",
+          "description": "Wrap the handleLiveRackUpdate function definition with useCallback and add [session] as the dependency array. The wrapper should be: const handleLiveRackUpdate = useCallback((data: { player1Points: number; player2Points: number }) => { /* existing function body unchanged */ }, [session]). This memoizes the function to prevent infinite render loops while maintaining the exact same logic for lag winner remapping and setLiveRackPoints calls. Do not modify any of the function body logic - only add the useCallback wrapper around the existing function."
         }
       ]
     }

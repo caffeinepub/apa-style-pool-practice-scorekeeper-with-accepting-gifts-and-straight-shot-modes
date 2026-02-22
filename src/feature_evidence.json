@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-auto-dead-ball-revert-logic-in-aparackscoringpanel-when-the-9-ball-is-unclicked-all-balls-that-were-auto-marked-as-dead-in-the-current-inning-balls-4-5-6-7-8-in-the-screenshot-must-revert-to-unscored-clickable-state-instead-of-remaining-locked",
-      "featureTitle": "Fix the auto-dead ball revert logic in ApaRackScoringPanel: when the 9-ball is unclicked, all balls that were auto-marked as dead in the current inning (balls 4, 5, 6, 7, 8 in the screenshot) must revert to unscored/clickable state instead of remaining locked",
+      "featureId": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-add-usecallback-to-the-react-imports-from-react",
+      "featureTitle": "In frontend/src/pages/apa/PracticeGamePage.tsx, add useCallback to the React imports from 'react'",
       "files": [
-        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+        "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,8 +22,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-react-error-185-in-practicegamepage-when-clicking-end-session-without-saving-add-a-microtask-delay-settimeout-with-0ms-between-clearpracticesession-and-navigate-to-prevent-state-updates-on-unmounted-components",
-      "featureTitle": "Fix React error #185 in PracticeGamePage when clicking 'End Session Without Saving': add a microtask delay (setTimeout with 0ms) between clearPracticeSession() and navigate('/') to prevent state updates on unmounted components",
+      "featureId": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-wrap-the-handleliverackupdate-function-with-usecallback-and-session-as-the-dependency-array-keep-the-function-body-exactly-the-same-only-add-the-usecallback-wrapper-around-it",
+      "featureTitle": "In frontend/src/pages/apa/PracticeGamePage.tsx, wrap the handleLiveRackUpdate function with useCallback and [session] as the dependency array. Keep the function body exactly the same - only add the useCallback wrapper around it.",
       "files": [
         "frontend/src/pages/apa/PracticeGamePage.tsx"
       ],
