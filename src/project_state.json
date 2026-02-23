@@ -1,77 +1,30 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "APA 9-Ball Practice app with scorekeeping and match tracking",
-  "architectural_notes": [
-    "All fixes must be surgical - no scope creep beyond explicit requests",
-    "Do not add new UI elements or displays without explicit approval",
-    "Previous build (129) added unauthorized projected score and live PPI displays"
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [
-    "9-ball revert guard fix not working correctly in build 129",
-    "Unauthorized projected score (+4) display added in build 129",
-    "Unauthorized live PPI display added during gameplay in build 129"
+    "Live scoring does not update when balls are selected"
   ],
   "isFixRequest": true,
-  "existing_features": [
-    {
-      "id": "feature-remove-the-unauthorized-projected-score-display-showing-4-next-to-the-current-score-in-aparackscoringpanel",
-      "title": "Remove the unauthorized projected score display showing '+4' next to the current score in ApaRackScoringPanel",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-remove-the-unauthorized-live-ppi-calculation-display-showing-ppi-0-00-def-0-during-active-gameplay-in-aparackscoringpanel",
-      "title": "Remove the unauthorized live PPI calculation display showing 'PPI: 0.00 | Def: 0' during active gameplay in ApaRackScoringPanel",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-9-ball-revert-guard-condition-in-aparackscoringpanel-to-allow-automatic-dead-ball-revert-when-clicking-the-9-ball",
-      "title": "Fix the 9-ball revert guard condition in ApaRackScoringPanel to allow automatic dead ball revert when clicking the 9-ball",
-      "reqIds": [
-        "REQ-7"
-      ],
-      "version": 1
-    }
-  ],
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix 9-ball revert logic - remove guard blocking auto-dead ball revert",
+      "summary": "Fix live scoring not updating when balls are selected",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Fix defensive button permissions - only active player can click their button",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Fix dead ball styling - remove red X, show plain gray circle",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Remove unwanted projected score display (+4 next to score)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Remove unwanted live PPI calculation display during gameplay",
-      "reqIds": [],
+      "summary": "Fix the score update logic in ApaRackScoringPanel so that the displayed scores for both players update immediately when any ball is selected (scored by playerA, playerB, or marked as dead)",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "APA 9-Ball Practice",
+  "projectName": "Pool Practice Scorekeeper",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -234,6 +234,13 @@ export default function ApaRackScoringPanel({
           // Store immediately for reliable revert
           autoMarkedDeadBallsRef.current = new Set(ballsToAutoMark);
 
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] 9-ball SELECTED by player', activePlayer);
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] Auto-marking balls as dead:', Array.from(ballsToAutoMark));
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] autoMarkedDeadBallsRef.current set to:', Array.from(autoMarkedDeadBallsRef.current));
+
           setBalls((prev) => {
             const updated = { ...prev };
             updated[9] = { state: nextState, isLocked: false };
@@ -250,6 +257,21 @@ export default function ApaRackScoringPanel({
           // Unselecting the 9-ball - revert auto-marked dead balls to blank
           // Allow reverting if the 9-ball is scored by active player OR if it's dead (from auto-mark)
           
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] 9-ball UNSELECTED - starting revert process');
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] Current 9-ball state:', currentState);
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] autoMarkedDeadBallsRef.current contains:', Array.from(autoMarkedDeadBallsRef.current));
+          
+          // Log current state of balls 1-8 BEFORE revert
+          const balls1to8Before: Record<number, string> = {};
+          for (let i = 1; i <= 8; i++) {
+            balls1to8Before[i] = balls[i].state;
+          }
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] State of balls 1-8 BEFORE revert:', balls1to8Before);
+
           // Remove from current inning tracking
           setCurrentInningBalls((prev) => {
             const next = new Set(prev);
@@ -261,14 +283,33 @@ export default function ApaRackScoringPanel({
             const updated = { ...prev };
             updated[9] = { state: 'unscored', isLocked: false };
 
+            // eslint-disable-next-line no-console
+            console.log('[9-BALL DEBUG] Processing revert for balls:', Array.from(autoMarkedDeadBallsRef.current));
+
             autoMarkedDeadBallsRef.current.forEach((ballNum) => {
+              // eslint-disable-next-line no-console
+              console.log(`[9-BALL DEBUG] Reverting ball ${ballNum} from '${prev[ballNum].state}' to 'unscored'`);
               updated[ballNum] = { state: 'unscored', isLocked: false };
             });
 
             return updated;
           });
 
+          // Log state of balls 1-8 AFTER revert
+          setTimeout(() => {
+            const balls1to8After: Record<number, string> = {};
+            for (let i = 1; i <= 8; i++) {
+              balls1to8After[i] = balls[i].state;
+            }
+            // eslint-disable-next-line no-console
+            console.log('[9-BALL DEBUG] State of balls 1-8 AFTER revert:', balls1to8After);
+            // eslint-disable-next-line no-console
+            console.log('[9-BALL DEBUG] Revert operation completed successfully');
+          }, 0);
+
           autoMarkedDeadBallsRef.current = new Set();
+          // eslint-disable-next-line no-console
+          console.log('[9-BALL DEBUG] autoMarkedDeadBallsRef.current cleared');
           return;
         } else {
           return; // Can't change opponent's 9-ball
@@ -445,134 +486,133 @@ export default function ApaRackScoringPanel({
   // - OR when rack is valid (totals 10 points)
   const canEndRack = targetReached || isRackValid;
 
-  const turnOverDisabled = matchContext.matchComplete;
+  // Check if 9-ball is selected (any non-blank state)
+  const nineBallSelected = balls[9].state !== 'unscored';
+
+  // Turn Over button logic:
+  // - Disabled when match is complete
+  // - Disabled when 9-ball is selected (must click End Rack or unselect 9-ball)
+  // - Disabled when in dead ball marking mode
+  const turnOverDisabled = matchContext.matchComplete || nineBallSelected || deadBallMode;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Rack {rackNumber}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">Inning {sharedInnings}</Badge>
-            <Badge variant={activePlayer === 'A' ? 'default' : 'secondary'}>
-              {activePlayer === 'A' ? player1Name : player2Name}'s Turn
+    <div className="flex justify-center w-full">
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle className="text-center">Rack {rackNumber}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Target Reached Alert */}
+          {targetReached && targetReachedPlayer && (
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                {targetReachedPlayer === 'A' ? player1Name : player2Name} has reached their target! Complete this rack to
+                end the match.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Active Player Indicator */}
+          <div className="flex justify-center">
+            <Badge variant="outline" className="text-base px-4 py-2">
+              Active: {activePlayer === 'A' ? player1Name : player2Name}
             </Badge>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Target Reached Alert */}
-        {targetReached && (
-          <Alert className="bg-emerald-50 border-emerald-200">
-            <AlertCircle className="h-4 w-4 text-emerald-600" />
-            <AlertDescription className="text-emerald-800">
-              <strong>{targetReachedPlayer === 'A' ? player1Name : player2Name}</strong> has reached their target score!
-              Press "End Rack" to complete the match.
-            </AlertDescription>
-          </Alert>
-        )}
 
-        {/* Rack Validation Alert */}
-        {!isRackValid && !targetReached && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Rack total must equal {POINTS_PER_RACK} points. Current total: {rackTotal} points.
-              {rackTotal < POINTS_PER_RACK && ' Select more balls or mark dead balls.'}
-              {rackTotal > POINTS_PER_RACK && ' Too many points selected.'}
-            </AlertDescription>
-          </Alert>
-        )}
+          {/* Ball Grid */}
+          <div className="grid grid-cols-3 gap-4 justify-items-center">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((ballNumber) => (
+              <ApaBallButton
+                key={ballNumber}
+                ballNumber={ballNumber}
+                state={balls[ballNumber].state}
+                isLocked={balls[ballNumber].isLocked}
+                onClick={() => handleBallClick(ballNumber)}
+              />
+            ))}
+          </div>
 
-        {/* Ball Grid */}
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((ballNumber) => (
-            <ApaBallButton
-              key={ballNumber}
-              ballNumber={ballNumber}
-              state={balls[ballNumber].state}
-              isLocked={balls[ballNumber].isLocked}
-              onClick={() => handleBallClick(ballNumber)}
-              activePlayer={activePlayer}
-            />
-          ))}
-        </div>
+          {/* Rack Total Display */}
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Rack Total: {rackTotal} / {POINTS_PER_RACK}
+              {isRackValid && <span className="ml-2 text-green-600">✓ Valid</span>}
+            </p>
+          </div>
 
-        {/* Defensive Shots */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{player1Name} Defensive Shots</label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setPlayer1DefensiveShots(Math.max(0, player1DefensiveShots - 1))}
-                disabled={player1DefensiveShots === 0}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="text-2xl font-bold w-12 text-center">{player1DefensiveShots}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleDefensiveIncrement('A')}
-                disabled={activePlayer !== 'A'}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+          {/* Defensive Shots Counters */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-center">{player1Name} Defensive Shots</p>
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPlayer1DefensiveShots(Math.max(0, player1DefensiveShots - 1))}
+                  disabled={player1DefensiveShots === 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-lg font-bold w-12 text-center">{player1DefensiveShots}</span>
+                <Button variant="outline" size="icon" onClick={() => handleDefensiveIncrement('A')}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-center">{player2Name} Defensive Shots</p>
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPlayer2DefensiveShots(Math.max(0, player2DefensiveShots - 1))}
+                  disabled={player2DefensiveShots === 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-lg font-bold w-12 text-center">{player2DefensiveShots}</span>
+                <Button variant="outline" size="icon" onClick={() => handleDefensiveIncrement('B')}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{player2Name} Defensive Shots</label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setPlayer2DefensiveShots(Math.max(0, player2DefensiveShots - 1))}
-                disabled={player2DefensiveShots === 0}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="text-2xl font-bold w-12 text-center">{player2DefensiveShots}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleDefensiveIncrement('B')}
-                disabled={activePlayer !== 'B'}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+          {/* Innings Display */}
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Innings: {sharedInnings}</p>
           </div>
-        </div>
 
-        {/* Control Buttons */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setDeadBallMode(!deadBallMode)}
-            className={deadBallMode ? 'bg-red-50 border-red-300' : ''}
-          >
-            <Shield className="mr-2 h-4 w-4" />
-            {deadBallMode ? 'Exit Dead Ball Mode' : 'Mark Dead Balls'}
-          </Button>
-          <Button variant="outline" onClick={handleResetRack}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset Rack
-          </Button>
-        </div>
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant={deadBallMode ? 'destructive' : 'outline'}
+              onClick={() => setDeadBallMode(!deadBallMode)}
+              className="w-full"
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              {deadBallMode ? 'Exit Dead Ball Mode' : 'Mark Dead Balls'}
+            </Button>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button onClick={handleTurnOverClick} disabled={turnOverDisabled} className="flex-1">
-            Turn Over
-          </Button>
-          <Button onClick={handleEndRack} disabled={!canEndRack} variant="default" className="flex-1">
-            End Rack
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <Button variant="outline" onClick={handleResetRack} className="w-full">
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset Rack
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Button onClick={handleTurnOverClick} disabled={turnOverDisabled} className="w-full">
+              Turn Over
+            </Button>
+
+            <Button onClick={handleEndRack} disabled={!canEndRack} variant="default" className="w-full">
+              End Rack
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

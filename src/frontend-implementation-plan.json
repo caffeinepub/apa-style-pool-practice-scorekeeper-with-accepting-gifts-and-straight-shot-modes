@@ -1,53 +1,22 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Revert unauthorized UI changes and fix 9-ball revert guard",
+  "title": "Fix live scoring update in APA rack scoring panel",
   "requirements": [
     {
-      "id": "REQ-5",
-      "summary": "Remove the unauthorized projected score display showing '+4' next to the current score",
+      "id": "REQ-1",
+      "summary": "Fix score update logic so displayed scores update immediately when balls are selected",
       "acceptanceCriteria": [
-        "The '+4' projected score indicator is completely removed from the scoreboard",
-        "Only the actual current score is displayed during active gameplay",
-        "No projected total appears next to player scores"
+        "When a ball is clicked and assigned to playerA, playerB's score increases immediately on screen",
+        "When a ball is clicked and assigned to playerB, playerA's score increases immediately on screen",
+        "When a ball is marked as dead, both player scores update immediately to reflect the adjusted points",
+        "Score changes are visible without requiring any additional user action or page refresh"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Remove the projected score display logic that shows '+4' next to the current score in the scoreboard. Locate and delete any code that calculates or renders projected totals adjacent to player scores. Ensure only the actual current score is displayed without any projected additions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Remove the unauthorized live PPI calculation display showing 'PPI: 0.00 | Def: 0' during active gameplay",
-      "acceptanceCriteria": [
-        "The live 'PPI: 0.00 | Def: 0' display is completely removed from the active game screen",
-        "PPI calculation only appears in the final match results summary",
-        "No real-time PPI updates during gameplay"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "operation": "modify",
-          "description": "Remove all live PPI and defensive shot count display logic from the active gameplay screen. Delete any UI elements that show 'PPI: 0.00 | Def: 0' or similar real-time statistical calculations. Preserve PPI calculation logic that runs at match completion but remove any in-game display of these statistics."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Fix the 9-ball revert guard condition to allow automatic dead ball revert when clicking the 9-ball",
-      "acceptanceCriteria": [
-        "Clicking the 9-ball when it is marked as dead automatically reverts it to unscored state",
-        "No guard condition blocks the automatic revert behavior for the 9-ball",
-        "The 9-ball behaves consistently with the approved revert logic"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
-          "operation": "modify",
-          "description": "Locate the guard condition that prevents the 9-ball from being automatically reverted when clicked in a dead state. Remove or adjust this guard to allow the 9-ball to revert to unscored state when clicked while marked as dead, matching the revert behavior of other balls. Ensure the fix does not affect the defensive button logic or dead ball styling already implemented."
+          "description": "Add React state for playerA and playerB scores that updates immediately when ballStates changes. Use useMemo or useEffect to compute scores from ballStates and store them in state variables that trigger re-renders. Ensure the score display components reference these state variables instead of computing scores inline in the render. This ensures that any ball click (playerA, playerB, or dead) triggers immediate score recalculation and display update."
         }
       ]
     }

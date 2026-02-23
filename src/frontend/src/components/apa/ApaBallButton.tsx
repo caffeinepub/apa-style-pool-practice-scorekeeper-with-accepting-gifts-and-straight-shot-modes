@@ -64,11 +64,7 @@ export default function ApaBallButton({
       )}
       aria-label={`Ball ${ballNumber} (${ballValue} point${ballValue > 1 ? 's' : ''}) - ${stateLabels[effectiveState]}${isLocked ? ' (Locked)' : ''}`}
     >
-      {effectiveState === 'dead' ? (
-        <span className="line-through opacity-70">{ballNumber}</span>
-      ) : (
-        ballNumber
-      )}
+      {ballNumber}
     </Button>
   );
 }

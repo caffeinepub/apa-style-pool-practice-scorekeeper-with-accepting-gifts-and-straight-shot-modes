@@ -1,78 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Revert unauthorized UI changes and fix 9-ball revert guard",
-  "projectName": "APA Pool Scorekeeper",
+  "title": "Fix live scoring update in APA rack scoring panel",
+  "projectName": "Pool Practice Scorekeeper",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-5",
-      "text": "Remove the unauthorized projected score display showing '+4' next to the current score in ApaRackScoringPanel",
+      "id": "REQ-1",
+      "text": "Fix the score update logic in ApaRackScoringPanel so that the displayed scores for both players update immediately when any ball is selected (scored by playerA, playerB, or marked as dead)",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent"
+          "msg-user-final"
         ],
         "quotes": [
-          "'+4' projected score next to LS's current score",
-          "You never asked for either of these"
+          "The live scoring isnt updating as I select the balls"
         ]
       },
       "acceptanceCriteria": [
-        "The '+4' projected score indicator is completely removed from the scoreboard",
-        "Only the actual current score is displayed during active gameplay",
-        "No projected total appears next to player scores"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Remove the unauthorized live PPI calculation display showing 'PPI: 0.00 | Def: 0' during active gameplay in ApaRackScoringPanel",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-recent"
-        ],
-        "quotes": [
-          "Live PPI calculation showing 'PPI: 0.00 | Def: 0' during active gameplay",
-          "I added UI elements and calculation logic that changed how the scoreboard looks"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The live 'PPI: 0.00 | Def: 0' display is completely removed from the active game screen",
-        "PPI calculation only appears in the final match results summary",
-        "No real-time PPI updates during gameplay"
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Fix the 9-ball revert guard condition in ApaRackScoringPanel to allow automatic dead ball revert when clicking the 9-ball",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-recent"
-        ],
-        "quotes": [
-          "the nineball guard isnt even fixed!!"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Clicking the 9-ball when it is marked as dead automatically reverts it to unscored state",
-        "No guard condition blocks the automatic revert behavior for the 9-ball",
-        "The 9-ball behaves consistently with the approved revert logic"
+        "When a ball is clicked and assigned to playerA, playerB's score increases immediately on screen",
+        "When a ball is clicked and assigned to playerB, playerA's score increases immediately on screen",
+        "When a ball is marked as dead, both player scores update immediately to reflect the adjusted points",
+        "Score changes are visible without requiring any additional user action or page refresh"
       ]
     }
   ],
   "constraints": [
-    "Only modify ApaRackScoringPanel and related APA scoring components",
-    "Do not change any other game modes (Accepting Gifts, Straight Shot)",
-    "Do not modify defensive button logic already fixed in previous builds",
-    "Do not modify dead ball styling already fixed in previous builds",
-    "Preserve all existing match saving and session storage functionality"
+    "Only modify ApaRackScoringPanel.tsx or its direct dependencies",
+    "Do not change the Mark Dead Balls button styling (already fixed)",
+    "Do not change the defensive shot counter size (already fixed)",
+    "Preserve all existing functionality including ball state tracking, inning flow, and defensive shot counting"
   ],
   "nonGoals": [
-    "Adding any new UI displays or calculations",
-    "Changing any functionality outside the three specified fixes",
-    "Modifying backend logic",
-    "Changing match history or statistics pages"
+    "Changing backend scoring logic",
+    "Modifying other APA components",
+    "Altering the visual design or layout",
+    "Adding new features beyond the score update fix"
   ],
   "imageRequirements": {
     "required": [],

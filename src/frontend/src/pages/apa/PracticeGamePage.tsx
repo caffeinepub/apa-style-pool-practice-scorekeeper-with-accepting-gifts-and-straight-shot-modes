@@ -45,6 +45,8 @@ export default function PracticeGamePage() {
   const [currentRackNumber, setCurrentRackNumber] = useState(1);
   const [player1TotalScore, setPlayer1TotalScore] = useState(0);
   const [player2TotalScore, setPlayer2TotalScore] = useState(0);
+  const [livePlayer1RackPoints, setLivePlayer1RackPoints] = useState(0);
+  const [livePlayer2RackPoints, setLivePlayer2RackPoints] = useState(0);
   const [matchComplete, setMatchComplete] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
 
@@ -158,6 +160,10 @@ export default function PracticeGamePage() {
     setInProgressSession(SESSION_KEYS.APA_PRACTICE, updatedSession);
     setPlayer1TotalScore(newPlayer1Total);
     setPlayer2TotalScore(newPlayer2Total);
+    
+    // Reset live rack points after rack completion
+    setLivePlayer1RackPoints(0);
+    setLivePlayer2RackPoints(0);
 
     if (isComplete) {
       setMatchComplete(true);
@@ -168,10 +174,21 @@ export default function PracticeGamePage() {
 
   const handleLiveRackUpdate = useCallback(
     (data: { player1Points: number; player2Points: number }) => {
-      // This callback is kept for compatibility but no longer used for display
-      // The rack scoring panel may still call it, so we keep the signature
+      // Update live rack points to display current rack scoring in real-time
+      if (!session) return;
+      
+      // Remap from seat-based to original Player1/Player2
+      if (session.lagWinner === 'A') {
+        // Player 1 is on LEFT, Player 2 is on RIGHT
+        setLivePlayer1RackPoints(data.player1Points);
+        setLivePlayer2RackPoints(data.player2Points);
+      } else {
+        // Player 2 is on LEFT, Player 1 is on RIGHT
+        setLivePlayer1RackPoints(data.player2Points);
+        setLivePlayer2RackPoints(data.player1Points);
+      }
     },
-    []
+    [session]
   );
 
   const handleSaveMatch = async () => {
@@ -244,6 +261,8 @@ export default function PracticeGamePage() {
   const rightPlayerScore = session.lagWinner === 'A' ? player2TotalScore : player1TotalScore;
   const leftPlayerTarget = session.lagWinner === 'A' ? player1Target : player2Target;
   const rightPlayerTarget = session.lagWinner === 'A' ? player2Target : player1Target;
+  const leftPlayerLiveRackPoints = session.lagWinner === 'A' ? livePlayer1RackPoints : livePlayer2RackPoints;
+  const rightPlayerLiveRackPoints = session.lagWinner === 'A' ? livePlayer2RackPoints : livePlayer1RackPoints;
 
   const totalPlayer1Innings = session.sharedInnings;
   const totalPlayer2Innings = session.sharedInnings;
@@ -314,7 +333,7 @@ export default function PracticeGamePage() {
                   {leftPlayerName} (SL {leftPlayerSkillLevel})
                 </div>
                 <div className="text-4xl font-bold">
-                  {leftPlayerScore}
+                  {leftPlayerScore + leftPlayerLiveRackPoints}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Race to {leftPlayerTarget}
@@ -328,7 +347,7 @@ export default function PracticeGamePage() {
                   {rightPlayerName} (SL {rightPlayerSkillLevel})
                 </div>
                 <div className="text-4xl font-bold">
-                  {rightPlayerScore}
+                  {rightPlayerScore + rightPlayerLiveRackPoints}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Race to {rightPlayerTarget}
