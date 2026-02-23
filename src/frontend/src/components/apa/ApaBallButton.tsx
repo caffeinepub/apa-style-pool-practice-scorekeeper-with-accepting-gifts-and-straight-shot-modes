@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
 
 type BallState = 'unscored' | 'playerA' | 'playerB' | 'dead';
 
@@ -66,10 +65,7 @@ export default function ApaBallButton({
       aria-label={`Ball ${ballNumber} (${ballValue} point${ballValue > 1 ? 's' : ''}) - ${stateLabels[effectiveState]}${isLocked ? ' (Locked)' : ''}`}
     >
       {effectiveState === 'dead' ? (
-        <div className="flex items-center justify-center">
-          <X className="h-8 w-8 text-red-600 absolute" strokeWidth={3} />
-          <span className="relative z-10">{ballNumber}</span>
-        </div>
+        <span className="line-through opacity-70">{ballNumber}</span>
       ) : (
         ballNumber
       )}

@@ -45,7 +45,6 @@ export default function PracticeGamePage() {
   const [currentRackNumber, setCurrentRackNumber] = useState(1);
   const [player1TotalScore, setPlayer1TotalScore] = useState(0);
   const [player2TotalScore, setPlayer2TotalScore] = useState(0);
-  const [liveRackPoints, setLiveRackPoints] = useState({ player1: 0, player2: 0 });
   const [matchComplete, setMatchComplete] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
 
@@ -159,7 +158,6 @@ export default function PracticeGamePage() {
     setInProgressSession(SESSION_KEYS.APA_PRACTICE, updatedSession);
     setPlayer1TotalScore(newPlayer1Total);
     setPlayer2TotalScore(newPlayer2Total);
-    setLiveRackPoints({ player1: 0, player2: 0 });
 
     if (isComplete) {
       setMatchComplete(true);
@@ -170,31 +168,10 @@ export default function PracticeGamePage() {
 
   const handleLiveRackUpdate = useCallback(
     (data: { player1Points: number; player2Points: number }) => {
-      if (!session) return;
-
-      // Remap live rack updates from seat-based to original Player1/Player2
-      // data.player1Points = LEFT seat points
-      // data.player2Points = RIGHT seat points
-      
-      let originalPlayer1LivePoints: number;
-      let originalPlayer2LivePoints: number;
-
-      if (session.lagWinner === 'A') {
-        // Player 1 is on LEFT, Player 2 is on RIGHT
-        originalPlayer1LivePoints = data.player1Points;
-        originalPlayer2LivePoints = data.player2Points;
-      } else {
-        // Player 2 is on LEFT, Player 1 is on RIGHT
-        originalPlayer1LivePoints = data.player2Points;
-        originalPlayer2LivePoints = data.player1Points;
-      }
-
-      setLiveRackPoints({ 
-        player1: originalPlayer1LivePoints, 
-        player2: originalPlayer2LivePoints 
-      });
+      // This callback is kept for compatibility but no longer used for display
+      // The rack scoring panel may still call it, so we keep the signature
     },
-    [session]
+    []
   );
 
   const handleSaveMatch = async () => {
@@ -267,8 +244,6 @@ export default function PracticeGamePage() {
   const rightPlayerScore = session.lagWinner === 'A' ? player2TotalScore : player1TotalScore;
   const leftPlayerTarget = session.lagWinner === 'A' ? player1Target : player2Target;
   const rightPlayerTarget = session.lagWinner === 'A' ? player2Target : player1Target;
-  const leftPlayerLiveRack = session.lagWinner === 'A' ? liveRackPoints.player1 : liveRackPoints.player2;
-  const rightPlayerLiveRack = session.lagWinner === 'A' ? liveRackPoints.player2 : liveRackPoints.player1;
 
   const totalPlayer1Innings = session.sharedInnings;
   const totalPlayer2Innings = session.sharedInnings;
@@ -278,7 +253,19 @@ export default function PracticeGamePage() {
   const player1Ppi = totalPlayer1Innings > 0 ? player1TotalScore / totalPlayer1Innings : 0;
   const player2Ppi = totalPlayer2Innings > 0 ? player2TotalScore / totalPlayer2Innings : 0;
 
-  const outcomeResult = computeApaPracticeMatchOutcome({
+  const matchContext = {
+    player1CurrentPoints: leftPlayerScore,
+    player2CurrentPoints: rightPlayerScore,
+    player1Target: leftPlayerTarget,
+    player2Target: rightPlayerTarget,
+    matchComplete,
+    activePlayer: session.activePlayer,
+    sharedInnings: session.sharedInnings,
+    bottomPlayer: session.bottomPlayer,
+  };
+
+  // Compute match outcome for display
+  const matchOutcome = computeApaPracticeMatchOutcome({
     player1Points: player1TotalScore,
     player2Points: player2TotalScore,
     player1SL: session.player1SkillLevel,
@@ -287,156 +274,108 @@ export default function PracticeGamePage() {
     player2Target,
   });
 
-  const player1Won = player1TotalScore >= player1Target;
-  const player2Won = player2TotalScore >= player2Target;
+  const player1Summary = {
+    name: session.player1Name,
+    skillLevel: session.player1SkillLevel,
+    pointsNeeded: player1Target,
+    pointsEarned: player1TotalScore,
+    defensiveShots: totalPlayer1DefensiveShots,
+    innings: totalPlayer1Innings,
+    ppi: player1Ppi,
+    isWinner: matchOutcome.player1Won,
+  };
+
+  const player2Summary = {
+    name: session.player2Name,
+    skillLevel: session.player2SkillLevel,
+    pointsNeeded: player2Target,
+    pointsEarned: player2TotalScore,
+    defensiveShots: totalPlayer2DefensiveShots,
+    innings: totalPlayer2Innings,
+    ppi: player2Ppi,
+    isWinner: !matchOutcome.player1Won,
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="space-y-6">
-        {/* Header */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl">APA 9-Ball Practice</CardTitle>
-              <Badge variant={matchComplete ? 'default' : 'secondary'}>
-                {matchComplete ? 'Match Complete' : `Rack ${currentRackNumber}`}
-              </Badge>
+    <div className="mx-auto max-w-4xl space-y-6 pb-8">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>APA 9-Ball Practice Match</CardTitle>
+            <Badge variant="outline">Rack {currentRackNumber}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Score Display */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground">
+                  {leftPlayerName} (SL {leftPlayerSkillLevel})
+                </div>
+                <div className="text-4xl font-bold">
+                  {leftPlayerScore}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Race to {leftPlayerTarget}
+                </div>
+              </div>
             </div>
-          </CardHeader>
-        </Card>
 
-        {/* Score Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Left Player (Lag Winner) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{leftPlayerName}</span>
-                <Badge variant="outline">SL {leftPlayerSkillLevel}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-muted-foreground">Score</span>
-                  <span className="text-4xl font-bold text-emerald-600">
-                    {leftPlayerScore + leftPlayerLiveRack}
-                  </span>
+            <div className="space-y-2">
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground">
+                  {rightPlayerName} (SL {rightPlayerSkillLevel})
                 </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-muted-foreground">Target</span>
-                  <span className="text-2xl font-semibold">{leftPlayerTarget}</span>
+                <div className="text-4xl font-bold">
+                  {rightPlayerScore}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Race to {rightPlayerTarget}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Right Player (Lag Loser) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{rightPlayerName}</span>
-                <Badge variant="outline">SL {rightPlayerSkillLevel}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-muted-foreground">Score</span>
-                  <span className="text-4xl font-bold text-emerald-600">
-                    {rightPlayerScore + rightPlayerLiveRack}
-                  </span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-muted-foreground">Target</span>
-                  <span className="text-2xl font-semibold">{rightPlayerTarget}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Match Complete Summary */}
+      {matchComplete && (
+        <ApaResultsSummary
+          player1={player1Summary}
+          player2={player2Summary}
+          matchPointOutcome={matchOutcome.outcome}
+        />
+      )}
 
-        {/* Rack Scoring Panel - Only render when match is NOT complete */}
-        {!matchComplete && (
-          <ApaRackScoringPanel
-            rackNumber={currentRackNumber}
-            player1Name={leftPlayerName}
-            player2Name={rightPlayerName}
-            onRackComplete={handleRackComplete}
-            onLiveRackUpdate={handleLiveRackUpdate}
-            matchContext={{
-              player1CurrentPoints: leftPlayerScore,
-              player2CurrentPoints: rightPlayerScore,
-              player1Target: leftPlayerTarget,
-              player2Target: rightPlayerTarget,
-              matchComplete,
-              activePlayer: session.activePlayer,
-              sharedInnings: session.sharedInnings,
-              bottomPlayer: session.bottomPlayer,
-            }}
-          />
-        )}
+      {/* Rack Scoring Panel */}
+      {!matchComplete && (
+        <ApaRackScoringPanel
+          rackNumber={currentRackNumber}
+          player1Name={leftPlayerName}
+          player2Name={rightPlayerName}
+          onRackComplete={handleRackComplete}
+          onLiveRackUpdate={handleLiveRackUpdate}
+          matchContext={matchContext}
+        />
+      )}
 
-        {/* Match Complete Summary */}
-        {matchComplete && (
-          <ApaResultsSummary
-            player1={{
-              name: session.player1Name,
-              skillLevel: session.player1SkillLevel,
-              pointsNeeded: player1Target,
-              pointsEarned: player1TotalScore,
-              defensiveShots: totalPlayer1DefensiveShots,
-              innings: totalPlayer1Innings,
-              ppi: player1Ppi,
-              isWinner: player1Won,
-            }}
-            player2={{
-              name: session.player2Name,
-              skillLevel: session.player2SkillLevel,
-              pointsNeeded: player2Target,
-              pointsEarned: player2TotalScore,
-              defensiveShots: totalPlayer2DefensiveShots,
-              innings: totalPlayer2Innings,
-              ppi: player2Ppi,
-              isWinner: player2Won,
-            }}
-            matchPointOutcome={outcomeResult.outcome}
-          />
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {matchComplete ? (
-            <>
-              <Button
-                onClick={handleSaveMatch}
-                className="flex-1"
-                size="lg"
-                disabled={saveMatchMutation.isPending}
-              >
-                {saveMatchMutation.isPending ? 'Saving...' : 'Save Match'}
-              </Button>
-              <Button
-                onClick={handleEndWithoutSaving}
-                variant="outline"
-                className="flex-1"
-                size="lg"
-                disabled={saveMatchMutation.isPending}
-              >
-                End Without Saving
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={() => setShowEndDialog(true)}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              End Session Without Saving
+      {/* Action Buttons */}
+      <div className="flex gap-4 justify-center">
+        {matchComplete ? (
+          <>
+            <Button onClick={handleSaveMatch} size="lg" disabled={saveMatchMutation.isPending}>
+              {saveMatchMutation.isPending ? 'Saving...' : 'Save Match'}
             </Button>
-          )}
-        </div>
+            <Button onClick={() => setShowEndDialog(true)} variant="outline" size="lg">
+              Discard Match
+            </Button>
+          </>
+        ) : (
+          <Button onClick={() => setShowEndDialog(true)} variant="outline" size="lg">
+            End Match
+          </Button>
+        )}
       </div>
 
       {/* End Match Dialog */}
@@ -444,8 +383,12 @@ export default function PracticeGamePage() {
         open={showEndDialog}
         onOpenChange={setShowEndDialog}
         onConfirm={handleEndWithoutSaving}
-        title="End Session Without Saving?"
-        description="This will discard the current session. This action cannot be undone."
+        title="End Match?"
+        description={
+          matchComplete
+            ? 'Are you sure you want to discard this completed match? All data will be lost.'
+            : 'Are you sure you want to end this match? All progress will be lost.'
+        }
       />
     </div>
   );

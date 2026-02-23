@@ -1,33 +1,77 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "APA 9-Ball Practice app with scorekeeping and match tracking",
   "architectural_notes": [
-    "React #185 infinite render loop caused by unstable callback identity in PracticeGamePage → ApaRackScoringPanel useEffect dependency chain",
-    "Fixed React #185 by wrapping handleLiveRackUpdate with useCallback([session]) to stabilize function reference between renders"
+    "All fixes must be surgical - no scope creep beyond explicit requests",
+    "Do not add new UI elements or displays without explicit approval",
+    "Previous build (129) added unauthorized projected score and live PPI displays"
   ],
-  "known_issues": [],
+  "known_issues": [
+    "9-ball revert guard fix not working correctly in build 129",
+    "Unauthorized projected score (+4) display added in build 129",
+    "Unauthorized live PPI display added during gameplay in build 129"
+  ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-add-usecallback-to-the-react-imports-from-react",
-      "title": "In frontend/src/pages/apa/PracticeGamePage.tsx, add useCallback to the React imports from 'react'",
+      "id": "feature-remove-the-unauthorized-projected-score-display-showing-4-next-to-the-current-score-in-aparackscoringpanel",
+      "title": "Remove the unauthorized projected score display showing '+4' next to the current score in ApaRackScoringPanel",
       "reqIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-wrap-the-handleliverackupdate-function-with-usecallback-and-session-as-the-dependency-array-keep-the-function-body-exactly-the-same-only-add-the-usecallback-wrapper-around-it",
-      "title": "In frontend/src/pages/apa/PracticeGamePage.tsx, wrap the handleLiveRackUpdate function with useCallback and [session] as the dependency array. Keep the function body exactly the same - only add the useCallback wrapper around it.",
+      "id": "feature-remove-the-unauthorized-live-ppi-calculation-display-showing-ppi-0-00-def-0-during-active-gameplay-in-aparackscoringpanel",
+      "title": "Remove the unauthorized live PPI calculation display showing 'PPI: 0.00 | Def: 0' during active gameplay in ApaRackScoringPanel",
       "reqIds": [
-        "REQ-2"
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-9-ball-revert-guard-condition-in-aparackscoringpanel-to-allow-automatic-dead-ball-revert-when-clicking-the-9-ball",
+      "title": "Fix the 9-ball revert guard condition in ApaRackScoringPanel to allow automatic dead ball revert when clicking the 9-ball",
+      "reqIds": [
+        "REQ-7"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Fix React error #185 infinite render loop with useCallback",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Fix 9-ball revert logic - remove guard blocking auto-dead ball revert",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Fix defensive button permissions - only active player can click their button",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Fix dead ball styling - remove red X, show plain gray circle",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Remove unwanted projected score display (+4 next to score)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Remove unwanted live PPI calculation display during gameplay",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "APA 9-Ball Practice",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

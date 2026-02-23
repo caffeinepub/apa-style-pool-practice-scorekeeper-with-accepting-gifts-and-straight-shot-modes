@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -76,7 +76,7 @@ export default function ApaRackScoringPanel({
   const [currentInningBalls, setCurrentInningBalls] = useState<Set<number>>(new Set());
   const [targetReached, setTargetReached] = useState(false);
   const [targetReachedPlayer, setTargetReachedPlayer] = useState<'A' | 'B' | null>(null);
-  const [autoMarkedDeadBalls, setAutoMarkedDeadBalls] = useState<Set<number>>(new Set());
+  const autoMarkedDeadBallsRef = useRef<Set<number>>(new Set());
 
   const { activePlayer, sharedInnings, turnOver, resetRack } = useApaInningFlow({
     startingPlayer: matchContext.activePlayer,
@@ -225,27 +225,30 @@ export default function ApaRackScoringPanel({
           // Track this ball as part of current inning
           setCurrentInningBalls((prev) => new Set(prev).add(ballNumber));
 
-          // Auto-mark balls 1-8 that are currently blank as dead
+          // Compute auto-dead list BEFORE setBalls
           const ballsToAutoMark: number[] = [];
+          for (let i = 1; i <= 8; i++) {
+            if (balls[i].state === 'unscored') ballsToAutoMark.push(i);
+          }
+
+          // Store immediately for reliable revert
+          autoMarkedDeadBallsRef.current = new Set(ballsToAutoMark);
+
           setBalls((prev) => {
             const updated = { ...prev };
             updated[9] = { state: nextState, isLocked: false };
-            
-            for (let i = 1; i <= 8; i++) {
-              if (prev[i].state === 'unscored') {
-                updated[i] = { state: 'dead', isLocked: false };
-                ballsToAutoMark.push(i);
-              }
-            }
+
+            ballsToAutoMark.forEach((i) => {
+              updated[i] = { state: 'dead', isLocked: false };
+            });
+
             return updated;
           });
-          
-          setAutoMarkedDeadBalls(new Set(ballsToAutoMark));
-          dlog('NINE_AUTO_MARK', { markedDead: ballsToAutoMark });
+
           return;
-        } else if (currentState === `player${activePlayer}`) {
+        } else if (currentState === `player${activePlayer}` || currentState === 'dead') {
           // Unselecting the 9-ball - revert auto-marked dead balls to blank
-          nextState = 'unscored';
+          // Allow reverting if the 9-ball is scored by active player OR if it's dead (from auto-mark)
           
           // Remove from current inning tracking
           setCurrentInningBalls((prev) => {
@@ -254,21 +257,18 @@ export default function ApaRackScoringPanel({
             return next;
           });
 
-          // Revert auto-marked dead balls back to blank
           setBalls((prev) => {
             const updated = { ...prev };
             updated[9] = { state: 'unscored', isLocked: false };
-            
-            autoMarkedDeadBalls.forEach((ballNum) => {
-              if (prev[ballNum].state === 'dead') {
-                updated[ballNum] = { state: 'unscored', isLocked: false };
-              }
+
+            autoMarkedDeadBallsRef.current.forEach((ballNum) => {
+              updated[ballNum] = { state: 'unscored', isLocked: false };
             });
+
             return updated;
           });
-          
-          dlog('NINE_REVERT', { revertedBalls: Array.from(autoMarkedDeadBalls) });
-          setAutoMarkedDeadBalls(new Set());
+
+          autoMarkedDeadBallsRef.current = new Set();
           return;
         } else {
           return; // Can't change opponent's 9-ball
@@ -358,7 +358,7 @@ export default function ApaRackScoringPanel({
       return updated;
     });
 
-    // Clear current inning tracking (but NOT autoMarkedDeadBalls - preserve it for 9-ball revert)
+    // Clear current inning tracking (but NOT autoMarkedDeadBallsRef - preserve it for 9-ball revert)
     setCurrentInningBalls(new Set());
 
     dlog('TURN_OVER_LOCKING', { newlyLocked: newLockedBalls });
@@ -381,7 +381,7 @@ export default function ApaRackScoringPanel({
     setCurrentInningBalls(new Set());
     setTargetReached(false);
     setTargetReachedPlayer(null);
-    setAutoMarkedDeadBalls(new Set());
+    autoMarkedDeadBallsRef.current = new Set();
     resetRack(activePlayer, sharedInnings);
   };
 
@@ -432,7 +432,7 @@ export default function ApaRackScoringPanel({
       sharedInnings: sharedInnings,
     });
 
-    // Reset for next rack (this will clear autoMarkedDeadBalls via handleResetRack)
+    // Reset for next rack (this will clear autoMarkedDeadBallsRef via handleResetRack)
     handleResetRack();
   };
 
@@ -512,7 +512,12 @@ export default function ApaRackScoringPanel({
                 <Minus className="h-4 w-4" />
               </Button>
               <span className="text-2xl font-bold w-12 text-center">{player1DefensiveShots}</span>
-              <Button variant="outline" size="icon" onClick={() => handleDefensiveIncrement('A')}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleDefensiveIncrement('A')}
+                disabled={activePlayer !== 'A'}
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -530,7 +535,12 @@ export default function ApaRackScoringPanel({
                 <Minus className="h-4 w-4" />
               </Button>
               <span className="text-2xl font-bold w-12 text-center">{player2DefensiveShots}</span>
-              <Button variant="outline" size="icon" onClick={() => handleDefensiveIncrement('B')}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleDefensiveIncrement('B')}
+                disabled={activePlayer !== 'B'}
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -538,41 +548,29 @@ export default function ApaRackScoringPanel({
         </div>
 
         {/* Control Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={handleTurnOverClick} disabled={turnOverDisabled}>
-            Turn Over
-          </Button>
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() => setDeadBallMode(!deadBallMode)}
             className={deadBallMode ? 'bg-red-50 border-red-300' : ''}
           >
-            <Shield className="h-4 w-4 mr-2" />
-            Dead Ball Mode
+            <Shield className="mr-2 h-4 w-4" />
+            {deadBallMode ? 'Exit Dead Ball Mode' : 'Mark Dead Balls'}
+          </Button>
+          <Button variant="outline" onClick={handleResetRack}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset Rack
           </Button>
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={handleResetRack}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset Rack
+        <div className="flex gap-2">
+          <Button onClick={handleTurnOverClick} disabled={turnOverDisabled} className="flex-1">
+            Turn Over
           </Button>
-          <Button onClick={handleEndRack} disabled={!canEndRack} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={handleEndRack} disabled={!canEndRack} variant="default" className="flex-1">
             End Rack
           </Button>
-        </div>
-
-        {/* Rack Points Display */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          <div>
-            <p className="text-sm text-muted-foreground">{player1Name} Rack Points:</p>
-            <p className="text-3xl font-bold text-emerald-600">{player1RackPoints}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{player2Name} Rack Points:</p>
-            <p className="text-3xl font-bold text-emerald-600">{player2RackPoints}</p>
-          </div>
         </div>
       </CardContent>
     </Card>

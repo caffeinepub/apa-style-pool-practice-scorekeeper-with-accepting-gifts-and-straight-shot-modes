@@ -1,36 +1,53 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix React error #185 infinite render loop with useCallback",
+  "title": "Revert unauthorized UI changes and fix 9-ball revert guard",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add useCallback to React imports in PracticeGamePage.tsx",
+      "id": "REQ-5",
+      "summary": "Remove the unauthorized projected score display showing '+4' next to the current score",
       "acceptanceCriteria": [
-        "The import statement includes useCallback alongside useState and useEffect"
+        "The '+4' projected score indicator is completely removed from the scoreboard",
+        "Only the actual current score is displayed during active gameplay",
+        "No projected total appears next to player scores"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Add useCallback to the React imports from 'react'. Change the import statement from 'import { useState, useEffect } from \"react\";' to 'import { useState, useEffect, useCallback } from \"react\";'. This prepares the component to use the useCallback hook for memoizing the handleLiveRackUpdate function."
+          "description": "Remove the projected score display logic that shows '+4' next to the current score in the scoreboard. Locate and delete any code that calculates or renders projected totals adjacent to player scores. Ensure only the actual current score is displayed without any projected additions."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Wrap handleLiveRackUpdate with useCallback and [session] dependency",
+      "id": "REQ-6",
+      "summary": "Remove the unauthorized live PPI calculation display showing 'PPI: 0.00 | Def: 0' during active gameplay",
       "acceptanceCriteria": [
-        "handleLiveRackUpdate is wrapped with useCallback",
-        "The dependency array contains [session]",
-        "The function body logic remains completely unchanged",
-        "The function still performs lag winner remapping and calls setLiveRackPoints"
+        "The live 'PPI: 0.00 | Def: 0' display is completely removed from the active game screen",
+        "PPI calculation only appears in the final match results summary",
+        "No real-time PPI updates during gameplay"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/apa/PracticeGamePage.tsx",
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
           "operation": "modify",
-          "description": "Wrap the handleLiveRackUpdate function definition with useCallback and add [session] as the dependency array. The wrapper should be: const handleLiveRackUpdate = useCallback((data: { player1Points: number; player2Points: number }) => { /* existing function body unchanged */ }, [session]). This memoizes the function to prevent infinite render loops while maintaining the exact same logic for lag winner remapping and setLiveRackPoints calls. Do not modify any of the function body logic - only add the useCallback wrapper around the existing function."
+          "description": "Remove all live PPI and defensive shot count display logic from the active gameplay screen. Delete any UI elements that show 'PPI: 0.00 | Def: 0' or similar real-time statistical calculations. Preserve PPI calculation logic that runs at match completion but remove any in-game display of these statistics."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Fix the 9-ball revert guard condition to allow automatic dead ball revert when clicking the 9-ball",
+      "acceptanceCriteria": [
+        "Clicking the 9-ball when it is marked as dead automatically reverts it to unscored state",
+        "No guard condition blocks the automatic revert behavior for the 9-ball",
+        "The 9-ball behaves consistently with the approved revert logic"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/apa/ApaRackScoringPanel.tsx",
+          "operation": "modify",
+          "description": "Locate the guard condition that prevents the 9-ball from being automatically reverted when clicked in a dead state. Remove or adjust this guard to allow the 9-ball to revert to unscored state when clicked while marked as dead, matching the revert behavior of other balls. Ensure the fix does not affect the defensive button logic or dead ball styling already implemented."
         }
       ]
     }

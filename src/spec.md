@@ -1,10 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix React error #185 infinite render loop by wrapping handleLiveRackUpdate with useCallback.
+**Goal:** Revert unauthorized UI changes and fix the 9-ball revert guard in APA Pool Scorekeeper.
 
 **Planned changes:**
-- Add useCallback to React imports in PracticeGamePage.tsx
-- Wrap handleLiveRackUpdate function with useCallback using [session] dependency array
+- Remove the unauthorized '+4' projected score display next to player scores in ApaRackScoringPanel
+- Remove the unauthorized 'PPI: 0.00 | Def: 0' live calculation display during active gameplay
+- Fix the 9-ball revert guard to allow automatic dead ball revert when clicking the 9-ball
 
-**User-visible outcome:** The practice game page will no longer experience infinite render loops, providing a stable and responsive scoring experience.
+**User-visible outcome:** The scoreboard displays only the actual current scores without projected totals or live PPI calculations during gameplay, and clicking a dead 9-ball automatically reverts it to unscored state.

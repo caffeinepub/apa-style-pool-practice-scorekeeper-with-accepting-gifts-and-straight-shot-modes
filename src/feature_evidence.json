@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-add-usecallback-to-the-react-imports-from-react",
-      "featureTitle": "In frontend/src/pages/apa/PracticeGamePage.tsx, add useCallback to the React imports from 'react'",
+      "featureId": "feature-remove-the-unauthorized-projected-score-display-showing-4-next-to-the-current-score-in-aparackscoringpanel",
+      "featureTitle": "Remove the unauthorized projected score display showing '+4' next to the current score in ApaRackScoringPanel",
       "files": [
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,15 +17,15 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-frontend-src-pages-apa-practicegamepage-tsx-wrap-the-handleliverackupdate-function-with-usecallback-and-session-as-the-dependency-array-keep-the-function-body-exactly-the-same-only-add-the-usecallback-wrapper-around-it",
-      "featureTitle": "In frontend/src/pages/apa/PracticeGamePage.tsx, wrap the handleLiveRackUpdate function with useCallback and [session] as the dependency array. Keep the function body exactly the same - only add the useCallback wrapper around it.",
+      "featureId": "feature-remove-the-unauthorized-live-ppi-calculation-display-showing-ppi-0-00-def-0-during-active-gameplay-in-aparackscoringpanel",
+      "featureTitle": "Remove the unauthorized live PPI calculation display showing 'PPI: 0.00 | Def: 0' during active gameplay in ApaRackScoringPanel",
       "files": [
-        "frontend/src/pages/apa/PracticeGamePage.tsx"
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -37,7 +37,27 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-fix-the-9-ball-revert-guard-condition-in-aparackscoringpanel-to-allow-automatic-dead-ball-revert-when-clicking-the-9-ball",
+      "featureTitle": "Fix the 9-ball revert guard condition in ApaRackScoringPanel to allow automatic dead ball revert when clicking the 9-ball",
+      "files": [
+        "frontend/src/components/apa/ApaRackScoringPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
       ],
       "confidence": "high"
     }
