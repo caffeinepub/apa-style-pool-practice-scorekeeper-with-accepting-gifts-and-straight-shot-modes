@@ -1,0 +1,23 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Rename legend label 'Candle (day)' to 'Shots (day)' in Straight Shot Trend Graph",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Change legend label from 'Candle (day)' to 'Shots (day)' in StraightShotTrendChart.tsx",
+      "acceptanceCriteria": [
+        "The legend in the Straight Shot Trend Graph displays 'Shots (day)' instead of 'Candle (day)'",
+        "The 'Trend' legend entry remains unchanged",
+        "No other UI, logic, or files are modified"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/straight-shot/StraightShotTrendChart.tsx",
+          "operation": "modify",
+          "description": "Update the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. Locate the legend configuration or data series name prop in the chart component and change the string value. Do not modify any other chart properties, logic, or styling."
+        }
+      ]
+    }
+  ]
+}

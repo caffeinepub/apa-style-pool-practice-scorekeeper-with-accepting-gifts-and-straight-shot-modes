@@ -1,0 +1,46 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-28T18:36:49.952Z",
+  "summary": "The diff shows StraightShotTrendChart.tsx was modified (truncated, so the exact label change cannot be confirmed), but three additional files were also modified: frontend/src/utils/urlParams.ts, frontend-file-summaries.txt, and project_state.json. The build request explicitly constrains that only StraightShotTrendChart.tsx may be modified. The label change in StraightShotTrendChart.tsx cannot be fully verified due to truncation, but the modification of other files is a clear violation.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Change the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)' in StraightShotTrendChart.tsx",
+      "reason": "The StraightShotTrendChart.tsx diff is truncated and does not show the legend label change. The relevant part of the file where the legend name would be defined is cut off, so conformance cannot be confirmed.",
+      "evidence": [
+        "frontend/src/components/straight-shot/StraightShotTrendChart.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Modification of frontend/src/utils/urlParams.ts",
+      "reason": "The build request and constraints specify that only StraightShotTrendChart.tsx may be modified. urlParams.ts is an unrelated utility file that should not have been touched.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
+      ]
+    },
+    {
+      "description": "Modification of frontend-file-summaries.txt",
+      "reason": "The build request constrains changes to StraightShotTrendChart.tsx only. Modifying this summary file was not requested.",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Modification of project_state.json",
+      "reason": "The build request constrains changes to StraightShotTrendChart.tsx only. Modifying project_state.json was not requested.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "confidence": 0.72,
+  "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/components/straight-shot/StraightShotTrendChart.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "project_state.json"
+  ]
+}

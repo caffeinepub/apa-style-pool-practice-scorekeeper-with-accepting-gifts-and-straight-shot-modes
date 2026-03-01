@@ -1,0 +1,38 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-28T18:36:49.957Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 1,
+    "implemented": 1,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "In StraightShotTrendChart.tsx, change the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. No other changes to this file or any other file.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/straight-shot/StraightShotTrendChart.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/straight-shot/StraightShotTrendChart.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/components/straight-shot/StraightShotTrendChart.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}
