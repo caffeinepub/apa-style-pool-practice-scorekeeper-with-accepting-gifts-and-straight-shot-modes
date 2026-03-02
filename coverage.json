@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T18:36:49.957Z",
+  "generatedAt": "2026-03-02T16:02:41.996Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -11,14 +11,14 @@
     "implemented": 1,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "In StraightShotTrendChart.tsx, change the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. No other changes to this file or any other file.",
+        "id": "REQ-6",
+        "summary": "In the footer of AppLayout (the area containing '© 2026 APA 9-Ball Scorekeeper. Built with ❤️ using caffeine.ai'), add a small 'Debug' text link next to or below the copyright line. Clicking this link toggles the existing DebugPanel component open and closed. The DebugPanel component already exists at frontend/src/components/debug/DebugPanel.tsx — import and reuse it as-is. The gear icon button must retain its existing Edit Profile behavior completely untouched. No changes to the header, nav buttons, any other layout elements, or any other functionality.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/straight-shot/StraightShotTrendChart.tsx"
+          "frontend/src/components/layout/AppLayout.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/straight-shot/StraightShotTrendChart.tsx"
+          "frontend/src/components/layout/AppLayout.tsx"
         ]
       }
     ]
@@ -28,7 +28,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/straight-shot/StraightShotTrendChart.tsx",
+    "frontend/src/components/layout/AppLayout.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

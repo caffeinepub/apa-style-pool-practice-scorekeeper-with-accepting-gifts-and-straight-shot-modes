@@ -310,6 +310,7 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'claimOwnership' : ActorMethod<[string, string], undefined>,
   'clearHistory' : ActorMethod<[], undefined>,
   'completeAgSession' : ActorMethod<[bigint], bigint>,
   'computeAPASummary' : ActorMethod<
@@ -320,10 +321,20 @@ export interface _SERVICE {
   'deleteMatches' : ActorMethod<[Array<string>], undefined>,
   'getAgLevelIndex' : ActorMethod<[], bigint>,
   'getAllMatches' : ActorMethod<[], Array<ApiMatch>>,
+  /**
+   * / Returns the Principal of the caller as Text.
+   */
+  'getCallerPrincipal' : ActorMethod<[], string>,
+  /**
+   * / Returns the role currently assigned to the caller in the authorization HashMap as Text,
+   * / or "none" if unassigned.
+   */
+  'getCallerRole' : ActorMethod<[], string>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getInviteOnlyMode' : ActorMethod<[], boolean>,
   'getMatch' : ActorMethod<[string], [] | [ApiMatch]>,
+  'getOwner' : ActorMethod<[], [] | [Principal]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,

@@ -178,6 +178,8 @@ export function useIsCallerAdmin() {
       return actor.isCallerAdmin();
     },
     enabled: !!actor && !isFetching,
+    // Do not cache stale admin status — always re-check when invalidated
+    staleTime: 0,
   });
 }
 
@@ -291,6 +293,45 @@ export function useSetApproval() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
       queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
+    },
+  });
+}
+
+export function useGetOwner() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Principal | null>({
+    queryKey: ['owner'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getOwner();
+    },
+    enabled: !!actor && !isFetching,
+    // Do not cache stale owner status — always re-check when invalidated
+    staleTime: 0,
+  });
+}
+
+export function useClaimOwnership() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.claimOwnership('', '');
+    },
+    onSuccess: async () => {
+      // Invalidate all relevant queries first
+      await queryClient.invalidateQueries({ queryKey: ['owner'] });
+      await queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+      await queryClient.invalidateQueries({ queryKey: ['callerUserRole'] });
+      await queryClient.invalidateQueries({ queryKey: ['isCallerApproved'] });
+      // Then explicitly refetch them to ensure fresh data is loaded immediately
+      await queryClient.refetchQueries({ queryKey: ['owner'] });
+      await queryClient.refetchQueries({ queryKey: ['isCallerAdmin'] });
+      await queryClient.refetchQueries({ queryKey: ['callerUserRole'] });
+      await queryClient.refetchQueries({ queryKey: ['isCallerApproved'] });
     },
   });
 }

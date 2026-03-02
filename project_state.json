@@ -1,16 +1,46 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "Sports stats tracking app with a Straight Shot Stats tab featuring a Straight Shot Trend Graph (candlestick chart with trend line).",
-  "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "projectStateVersion": 13,
+  "summary": "ICP/Motoko APA Pool Scorer app. Live canister is v163. Debug panel being added as a small footer link (toggleable, no interference with existing nav/gear icon functionality). Frontend-only deploys succeed; backend deploys still failing — support contacted. Next step: verify owner/admin state via debug panel on live canister.",
+  "architectural_notes": [
+    "Backend uses Motoko with HashMap for role assignments (principal → role variants like #user, #admin)",
+    "adminAssigned flag controls whether initialize() can reassign admin role",
+    "Debug queries must be read-only (query calls), no side effects, callable via Candid UI",
+    "Surgical fix to access-control.mo: case (?_) {} replaced with token-checked admin promotion — only promotes if adminAssigned is false and token matches",
+    "No-op deploy test: add comment-only change to backend/access-control.mo to isolate whether deployment failures are pipeline/network issues or code-edit-induced compile errors",
+    "Frontend-only deploys succeed while backend deploys fail — confirms issue is backend upgrade/install pipeline, not frontend or network connectivity",
+    "Debug panel toggle moved from second header nav button to a small footer link — gear icon retains existing Edit Profile modal behavior"
+  ],
+  "known_issues": [
+    "Repeated deployment failures (v148+) caused by full codebase regeneration from memory introducing Motoko syntax/type errors",
+    "Deployment failures occurring post-fix attempt; no-op test in progress to isolate root cause (pipeline vs. code edit)",
+    "No-op deploy (comment-only change) also failed, confirming deployment failures are infrastructure/pipeline/network/state level, not code-related",
+    "Owner/admin state on live canister is unconfirmed — 'Claim Ownership' may not have set correctly during prior troubleshooting",
+    "Second header nav button (gear icon) already owned by Edit Profile modal — debug panel wired there was shadowed/overridden"
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-in-straightshottrendchart-tsx-change-the-legend-label-for-the-candlestick-series-from-candle-day-to-shots-day-no-other-changes-to-this-file-or-any-other-file",
-      "title": "In StraightShotTrendChart.tsx, change the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. No other changes to this file or any other file.",
+      "id": "feature-add-a-debug-panel-component-that-calls-getowner-getcallerprincipal-iscalleradmin-iscallerapproved-and-getcallerrole-on-the-live-canister-and-displays-the-raw-returned-values-each-call-must-be-wrapped-in-individual-try-catch-blocks-so-a-trap-on-any-single-call-e-g-getcallerrole-does-not-prevent-the-others-from-rendering-show-each-result-as-a-labeled-key-value-pair-the-panel-should-be-toggleable-show-hide",
+      "title": "Add a debug panel component that calls getOwner(), getCallerPrincipal(), isCallerAdmin(), isCallerApproved(), and getCallerRole() on the live canister and displays the raw returned values. Each call must be wrapped in individual try/catch blocks so a trap on any single call (e.g. getCallerRole) does not prevent the others from rendering. Show each result as a labeled key-value pair. The panel should be toggleable (show/hide).",
       "reqIds": [
-        "REQ-1"
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-wire-the-debug-panel-toggle-to-the-second-button-in-the-header-nav-bar-the-element-at-xpath-html-1-body-1-div-1-div-1-header-1-div-1-div-2-button-2-the-second-button-in-applayout-s-header-nav-div-should-open-close-the-debug-panel-when-clicked-only-this-button-s-onclick-behavior-is-changed-no-other-header-elements-layout-styles-or-buttons-are-modified",
+      "title": "Wire the debug panel toggle to the second button in the header nav bar. The element at XPath /html[1]/body[1]/div[1]/div[1]/header[1]/div[1]/div[2]/button[2] (the second button in AppLayout's header nav div) should open/close the debug panel when clicked. Only this button's onClick behavior is changed — no other header elements, layout, styles, or buttons are modified.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-footer-of-applayout-the-area-containing-2026-apa-9-ball-scorekeeper-built-with-using-caffeine-ai-add-a-small-debug-text-link-next-to-or-below-the-copyright-line-clicking-this-link-toggles-the-existing-debugpanel-component-open-and-closed-the-debugpanel-component-already-exists-at-frontend-src-components-debug-debugpanel-tsx-import-and-reuse-it-as-is-the-gear-icon-button-must-retain-its-existing-edit-profile-behavior-completely-untouched-no-changes-to-the-header-nav-buttons-any-other-layout-elements-or-any-other-functionality",
+      "title": "In the footer of AppLayout (the area containing '© 2026 APA 9-Ball Scorekeeper. Built with ❤️ using caffeine.ai'), add a small 'Debug' text link next to or below the copyright line. Clicking this link toggles the existing DebugPanel component open and closed. The DebugPanel component already exists at frontend/src/components/debug/DebugPanel.tsx — import and reuse it as-is. The gear icon button must retain its existing Edit Profile behavior completely untouched. No changes to the header, nav buttons, any other layout elements, or any other functionality.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -18,13 +48,37 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Rename legend label from 'Candle (day)' to 'Shots (day)' in the Straight Shot Trend Graph only",
+      "summary": "In backend/main.mo, inside the initialize() function, locate the case (?_) {} branch that currently short-circuits when the caller already exists in userRoles. Replace only that branch with the following logic — touching nothing else in the file:\n\ncase (?_) {\n  if (not state.adminAssigned and userProvidedToken == adminToken) {\n    state.userRoles.add(caller, #admin);\n    state.adminAssigned := true;\n  };\n};\n\nThis allows a principal already registered as #user to be promoted to #admin if and only if the correct admin token is supplied and adminAssigned is still false. All other logic, function signatures, stable variables, and module structure must remain completely unchanged.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "In backend/access-control.mo, add a single comment line '// noop deploy test (comment-only)' immediately after the import statements at the top of the file. Make absolutely no other changes to the file — no logic, no formatting, no whitespace modifications outside of inserting this one comment line.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "In backend/access-control.mo, add a single comment line '// noop deploy test retry (20min)' immediately after the import statements at the top of the file. Make absolutely no other changes to the file — no logic, no formatting, no whitespace modifications outside of inserting this one comment line.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add a small 'Debug' link in the footer (next to/below copyright line) that toggles the debug panel open/close. The gear icon must keep its existing Edit Profile behavior untouched. Zero other layout, nav, or functionality changes. Easy to remove later.",
       "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Rename legend label 'Candle (day)' to 'Shots (day)' in Straight Shot Trend Graph",
+  "projectName": "APA Pool Scorer",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

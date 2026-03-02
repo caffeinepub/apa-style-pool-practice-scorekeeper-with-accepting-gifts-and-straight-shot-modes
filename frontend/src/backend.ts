@@ -426,6 +426,7 @@ export enum Variant_all_playerMatch_teamMatch_detailRack {
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    claimOwnership(adminToken: string, userProvidedToken: string): Promise<void>;
     clearHistory(): Promise<void>;
     completeAgSession(finalLevel: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
@@ -433,10 +434,20 @@ export interface backendInterface {
     deleteMatches(matchIds: Array<string>): Promise<void>;
     getAgLevelIndex(): Promise<bigint>;
     getAllMatches(): Promise<Array<ApiMatch>>;
+    /**
+     * / Returns the Principal of the caller as Text.
+     */
+    getCallerPrincipal(): Promise<string>;
+    /**
+     * / Returns the role currently assigned to the caller in the authorization HashMap as Text,
+     * / or "none" if unassigned.
+     */
+    getCallerRole(): Promise<string>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getInviteOnlyMode(): Promise<boolean>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
+    getOwner(): Promise<Principal | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
@@ -477,6 +488,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async claimOwnership(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.claimOwnership(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.claimOwnership(arg0, arg1);
             return result;
         }
     }
@@ -578,6 +603,34 @@ export class Backend implements backendInterface {
             return from_candid_vec_n3(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getCallerPrincipal(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerPrincipal();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerPrincipal();
+            return result;
+        }
+    }
+    async getCallerRole(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerRole();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerRole();
+            return result;
+        }
+    }
     async getCallerUserProfile(): Promise<UserProfile | null> {
         if (this.processError) {
             try {
@@ -632,6 +685,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getMatch(arg0);
             return from_candid_opt_n36(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getOwner(): Promise<Principal | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getOwner();
+                return from_candid_opt_n27(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getOwner();
+            return from_candid_opt_n27(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {

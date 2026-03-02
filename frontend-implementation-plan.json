@@ -1,21 +1,26 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Rename legend label 'Candle (day)' to 'Shots (day)' in Straight Shot Trend Graph",
+  "title": "Add Debug footer link to toggle debug panel",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Change legend label from 'Candle (day)' to 'Shots (day)' in StraightShotTrendChart.tsx",
+      "id": "REQ-6",
+      "summary": "Add a small 'Debug' text link in the AppLayout footer that toggles the existing DebugPanel component open and closed, without modifying any other layout elements or functionality",
       "acceptanceCriteria": [
-        "The legend in the Straight Shot Trend Graph displays 'Shots (day)' instead of 'Candle (day)'",
-        "The 'Trend' legend entry remains unchanged",
-        "No other UI, logic, or files are modified"
+        "A small 'Debug' text link appears in the footer area next to or below the copyright line on all pages rendered by AppLayout",
+        "Clicking the 'Debug' link toggles the DebugPanel open; clicking it again closes it",
+        "The DebugPanel displays results from getOwner(), getCallerPrincipal(), isCallerAdmin(), isCallerApproved(), and getCallerRole() as labeled key-value pairs",
+        "The gear icon in the header still opens the Edit Profile modal — its behavior is completely unchanged",
+        "The bar chart icon in the header retains its existing behavior unchanged",
+        "The Logout button retains its existing behavior unchanged",
+        "No other header, nav, layout, or page elements are modified",
+        "The 'Debug' link and DebugPanel can be removed later by deleting only the footer link and its associated state — no other code is entangled"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/straight-shot/StraightShotTrendChart.tsx",
+          "path": "frontend/src/components/layout/AppLayout.tsx",
           "operation": "modify",
-          "description": "Update the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. Locate the legend configuration or data series name prop in the chart component and change the string value. Do not modify any other chart properties, logic, or styling."
+          "description": "Add a boolean state variable (e.g., isDebugPanelOpen) to track the debug panel visibility. In the footer section (below the copyright text '© 2026 APA 9-Ball Scorekeeper. Built with ❤️ using caffeine.ai'), add a small text link labeled 'Debug' that toggles this state when clicked. Import and conditionally render the existing DebugPanel component from frontend/src/components/debug/DebugPanel.tsx, passing the open state and a close handler. Ensure the gear icon, bar chart icon, logout button, and all other layout elements remain completely unchanged. The debug link and panel should be self-contained so they can be removed by deleting only the state variable, the link element, and the DebugPanel conditional render."
         }
       ]
     }

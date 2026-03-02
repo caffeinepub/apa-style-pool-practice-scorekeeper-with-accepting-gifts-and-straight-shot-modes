@@ -213,8 +213,8 @@ export function getSecretParameter(paramName: string): string | null {
 const NAV_ORIGIN_KEY = 'navigationOrigin';
 
 /**
- * Stores the navigation origin in sessionStorage so the destination page
- * can render a context-aware back-link (e.g. "Back to Stats" vs "Back to Home").
+ * Stores the navigation origin in sessionStorage so the next page knows
+ * where to send the user when they press "Back".
  *
  * @param origin - A short identifier for the originating page (e.g. 'home', 'stats', 'history')
  */
@@ -241,8 +241,9 @@ export function getNavigationOrigin(): string | null {
 }
 
 /**
- * Clears the stored navigation origin. Call this after consuming the value
- * (e.g. when the user presses the back button) to avoid stale state.
+ * Clears the stored navigation origin after it has been consumed.
+ * Call this when the user actually navigates back so the value doesn't
+ * persist to subsequent pages.
  */
 export function clearNavigationOrigin(): void {
     try {

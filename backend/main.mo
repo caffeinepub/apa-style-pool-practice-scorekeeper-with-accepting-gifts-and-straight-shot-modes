@@ -19,9 +19,8 @@ actor {
 
   let approvalState = UserApproval.initState(accessControlState);
 
+  var owner : ?Principal = null;
   var inviteOnlyMode : Bool = false;
-
-  // Use a single value to represent the current Accepting Gifts level index (0-11)
   let agLevelIndices = Map.empty<Principal, Nat>();
 
   func hasAccess(caller : Principal) : Bool {
@@ -29,6 +28,27 @@ actor {
       return not caller.isAnonymous();
     };
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+  };
+
+  public query ({ caller }) func getOwner() : async ?Principal {
+    owner;
+  };
+
+  public shared ({ caller }) func claimOwnership(adminToken : Text, userProvidedToken : Text) : async () {
+    // Reject anonymous callers
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous principals cannot claim ownership");
+    };
+    switch (owner) {
+      case (null) {
+        owner := ?caller;
+        // Initialize the access control system with this caller as the admin
+        AccessControl.initialize(accessControlState, caller, adminToken, userProvidedToken);
+      };
+      case (?_) {
+        // Ownership already claimed; silently ignore subsequent calls
+      };
+    };
   };
 
   public query ({ caller }) func getInviteOnlyMode() : async Bool {
@@ -41,7 +61,6 @@ actor {
     };
     inviteOnlyMode := enabled;
   };
-
   public query ({ caller }) func isCallerApproved() : async Bool {
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
   };
@@ -68,6 +87,24 @@ actor {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     UserApproval.listApprovals(approvalState);
+  };
+
+  // Diagnostic query functions for admin reassignment debugging
+
+  /// Returns the Principal of the caller as Text.
+  public query ({ caller }) func getCallerPrincipal() : async Text {
+    caller.toText();
+  };
+
+  /// Returns the role currently assigned to the caller in the authorization HashMap as Text,
+  /// or "none" if unassigned.
+  public query ({ caller }) func getCallerRole() : async Text {
+    let role = AccessControl.getUserRole(accessControlState, caller);
+    switch (role) {
+      case (#admin) { "admin" };
+      case (#user) { "user" };
+      case (#guest) { "guest" };
+    };
   };
 
   public type UserProfile = {
@@ -827,8 +864,8 @@ actor {
 
     switch (matchHistory.get(matchId)) {
       case (?matchRecord) {
-        let owner = getMatchOwner(matchRecord);
-        if (caller != owner and not AccessControl.isAdmin(accessControlState, caller)) {
+        let matchOwner = getMatchOwner(matchRecord);
+        if (caller != matchOwner and not AccessControl.isAdmin(accessControlState, caller)) {
           Runtime.trap("Unauthorized: Can only view your own matches");
         };
         ?convertToApiMatch(matchRecord);
@@ -849,8 +886,8 @@ actor {
         if (isAdmin) {
           true;
         } else {
-          let owner = getMatchOwner(m);
-          caller == owner;
+          let matchOwner = getMatchOwner(m);
+          caller == matchOwner;
         };
       })
       .map(func(m) { convertToApiMatch(m) })
@@ -894,8 +931,8 @@ actor {
     switch (matchHistory.get(matchId)) {
       case (null) { Runtime.trap("Match with id " # matchId # " does not exist") };
       case (?matchRecord) {
-        let owner = getMatchOwner(matchRecord);
-        if (caller != owner and not AccessControl.isAdmin(accessControlState, caller)) {
+        let matchOwner = getMatchOwner(matchRecord);
+        if (caller != matchOwner and not AccessControl.isAdmin(accessControlState, caller)) {
           Runtime.trap("Unauthorized: Can only delete your own matches");
         };
         matchHistory.remove(matchId);
@@ -1024,8 +1061,8 @@ actor {
       switch (matchHistory.get(matchId)) {
         case (null) { Runtime.trap("Match with id " # matchId # " does not exist") };
         case (?matchRecord) {
-          let owner = getMatchOwner(matchRecord);
-          if (caller != owner and not hasAdminRights) {
+          let matchOwner = getMatchOwner(matchRecord);
+          if (caller != matchOwner and not hasAdminRights) {
             Runtime.trap("Unauthorized: Can only delete your own matches");
           };
           matchHistory.remove(matchId);

@@ -343,6 +343,7 @@ export enum Variant_all_playerMatch_teamMatch_detailRack {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    claimOwnership(adminToken: string, userProvidedToken: string): Promise<void>;
     clearHistory(): Promise<void>;
     completeAgSession(finalLevel: bigint): Promise<bigint>;
     computeAPASummary(startingPlayer: string, ballStates: Array<BallState>): Promise<APADetailedInnningSummary>;
@@ -350,10 +351,20 @@ export interface backendInterface {
     deleteMatches(matchIds: Array<string>): Promise<void>;
     getAgLevelIndex(): Promise<bigint>;
     getAllMatches(): Promise<Array<ApiMatch>>;
+    /**
+     * / Returns the Principal of the caller as Text.
+     */
+    getCallerPrincipal(): Promise<string>;
+    /**
+     * / Returns the role currently assigned to the caller in the authorization HashMap as Text,
+     * / or "none" if unassigned.
+     */
+    getCallerRole(): Promise<string>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getInviteOnlyMode(): Promise<boolean>;
     getMatch(matchId: string): Promise<ApiMatch | null>;
+    getOwner(): Promise<Principal | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;

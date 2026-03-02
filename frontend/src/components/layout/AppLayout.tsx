@@ -1,22 +1,55 @@
+import { useState } from 'react';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { Shield, BarChart3, Loader2 } from 'lucide-react';
+import { Shield, BarChart3, Loader2, KeyRound } from 'lucide-react';
 import LoginButton from '../auth/LoginButton';
 import ProfileSetupDialog from '../auth/ProfileSetupDialog';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { useIsCallerAdmin, useGetCallerUserProfile } from '../../hooks/useQueries';
+import { useIsCallerAdmin, useGetCallerUserProfile, useClaimOwnership, useGetOwner } from '../../hooks/useQueries';
 import { useActor } from '../../hooks/useActor';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import DebugPanel from '../debug/DebugPanel';
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
-  const { data: isAdmin } = useIsCallerAdmin();
+  const { data: isAdmin, isFetched: isAdminFetched } = useIsCallerAdmin();
   const { actor, isFetching: actorFetching } = useActor();
   const { isLoading: profileLoading } = useGetCallerUserProfile();
+  const { data: owner, isFetched: isOwnerFetched } = useGetOwner();
+  const claimOwnership = useClaimOwnership();
   const isAuthenticated = !!identity;
+  const [isDebugPanelOpen, setIsDebugPanelOpen] = useState(false);
 
   // Show connecting indicator when authenticated but actor/profile not ready
   const isConnecting = isAuthenticated && (actorFetching || (!actor && !profileLoading));
+
+  // Show claim ownership button when:
+  // - user is authenticated
+  // - actor is ready
+  // - admin status has been fetched and user is not already admin
+  // - owner query has been fetched and no owner has been claimed yet
+  const showClaimOwnership =
+    isAuthenticated &&
+    !!actor &&
+    !actorFetching &&
+    isAdminFetched &&
+    !isAdmin &&
+    isOwnerFetched &&
+    owner === null;
+
+  const handleClaimOwnership = async () => {
+    try {
+      await claimOwnership.mutateAsync();
+    } catch {
+      // Error is handled silently; the button state reflects the result
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,6 +88,30 @@ export default function AppLayout() {
                 <Shield className="h-5 w-5" />
               </Button>
             )}
+            {showClaimOwnership && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleClaimOwnership}
+                      disabled={claimOwnership.isPending}
+                      title="Claim Ownership"
+                    >
+                      {claimOwnership.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <KeyRound className="h-5 w-5 text-amber-500" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Claim admin ownership</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <ProfileSetupDialog />
             <LoginButton />
           </div>
@@ -75,8 +132,17 @@ export default function AppLayout() {
               caffeine.ai
             </a>
           </p>
+          <p className="mt-2">
+            <button
+              onClick={() => setIsDebugPanelOpen(prev => !prev)}
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground underline underline-offset-2 transition-colors"
+            >
+              Debug
+            </button>
+          </p>
         </div>
       </footer>
+      <DebugPanel isOpen={isDebugPanelOpen} onClose={() => setIsDebugPanelOpen(false)} />
     </div>
   );
 }

@@ -1,38 +1,49 @@
 {
   "kind": "build_request",
-  "title": "Rename legend label 'Candle (day)' to 'Shots (day)' in Straight Shot Trend Graph",
-  "priority": "normal",
+  "title": "Add Debug footer link to toggle debug panel",
+  "projectName": "APA 9-Ball Scorekeeper",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "In StraightShotTrendChart.tsx, change the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. No other changes to this file or any other file.",
+      "id": "REQ-6",
+      "text": "In the footer of AppLayout (the area containing '© 2026 APA 9-Ball Scorekeeper. Built with ❤️ using caffeine.ai'), add a small 'Debug' text link next to or below the copyright line. Clicking this link toggles the existing DebugPanel component open and closed. The DebugPanel component already exists at frontend/src/components/debug/DebugPanel.tsx — import and reuse it as-is. The gear icon button must retain its existing Edit Profile behavior completely untouched. No changes to the header, nav buttons, any other layout elements, or any other functionality.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-recent"
         ],
         "quotes": [
-          "On the straight shots Stats tab, the Straight Shot Trend Graph only, I would like in the legend for \"Candle (day)\" to say \"Shots (day)\""
+          "i want the debug panel as a small link at the bottom. so that it can be removed later once we get this working...and this should not affect any other functionality.",
+          "go and do not make other changes"
         ]
       },
       "acceptanceCriteria": [
-        "The legend in the Straight Shot Trend Graph displays 'Shots (day)' instead of 'Candle (day)'",
-        "The 'Trend' legend entry remains unchanged",
-        "No other UI, logic, or files are modified"
+        "A small 'Debug' text link appears in the footer area next to or below the copyright line on all pages rendered by AppLayout",
+        "Clicking the 'Debug' link toggles the DebugPanel open; clicking it again closes it",
+        "The DebugPanel displays results from getOwner(), getCallerPrincipal(), isCallerAdmin(), isCallerApproved(), and getCallerRole() as labeled key-value pairs",
+        "The gear icon in the header still opens the Edit Profile modal — its behavior is completely unchanged",
+        "The bar chart icon in the header retains its existing behavior unchanged",
+        "The Logout button retains its existing behavior unchanged",
+        "No other header, nav, layout, or page elements are modified",
+        "The 'Debug' link and DebugPanel can be removed later by deleting only the footer link and its associated state — no other code is entangled"
       ]
     }
   ],
   "constraints": [
-    "Only StraightShotTrendChart.tsx may be modified",
-    "No logic changes",
-    "No other UI or interface changes",
-    "No other files touched"
+    "Do not modify the gear icon button or its Edit Profile modal behavior",
+    "Do not modify any other header or nav elements",
+    "Do not modify the bar chart icon button behavior",
+    "Do not modify the Logout button",
+    "Reuse the existing DebugPanel component from frontend/src/components/debug/DebugPanel.tsx — do not recreate it",
+    "No backend changes whatsoever",
+    "No changes to any page other than adding the footer link toggle in AppLayout"
   ],
   "nonGoals": [
-    "Changing any chart logic or data processing",
-    "Modifying any other component or page",
-    "Altering the 'Trend' legend label",
-    "Any backend changes"
+    "Moving or rewiring the debug panel toggle to any header button",
+    "Creating a new /debug route",
+    "Adding any keyboard shortcut for the debug panel",
+    "Any backend code changes",
+    "Any changes to existing page layouts beyond the footer debug link"
   ],
   "imageRequirements": {
     "required": [],

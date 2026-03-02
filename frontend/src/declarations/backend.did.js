@@ -328,6 +328,7 @@ export const MatchLogRecord = IDL.Variant({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'claimOwnership' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'clearHistory' : IDL.Func([], [], []),
   'completeAgSession' : IDL.Func([IDL.Nat], [IDL.Nat], []),
   'computeAPASummary' : IDL.Func(
@@ -339,10 +340,13 @@ export const idlService = IDL.Service({
   'deleteMatches' : IDL.Func([IDL.Vec(IDL.Text)], [], []),
   'getAgLevelIndex' : IDL.Func([], [IDL.Nat], ['query']),
   'getAllMatches' : IDL.Func([], [IDL.Vec(ApiMatch)], ['query']),
+  'getCallerPrincipal' : IDL.Func([], [IDL.Text], ['query']),
+  'getCallerRole' : IDL.Func([], [IDL.Text], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getInviteOnlyMode' : IDL.Func([], [IDL.Bool], ['query']),
   'getMatch' : IDL.Func([IDL.Text], [IDL.Opt(ApiMatch)], ['query']),
+  'getOwner' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -683,6 +687,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'claimOwnership' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'clearHistory' : IDL.Func([], [], []),
     'completeAgSession' : IDL.Func([IDL.Nat], [IDL.Nat], []),
     'computeAPASummary' : IDL.Func(
@@ -694,10 +699,13 @@ export const idlFactory = ({ IDL }) => {
     'deleteMatches' : IDL.Func([IDL.Vec(IDL.Text)], [], []),
     'getAgLevelIndex' : IDL.Func([], [IDL.Nat], ['query']),
     'getAllMatches' : IDL.Func([], [IDL.Vec(ApiMatch)], ['query']),
+    'getCallerPrincipal' : IDL.Func([], [IDL.Text], ['query']),
+    'getCallerRole' : IDL.Func([], [IDL.Text], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getInviteOnlyMode' : IDL.Func([], [IDL.Bool], ['query']),
     'getMatch' : IDL.Func([IDL.Text], [IDL.Opt(ApiMatch)], ['query']),
+    'getOwner' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],

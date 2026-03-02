@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-straightshottrendchart-tsx-change-the-legend-label-for-the-candlestick-series-from-candle-day-to-shots-day-no-other-changes-to-this-file-or-any-other-file",
-      "featureTitle": "In StraightShotTrendChart.tsx, change the legend label for the candlestick series from 'Candle (day)' to 'Shots (day)'. No other changes to this file or any other file.",
+      "featureId": "feature-in-the-footer-of-applayout-the-area-containing-2026-apa-9-ball-scorekeeper-built-with-using-caffeine-ai-add-a-small-debug-text-link-next-to-or-below-the-copyright-line-clicking-this-link-toggles-the-existing-debugpanel-component-open-and-closed-the-debugpanel-component-already-exists-at-frontend-src-components-debug-debugpanel-tsx-import-and-reuse-it-as-is-the-gear-icon-button-must-retain-its-existing-edit-profile-behavior-completely-untouched-no-changes-to-the-header-nav-buttons-any-other-layout-elements-or-any-other-functionality",
+      "featureTitle": "In the footer of AppLayout (the area containing '© 2026 APA 9-Ball Scorekeeper. Built with ❤️ using caffeine.ai'), add a small 'Debug' text link next to or below the copyright line. Clicking this link toggles the existing DebugPanel component open and closed. The DebugPanel component already exists at frontend/src/components/debug/DebugPanel.tsx — import and reuse it as-is. The gear icon button must retain its existing Edit Profile behavior completely untouched. No changes to the header, nav buttons, any other layout elements, or any other functionality.",
       "files": [
-        "frontend/src/components/straight-shot/StraightShotTrendChart.tsx"
+        "frontend/src/components/layout/AppLayout.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,7 +17,7 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-6"
       ],
       "confidence": "high"
     }
